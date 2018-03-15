@@ -1,0 +1,28 @@
+{
+  "name": "acme-v2",
+  "version": "1.0.0",
+  "description": "A framework for building letsencrypt clients (and other ACME v2 clients), forked from le-acme-core.js.",
+  "main": "node.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://gitea@git.coolaj86.com:22042/coolaj86/acme-v2.js.git"
+  },
+  "keywords": [
+    "acmev2",
+    "acme-v2",
+    "acme",
+    "letsencrypt-v2",
+    "letsencryptv2",
+    "greenlock",
+    "greenlock2"
+  ],
+  "author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
+  "license": "(MIT OR Apache-2.0)",
+  "dependencies": {
+    "request": "^2.85.0",
+    "rsa-compat": "^1.2.7"
+  }
+}
