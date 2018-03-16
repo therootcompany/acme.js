@@ -58,45 +58,6 @@ function create(deps) {
   var directoryUrl = deps.directoryUrl || defaults.stagingServerUrl;
   var request = deps.promisify(getRequest({}));
 
-  var acme2 = {
-    getAcmeUrls: function () {
-      var me = this;
-      return request({ url: directoryUrl }).then(function (resp) {
-        me._directoryUrls = JSON.parse(resp.body);
-        me._tos = me._directoryUrls.meta.termsOfService;
-        return me._directoryUrls;
-      });
-    }
-  , getNonce: function () {
-      var me = this;
-      return request({ method: 'HEAD', url: me._directoryUrls.newNonce }).then(function (resp) {
-        me._nonce = resp.toJSON().headers['replay-nonce'];
-        return me._nonce;
-      });
-    }
-		// ACME RFC Section 7.3 Account Creation
-		/*
-		 {
-			 "protected": base64url({
-				 "alg": "ES256",
-				 "jwk": {...},
-				 "nonce": "6S8IqOGY7eL2lsGoTZYifg",
-				 "url": "https://example.com/acme/new-account"
-			 }),
-			 "payload": base64url({
-				 "termsOfServiceAgreed": true,
-				 "onlyReturnExisting": false,
-				 "contact": [
-					 "mailto:cert-admin@example.com",
-					 "mailto:admin@example.com"
-				 ]
-			 }),
-			 "signature": "RZPOnYoPs1PhjszF...-nh6X1qtOFPB519I"
-		 }
-		*/
-  , registerNewAccount: function () {
-      var me = this;
-			var RSA = require('rsa-compat').RSA;
 			var crypto = require('crypto');
 			RSA.signJws = RSA.generateJws = RSA.generateSignatureJws = RSA.generateSignatureJwk =
 			function (keypair, payload, nonce) {
@@ -142,14 +103,60 @@ function create(deps) {
 				};
 			};
 
-      var options = {
-        email: 'coolaj86@gmail.com'
-      , keypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') })
-      };
+  var acme2 = {
+    getAcmeUrls: function () {
+      var me = this;
+      return request({ url: directoryUrl }).then(function (resp) {
+        me._directoryUrls = JSON.parse(resp.body);
+        me._tos = me._directoryUrls.meta.termsOfService;
+        return me._directoryUrls;
+      });
+    }
+  , getNonce: function () {
+      var me = this;
+      return request({ method: 'HEAD', url: me._directoryUrls.newNonce }).then(function (resp) {
+        me._nonce = resp.toJSON().headers['replay-nonce'];
+        return me._nonce;
+      });
+    }
+		// ACME RFC Section 7.3 Account Creation
+		/*
+		 {
+			 "protected": base64url({
+				 "alg": "ES256",
+				 "jwk": {...},
+				 "nonce": "6S8IqOGY7eL2lsGoTZYifg",
+				 "url": "https://example.com/acme/new-account"
+			 }),
+			 "payload": base64url({
+				 "termsOfServiceAgreed": true,
+				 "onlyReturnExisting": false,
+				 "contact": [
+					 "mailto:cert-admin@example.com",
+					 "mailto:admin@example.com"
+				 ]
+			 }),
+			 "signature": "RZPOnYoPs1PhjszF...-nh6X1qtOFPB519I"
+		 }
+		*/
+  , registerNewAccount: function (options) {
+      var me = this;
+
       var body = {
         termsOfServiceAgreed: true
       , onlyReturnExisting: false
       , contact: [ 'mailto:' + options.email ]
+      /*
+       "externalAccountBinding": {
+         "protected": base64url({
+           "alg": "HS256",
+           "kid": /* key identifier from CA *//*,
+           "url": "https://example.com/acme/new-account"
+         }),
+         "payload": base64url(/* same as in "jwk" above *//*),
+         "signature": /* MAC using MAC key from CA *//*
+       }
+      */
       };
 			var payload = JSON.stringify(body, null, 2);
 			var jws = RSA.signJws(
@@ -167,21 +174,99 @@ function create(deps) {
       , json: jws
       }).then(function (resp) {
         me._nonce = resp.toJSON().headers['replay-nonce'];
+        var location = resp.toJSON().headers['location'];
+        console.log(location); // the account id url
         console.log(resp.toJSON());
+				me._kid = location;
         return resp.body;
       });
     }
+		/*
+		 POST /acme/new-order HTTP/1.1
+		 Host: example.com
+		 Content-Type: application/jose+json
+
+		 {
+			 "protected": base64url({
+				 "alg": "ES256",
+				 "kid": "https://example.com/acme/acct/1",
+				 "nonce": "5XJ1L3lEkMG7tR6pA00clA",
+				 "url": "https://example.com/acme/new-order"
+			 }),
+			 "payload": base64url({
+				 "identifiers": [{"type:"dns","value":"example.com"}],
+				 "notBefore": "2016-01-01T00:00:00Z",
+				 "notAfter": "2016-01-08T00:00:00Z"
+			 }),
+			 "signature": "H6ZXtGjTZyUnPeKn...wEA4TklBdh3e454g"
+		 }
+		*/
+  , getCertificate: function (options, cb) {
+			var me = this;
+
+      var body = {
+				identifiers: [
+          { type: "dns" , value: "www.ppl.family" }
+				/*
+        , {	type: "dns" , value: "example.net" }
+				*/
+        ]
+        //, "notBefore": "2016-01-01T00:00:00Z"
+       //, "notAfter": "2016-01-08T00:00:00Z"
+      };
+
+			var payload = JSON.stringify(body);
+			//var payload = JSON.stringify(body, null, 2);
+			var jws = RSA.signJws(
+        options.keypair
+      , new Buffer(payload)
+      , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newOrder, kid: me._kid }
+			);
+
+      return request({
+        method: 'POST'
+      , url: me._directoryUrls.newOrder
+      , headers: { 'Content-Type': 'application/jose+json' }
+      , json: jws
+      }).then(function (resp) {
+        me._nonce = resp.toJSON().headers['replay-nonce'];
+        var location = resp.toJSON().headers['location'];
+        console.log(location); // the account id url
+        console.log(resp.toJSON());
+        //var body = JSON.parse(resp.body);
+        me._authorizations = resp.body.authorizations;
+        me._order = location;
+        me._finalize = resp.body.finalize;
+
+        //return resp.body;
+        return Promise.all(me._authorizations.map(function (auth) {
+          return request({ method: 'GET', url: auth, json: true }).then(function (resp) {
+            console.log('Authorization:');
+            console.log(resp.body.challenges);
+          });
+        }));
+      });
+		}
   };
   return acme2;
 }
 
+var RSA = require('rsa-compat').RSA;
 var acme2 = create();
 acme2.getAcmeUrls().then(function (body) {
   console.log(body);
   acme2.getNonce().then(function (nonce) {
     console.log(nonce);
-    acme2.registerNewAccount().then(function (account) {
+
+		var options = {
+			email: 'coolaj86@gmail.com'
+		, keypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') })
+		};
+    acme2.registerNewAccount(options).then(function (account) {
       console.log(account);
+    	acme2.getCertificate(options, function () {
+				console.log('got cert');
+      });
     });
   });
 });

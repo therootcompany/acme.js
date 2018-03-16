@@ -10,3 +10,12 @@ In progress
 * get directory
 * get nonce
 * create account
+* new order
+* get challenges
+
+Not yet tried
+
+* respond to challenges
+* finalize order
+* poll for status
+* download certificates
