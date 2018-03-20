@@ -201,12 +201,167 @@ function create(deps) {
 			 "signature": "H6ZXtGjTZyUnPeKn...wEA4TklBdh3e454g"
 		 }
 		*/
+  , _getChallenges: function (options, auth) {
+      console.log('\n[DEBUG] getChallenges\n');
+      return request({ method: 'GET', url: auth, json: true }).then(function (resp) {
+        console.log('Authorization:');
+        console.log(resp.body.challenges);
+        return resp.body.challenges;
+      });
+    }
+    // https://tools.ietf.org/html/draft-ietf-acme-acme-10#section-7.5.1
+  , _postChallenge: function (options, ch) {
+			var me = this;
+
+      var body = { };
+
+			var payload = JSON.stringify(body);
+			//var payload = JSON.stringify(body, null, 2);
+			var jws = RSA.signJws(
+        options.keypair
+      , new Buffer(payload)
+      , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
+			);
+
+      var thumbprint = RSA.thumbprint(options.keypair);
+      var keyAuthorization = ch.token + '.' + thumbprint;
+      //   keyAuthorization = token || '.' || base64url(JWK_Thumbprint(accountKey))
+      //   /.well-known/acme-challenge/:token
+      console.log('type:');
+      console.log(ch.type);
+      console.log('ch.token:');
+      console.log(ch.token);
+      console.log('thumbprint:');
+      console.log(thumbprint);
+      console.log('keyAuthorization:');
+      console.log(keyAuthorization);
+      /*
+      options.setChallenge(ch.token, thumbprint, keyAuthorization, function (err) {
+      });
+      */
+      function wait(ms) {
+        return new Promise(function (resolve) {
+          setTimeout(resolve, (ms || 1100));
+        });
+      }
+      function pollStatus() {
+        console.log('\n[DEBUG] statusChallenge\n');
+        return request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
+          console.error('poll: resp.body:');
+          console.error(resp.body);
+
+          if ('pending' === resp.body.status) {
+            console.log('poll: again');
+            return wait().then(pollStatus);
+          }
+
+          if ('valid' === resp.body.status) {
+            console.log('poll: valid');
+            return resp.body;
+          }
+
+          if (!resp.body.status) {
+            console.error("[acme-v2] (y) bad challenge state:");
+          }
+          else if ('invalid' === resp.body.status) {
+            console.error("[acme-v2] (x) invalid challenge state:");
+          }
+          else {
+            console.error("[acme-v2] (z) bad challenge state:");
+          }
+        });
+      }
+
+      console.log('\n[DEBUG] postChallenge\n');
+      //console.log('\n[DEBUG] stop to fix things\n'); return;
+
+      function post() {
+        return request({
+          method: 'POST'
+        , url: ch.url
+        , headers: { 'Content-Type': 'application/jose+json' }
+        , json: jws
+        }).then(function (resp) {
+          me._nonce = resp.toJSON().headers['replay-nonce'];
+          console.log('respond to challenge: resp.body:');
+          console.log(resp.body);
+          return wait().then(pollStatus);
+        });
+      }
+
+      return wait(20 * 1000).then(post);
+    }
+  , _finalizeOrder: function (options, validatedDomains) {
+      console.log('finalizeOrder:');
+			var me = this;
+
+      var csr = RSA.generateCsrWeb64(options.certificateKeypair, validatedDomains);
+      var body = { csr: csr };
+      var payload = JSON.stringify(body);
+
+      function wait(ms) {
+        return new Promise(function (resolve) {
+          setTimeout(resolve, (ms || 1100));
+        });
+      }
+
+      function pollCert() {
+        //var payload = JSON.stringify(body, null, 2);
+        var jws = RSA.signJws(
+          options.keypair
+        , new Buffer(payload)
+        , { nonce: me._nonce, alg: 'RS256', url: me._finalize, kid: me._kid }
+        );
+
+        console.log('finalize:', me._finalize);
+        return request({
+          method: 'POST'
+        , url: me._finalize
+        , headers: { 'Content-Type': 'application/jose+json' }
+        , json: jws
+        }).then(function (resp) {
+          me._nonce = resp.toJSON().headers['replay-nonce'];
+
+          console.log('order finalized: resp.body:');
+          console.log(resp.body);
+
+          if ('processing' === resp.body.status) {
+            return wait().then(pollCert);
+          }
+
+          if ('valid' === resp.body.status) {
+            me._expires = resp.body.expires;
+            me._certificate = resp.body.certificate;
+
+            return resp.body;
+          }
+
+          if ('invalid' === resp.body.status) {
+            console.error('cannot finalize: badness');
+            return;
+          }
+
+          console.error('(x) cannot finalize: badness');
+          return;
+        });
+      }
+
+      return pollCert();
+    }
+  , _getCertificate: function (auth) {
+      var me = this;
+      return request({ method: 'GET', url: me._certificate, json: true }).then(function (resp) {
+        console.log('Certificate:');
+        console.log(resp.body);
+        return resp.body;
+      });
+    }
   , getCertificate: function (options, cb) {
 			var me = this;
 
       var body = {
 				identifiers: [
-          { type: "dns" , value: "www.ppl.family" }
+          { type: "dns" , value: "test.ppl.family" }
 				/*
         , {	type: "dns" , value: "example.net" }
 				*/
@@ -223,6 +378,7 @@ function create(deps) {
       , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newOrder, kid: me._kid }
 			);
 
+      console.log('\n[DEBUG] newOrder\n');
       return request({
         method: 'POST'
       , url: me._directoryUrls.newOrder
@@ -237,14 +393,32 @@ function create(deps) {
         me._authorizations = resp.body.authorizations;
         me._order = location;
         me._finalize = resp.body.finalize;
+        //console.log('[DEBUG] finalize:', me._finalize); return;
 
         //return resp.body;
         return Promise.all(me._authorizations.map(function (auth) {
-          return request({ method: 'GET', url: auth, json: true }).then(function (resp) {
-            console.log('Authorization:');
-            console.log(resp.body.challenges);
+          console.log('authz', auth);
+          return me._getChallenges(options, auth).then(function (challenges) {
+            var chp;
+
+            challenges.forEach(function (ch) {
+              if ('http-01' !== ch.type) {
+                return;
+              }
+              chp = me._postChallenge(options, ch);
+            });
+
+            return chp;
           });
-        }));
+        })).then(function () {
+          var validatedDomains = body.identifiers.map(function (ident) {
+            return ident.value;
+          });
+
+          return me._finalizeOrder(options, validatedDomains);
+        }).then(function () {
+          return me._getCertificate();
+        });
       });
 		}
   };
@@ -260,7 +434,8 @@ acme2.getAcmeUrls().then(function (body) {
 
 		var options = {
 			email: 'coolaj86@gmail.com'
-		, keypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') })
+		, keypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/account.privkey.pem') })
+		, certificateKeypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') })
 		};
     acme2.registerNewAccount(options).then(function (account) {
       console.log(account);
