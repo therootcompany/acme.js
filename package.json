@@ -1,6 +1,6 @@
 {
   "name": "acme-v2",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "A framework for building letsencrypt clients (and other ACME v2 clients), forked from le-acme-core.js.",
   "main": "node.js",
   "scripts": {
