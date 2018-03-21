@@ -2,8 +2,9 @@
  * acme-v2.js
  * Copyright(c) 2018 AJ ONeal <aj@ppl.family> https://ppl.family
  * Apache-2.0 OR MIT (and hence also MPL 2.0)
-*/
+ */
 'use strict';
+/* globals Promise */
 
 var defaults = {
   productionServerUrl:    'https://acme-v02.api.letsencrypt.org/directory'
@@ -52,56 +53,12 @@ function create(deps) {
     });
   }
 
+  var RSA = deps.RSA || require('rsa-compat').RSA;
   deps.request = deps.request || require('request');
   deps.promisify = deps.promisify || require('util').promisify;
 
   var directoryUrl = deps.directoryUrl || defaults.stagingServerUrl;
   var request = deps.promisify(getRequest({}));
-
-			var crypto = require('crypto');
-			RSA.signJws = RSA.generateJws = RSA.generateSignatureJws = RSA.generateSignatureJwk =
-			function (keypair, payload, nonce) {
-        var prot = {};
-        if (nonce) {
-          if ('string' === typeof nonce) {
-            prot.nonce = nonce;
-          } else {
-            prot = nonce;
-          }
-        }
-				keypair = RSA._internal.import(keypair);
-				keypair = RSA._internal.importForge(keypair);
-				keypair.publicKeyJwk = RSA.exportPublicJwk(keypair);
-
-				// Compute JWS signature
-				var protectedHeader = "";
-				if (Object.keys(prot).length) {
-					protectedHeader = JSON.stringify(prot); // { alg: prot.alg, nonce: prot.nonce, url: prot.url });
-				}
-				var protected64 = RSA.utils.toWebsafeBase64(new Buffer(protectedHeader).toString('base64'));
-				var payload64 = RSA.utils.toWebsafeBase64(payload.toString('base64'));
-				var raw = protected64 + "." + payload64;
-				var sha256Buf = crypto.createHash('sha256').update(raw).digest();
-				var sig64;
-
-				if (RSA._URSA) {
-					sig64 = RSA._ursaGenerateSig(keypair, sha256Buf);
-				} else {
-					sig64 = RSA._forgeGenerateSig(keypair, sha256Buf);
-				}
-
-				return {
-          /*
-					header: {
-						alg: "RS256"
-					, jwk: keypair.publicKeyJwk
-					}
-          */
-				  protected: protected64
-				, payload: payload64
-				, signature: sig64
-				};
-			};
 
   var acme2 = {
     getAcmeUrls: function () {
@@ -114,116 +71,138 @@ function create(deps) {
     }
   , getNonce: function () {
       var me = this;
+      if (me._nonce) { return new Promise(function (resolve) { resolve(me._nonce); return; }); }
       return request({ method: 'HEAD', url: me._directoryUrls.newNonce }).then(function (resp) {
         me._nonce = resp.toJSON().headers['replay-nonce'];
         return me._nonce;
       });
     }
-		// ACME RFC Section 7.3 Account Creation
-		/*
-		 {
-			 "protected": base64url({
-				 "alg": "ES256",
-				 "jwk": {...},
-				 "nonce": "6S8IqOGY7eL2lsGoTZYifg",
-				 "url": "https://example.com/acme/new-account"
-			 }),
-			 "payload": base64url({
-				 "termsOfServiceAgreed": true,
-				 "onlyReturnExisting": false,
-				 "contact": [
-					 "mailto:cert-admin@example.com",
-					 "mailto:admin@example.com"
-				 ]
-			 }),
-			 "signature": "RZPOnYoPs1PhjszF...-nh6X1qtOFPB519I"
-		 }
-		*/
+    // ACME RFC Section 7.3 Account Creation
+    /*
+     {
+       "protected": base64url({
+         "alg": "ES256",
+         "jwk": {...},
+         "nonce": "6S8IqOGY7eL2lsGoTZYifg",
+         "url": "https://example.com/acme/new-account"
+       }),
+       "payload": base64url({
+         "termsOfServiceAgreed": true,
+         "onlyReturnExisting": false,
+         "contact": [
+           "mailto:cert-admin@example.com",
+           "mailto:admin@example.com"
+         ]
+       }),
+       "signature": "RZPOnYoPs1PhjszF...-nh6X1qtOFPB519I"
+     }
+    */
   , registerNewAccount: function (options) {
       var me = this;
 
-      var body = {
-        termsOfServiceAgreed: true
-      , onlyReturnExisting: false
-      , contact: [ 'mailto:' + options.email ]
-      /*
-       "externalAccountBinding": {
-         "protected": base64url({
-           "alg": "HS256",
-           "kid": /* key identifier from CA *//*,
-           "url": "https://example.com/acme/new-account"
-         }),
-         "payload": base64url(/* same as in "jwk" above *//*),
-         "signature": /* MAC using MAC key from CA *//*
-       }
-      */
-      };
-			var payload = JSON.stringify(body, null, 2);
-			var jws = RSA.signJws(
-        options.keypair
-      , new Buffer(payload)
-      , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newAccount, jwk: RSA.exportPublicJwk(options.keypair) }
-			);
+      console.log('[acme-v2] registerNewAccount');
 
-      console.log('jws:');
-      console.log(jws);
-      return request({
-        method: 'POST'
-      , url: me._directoryUrls.newAccount
-      , headers: { 'Content-Type': 'application/jose+json' }
-      , json: jws
-      }).then(function (resp) {
-        me._nonce = resp.toJSON().headers['replay-nonce'];
-        var location = resp.toJSON().headers['location'];
-        console.log(location); // the account id url
-        console.log(resp.toJSON());
-				me._kid = location;
-        return resp.body;
+      return me.getNonce().then(function () {
+        return new Promise(function (resolve, reject) {
+
+          function agree(err, tosUrl) {
+            if (err) { reject(err); return; }
+            if (me._tos !== tosUrl) {
+              err = new Error("You must agree to the ToS at '" + me._tos + "'");
+              err.code = "E_AGREE_TOS";
+              reject(err);
+              return;
+            }
+
+            var jwk = RSA.exportPublicJwk(options.accountKeypair);
+            var body = {
+              termsOfServiceAgreed: tosUrl === me._tos
+            , onlyReturnExisting: false
+            , contact: [ 'mailto:' + options.email ]
+            };
+            if (options.externalAccount) {
+              body.externalAccountBinding = RSA.signJws(
+                options.externalAccount.secret
+              , undefined
+              , { alg: "HS256"
+                , kid: options.externalAccount.id
+                , url: me._directoryUrls.newAccount
+                }
+              , new Buffer(JSON.stringify(jwk))
+              );
+            }
+            var payload = JSON.stringify(body);
+            var jws = RSA.signJws(
+              options.accountKeypair
+            , undefined
+            , { nonce: me._nonce
+              , alg: 'RS256'
+              , url: me._directoryUrls.newAccount
+              , jwk: jwk
+              }
+            , new Buffer(payload)
+            );
+
+            console.log('[acme-v2] registerNewAccount JSON body:');
+            delete jws.header;
+            console.log(jws);
+            me._nonce = null;
+            return request({
+              method: 'POST'
+            , url: me._directoryUrls.newAccount
+            , headers: { 'Content-Type': 'application/jose+json' }
+            , json: jws
+            }).then(function (resp) {
+              me._nonce = resp.toJSON().headers['replay-nonce'];
+              var location = resp.toJSON().headers.location;
+              console.log('[DEBUG] new account location:'); // the account id url
+              console.log(location); // the account id url
+              console.log(resp.toJSON());
+              me._kid = location;
+              return resp.body;
+            }).then(resolve);
+          }
+
+          console.log('[acme-v2] agreeToTerms');
+          options.agreeToTerms(me._tos, agree);
+        });
       });
     }
-		/*
-		 POST /acme/new-order HTTP/1.1
-		 Host: example.com
-		 Content-Type: application/jose+json
+    /*
+     POST /acme/new-order HTTP/1.1
+     Host: example.com
+     Content-Type: application/jose+json
 
-		 {
-			 "protected": base64url({
-				 "alg": "ES256",
-				 "kid": "https://example.com/acme/acct/1",
-				 "nonce": "5XJ1L3lEkMG7tR6pA00clA",
-				 "url": "https://example.com/acme/new-order"
-			 }),
-			 "payload": base64url({
-				 "identifiers": [{"type:"dns","value":"example.com"}],
-				 "notBefore": "2016-01-01T00:00:00Z",
-				 "notAfter": "2016-01-08T00:00:00Z"
-			 }),
-			 "signature": "H6ZXtGjTZyUnPeKn...wEA4TklBdh3e454g"
-		 }
-		*/
+     {
+       "protected": base64url({
+         "alg": "ES256",
+         "kid": "https://example.com/acme/acct/1",
+         "nonce": "5XJ1L3lEkMG7tR6pA00clA",
+         "url": "https://example.com/acme/new-order"
+       }),
+       "payload": base64url({
+         "identifiers": [{"type:"dns","value":"example.com"}],
+         "notBefore": "2016-01-01T00:00:00Z",
+         "notAfter": "2016-01-08T00:00:00Z"
+       }),
+       "signature": "H6ZXtGjTZyUnPeKn...wEA4TklBdh3e454g"
+     }
+    */
   , _getChallenges: function (options, auth) {
       console.log('\n[DEBUG] getChallenges\n');
       return request({ method: 'GET', url: auth, json: true }).then(function (resp) {
-        console.log('Authorization:');
-        console.log(resp.body.challenges);
-        return resp.body.challenges;
+        return resp.body;
       });
     }
     // https://tools.ietf.org/html/draft-ietf-acme-acme-10#section-7.5.1
-  , _postChallenge: function (options, ch) {
-			var me = this;
+  , _postChallenge: function (options, identifier, ch) {
+      var me = this;
 
       var body = { };
 
-			var payload = JSON.stringify(body);
-			//var payload = JSON.stringify(body, null, 2);
-			var jws = RSA.signJws(
-        options.keypair
-      , new Buffer(payload)
-      , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
-			);
+      var payload = JSON.stringify(body);
 
-      var thumbprint = RSA.thumbprint(options.keypair);
+      var thumbprint = RSA.thumbprint(options.accountKeypair);
       var keyAuthorization = ch.token + '.' + thumbprint;
       //   keyAuthorization = token || '.' || base64url(JWK_Thumbprint(accountKey))
       //   /.well-known/acme-challenge/:token
@@ -235,67 +214,115 @@ function create(deps) {
       console.log(thumbprint);
       console.log('keyAuthorization:');
       console.log(keyAuthorization);
-      /*
-      options.setChallenge(ch.token, thumbprint, keyAuthorization, function (err) {
+
+      return new Promise(function (resolve, reject) {
+        if (options.setupChallenge) {
+          options.setupChallenge(
+            { identifier: identifier
+            , hostname: identifier.value
+            , type: ch.type
+            , token: ch.token
+            , thumbprint: thumbprint
+            , keyAuthorization: keyAuthorization
+            , dnsAuthorization: RSA.utils.toWebsafeBase64(
+                require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
+              )
+            }
+          , testChallenge
+          );
+        } else {
+          options.setChallenge(identifier.value, ch.token, keyAuthorization, testChallenge);
+        }
+
+        function testChallenge(err) {
+          if (err) { reject(err); return; }
+
+          // TODO put check dns / http checks here?
+          // http-01: GET https://example.org/.well-known/acme-challenge/{{token}} => {{keyAuth}}
+          // dns-01: TXT _acme-challenge.example.org. => "{{urlSafeBase64(sha256(keyAuth))}}"
+
+          function wait(ms) {
+            return new Promise(function (resolve) {
+              setTimeout(resolve, (ms || 1100));
+            });
+          }
+
+          function pollStatus() {
+            console.log('\n[DEBUG] statusChallenge\n');
+            return request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
+              console.error('poll: resp.body:');
+              console.error(resp.body);
+
+              if ('pending' === resp.body.status) {
+                console.log('poll: again');
+                return wait().then(pollStatus);
+              }
+
+              if ('valid' === resp.body.status) {
+                console.log('poll: valid');
+                try {
+                  if (options.teardownChallenge) {
+                    options.teardownChallenge(
+                      { identifier: identifier
+                      , type: ch.type
+                      , token: ch.token
+                      }
+                    , function () {}
+                    );
+                  } else {
+                    options.removeChallenge(identifier.value, ch.token, function () {});
+                  }
+                } catch(e) {}
+                return resp.body;
+              }
+
+              if (!resp.body.status) {
+                console.error("[acme-v2] (y) bad challenge state:");
+              }
+              else if ('invalid' === resp.body.status) {
+                console.error("[acme-v2] (x) invalid challenge state:");
+              }
+              else {
+                console.error("[acme-v2] (z) bad challenge state:");
+              }
+
+              return Promise.reject(new Error("[acme-v2] bad challenge state"));
+            });
+          }
+
+          console.log('\n[DEBUG] postChallenge\n');
+          //console.log('\n[DEBUG] stop to fix things\n'); return;
+
+          function post() {
+            var jws = RSA.signJws(
+              options.accountKeypair
+            , undefined
+            , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
+            , new Buffer(payload)
+            );
+            me._nonce = null;
+            return request({
+              method: 'POST'
+            , url: ch.url
+            , headers: { 'Content-Type': 'application/jose+json' }
+            , json: jws
+            }).then(function (resp) {
+              me._nonce = resp.toJSON().headers['replay-nonce'];
+              console.log('respond to challenge: resp.body:');
+              console.log(resp.body);
+              return wait().then(pollStatus).then(resolve, reject);
+            });
+          }
+
+          return wait(20 * 1000).then(post);
+        }
       });
-      */
-      function wait(ms) {
-        return new Promise(function (resolve) {
-          setTimeout(resolve, (ms || 1100));
-        });
-      }
-      function pollStatus() {
-        console.log('\n[DEBUG] statusChallenge\n');
-        return request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
-          console.error('poll: resp.body:');
-          console.error(resp.body);
-
-          if ('pending' === resp.body.status) {
-            console.log('poll: again');
-            return wait().then(pollStatus);
-          }
-
-          if ('valid' === resp.body.status) {
-            console.log('poll: valid');
-            return resp.body;
-          }
-
-          if (!resp.body.status) {
-            console.error("[acme-v2] (y) bad challenge state:");
-          }
-          else if ('invalid' === resp.body.status) {
-            console.error("[acme-v2] (x) invalid challenge state:");
-          }
-          else {
-            console.error("[acme-v2] (z) bad challenge state:");
-          }
-        });
-      }
-
-      console.log('\n[DEBUG] postChallenge\n');
-      //console.log('\n[DEBUG] stop to fix things\n'); return;
-
-      function post() {
-        return request({
-          method: 'POST'
-        , url: ch.url
-        , headers: { 'Content-Type': 'application/jose+json' }
-        , json: jws
-        }).then(function (resp) {
-          me._nonce = resp.toJSON().headers['replay-nonce'];
-          console.log('respond to challenge: resp.body:');
-          console.log(resp.body);
-          return wait().then(pollStatus);
-        });
-      }
-
-      return wait(20 * 1000).then(post);
     }
   , _finalizeOrder: function (options, validatedDomains) {
       console.log('finalizeOrder:');
-			var me = this;
+      var me = this;
 
-      var csr = RSA.generateCsrWeb64(options.certificateKeypair, validatedDomains);
+      var csr = RSA.generateCsrWeb64(options.domainKeypair, validatedDomains);
       var body = { csr: csr };
       var payload = JSON.stringify(body);
 
@@ -306,14 +333,15 @@ function create(deps) {
       }
 
       function pollCert() {
-        //var payload = JSON.stringify(body, null, 2);
         var jws = RSA.signJws(
-          options.keypair
-        , new Buffer(payload)
+          options.accountKeypair
+        , undefined
         , { nonce: me._nonce, alg: 'RS256', url: me._finalize, kid: me._kid }
+        , new Buffer(payload)
         );
 
         console.log('finalize:', me._finalize);
+        me._nonce = null;
         return request({
           method: 'POST'
         , url: me._finalize
@@ -348,7 +376,7 @@ function create(deps) {
 
       return pollCert();
     }
-  , _getCertificate: function (auth) {
+  , _getCertificate: function () {
       var me = this;
       return request({ method: 'GET', url: me._certificate, json: true }).then(function (resp) {
         console.log('Certificate:');
@@ -357,91 +385,93 @@ function create(deps) {
       });
     }
   , getCertificate: function (options, cb) {
-			var me = this;
+      console.log('[acme-v2] DEBUG get cert 1');
+      var me = this;
 
-      var body = {
-				identifiers: [
-          { type: "dns" , value: "test.ppl.family" }
-				/*
-        , {	type: "dns" , value: "example.net" }
-				*/
-        ]
-        //, "notBefore": "2016-01-01T00:00:00Z"
-       //, "notAfter": "2016-01-08T00:00:00Z"
-      };
+      if (!options.challengeTypes) {
+        if (!options.challengeType) {
+          cb(new Error("challenge type must be specified"));
+          return Promise.reject(new Error("challenge type must be specified"));
+        }
+        options.challengeTypes = [ options.challengeType ];
+      }
 
-			var payload = JSON.stringify(body);
-			//var payload = JSON.stringify(body, null, 2);
-			var jws = RSA.signJws(
-        options.keypair
-      , new Buffer(payload)
-      , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newOrder, kid: me._kid }
-			);
+      console.log('[acme-v2] getCertificate');
+      return me.getNonce().then(function () {
+        var body = {
+          identifiers: options.domains.map(function (hostname) {
+            return { type: "dns" , value: hostname };
+          })
+          //, "notBefore": "2016-01-01T00:00:00Z"
+          //, "notAfter": "2016-01-08T00:00:00Z"
+        };
 
-      console.log('\n[DEBUG] newOrder\n');
-      return request({
-        method: 'POST'
-      , url: me._directoryUrls.newOrder
-      , headers: { 'Content-Type': 'application/jose+json' }
-      , json: jws
-      }).then(function (resp) {
-        me._nonce = resp.toJSON().headers['replay-nonce'];
-        var location = resp.toJSON().headers['location'];
-        console.log(location); // the account id url
-        console.log(resp.toJSON());
-        //var body = JSON.parse(resp.body);
-        me._authorizations = resp.body.authorizations;
-        me._order = location;
-        me._finalize = resp.body.finalize;
-        //console.log('[DEBUG] finalize:', me._finalize); return;
+        var payload = JSON.stringify(body);
+        var jws = RSA.signJws(
+          options.accountKeypair
+        , undefined
+        , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newOrder, kid: me._kid }
+        , new Buffer(payload)
+        );
 
-        //return resp.body;
-        return Promise.all(me._authorizations.map(function (auth) {
-          console.log('authz', auth);
-          return me._getChallenges(options, auth).then(function (challenges) {
-            var chp;
+        console.log('\n[DEBUG] newOrder\n');
+        me._nonce = null;
+        return request({
+          method: 'POST'
+        , url: me._directoryUrls.newOrder
+        , headers: { 'Content-Type': 'application/jose+json' }
+        , json: jws
+        }).then(function (resp) {
+          me._nonce = resp.toJSON().headers['replay-nonce'];
+          var location = resp.toJSON().headers.location;
+          console.log(location); // the account id url
+          console.log(resp.toJSON());
+          //var body = JSON.parse(resp.body);
+          me._authorizations = resp.body.authorizations;
+          me._order = location;
+          me._finalize = resp.body.finalize;
+          //console.log('[DEBUG] finalize:', me._finalize); return;
 
-            challenges.forEach(function (ch) {
-              if ('http-01' !== ch.type) {
-                return;
+          //return resp.body;
+          return Promise.all(me._authorizations.map(function (authUrl) {
+            return me._getChallenges(options, authUrl).then(function (results) {
+              // var domain = options.domains[i]; // results.identifier.value
+              var chType = options.challengeTypes.filter(function (chType) {
+                return results.challenges.some(function (ch) {
+                  return ch.type === chType;
+                });
+              })[0];
+              var challenge = results.challenges.filter(function (ch) {
+                if (chType === ch.type) {
+                  return ch;
+                }
+              })[0];
+
+              if (!challenge) {
+                return Promise.reject(new Error("Server didn't offer any challenge we can handle."));
               }
-              chp = me._postChallenge(options, ch);
+
+              return me._postChallenge(options, results.identifier, challenge);
+            });
+          })).then(function () {
+            var validatedDomains = body.identifiers.map(function (ident) {
+              return ident.value;
             });
 
-            return chp;
+            return me._finalizeOrder(options, validatedDomains);
+          }).then(function () {
+            return me._getCertificate().then(function (result) { cb(null, result); return result; }, cb);
           });
-        })).then(function () {
-          var validatedDomains = body.identifiers.map(function (ident) {
-            return ident.value;
-          });
-
-          return me._finalizeOrder(options, validatedDomains);
-        }).then(function () {
-          return me._getCertificate();
         });
       });
-		}
+    }
   };
   return acme2;
 }
 
-var RSA = require('rsa-compat').RSA;
-var acme2 = create();
-acme2.getAcmeUrls().then(function (body) {
-  console.log(body);
-  acme2.getNonce().then(function (nonce) {
-    console.log(nonce);
-
-		var options = {
-			email: 'coolaj86@gmail.com'
-		, keypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/account.privkey.pem') })
-		, certificateKeypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') })
-		};
-    acme2.registerNewAccount(options).then(function (account) {
-      console.log(account);
-    	acme2.getCertificate(options, function () {
-				console.log('got cert');
-      });
-    });
-  });
+module.exports.ACME = {
+  create: create
+};
+Object.keys(defaults).forEach(function (key) {
+  module.exports.ACME[key] = defaults[key];
 });
