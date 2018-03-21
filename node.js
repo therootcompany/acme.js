@@ -61,10 +61,10 @@ function create(deps) {
   var request = deps.promisify(getRequest({}));
 
   var acme2 = {
-    getAcmeUrls: function () {
+    getAcmeUrls: function (_directoryUrl) {
       var me = this;
-      return request({ url: directoryUrl }).then(function (resp) {
-        me._directoryUrls = JSON.parse(resp.body);
+      return request({ url: _directoryUrl || directoryUrl, json: true }).then(function (resp) {
+        me._directoryUrls = resp.body;
         me._tos = me._directoryUrls.meta.termsOfService;
         return me._directoryUrls;
       });
@@ -206,14 +206,6 @@ function create(deps) {
       var keyAuthorization = ch.token + '.' + thumbprint;
       //   keyAuthorization = token || '.' || base64url(JWK_Thumbprint(accountKey))
       //   /.well-known/acme-challenge/:token
-      console.log('type:');
-      console.log(ch.type);
-      console.log('ch.token:');
-      console.log(ch.token);
-      console.log('thumbprint:');
-      console.log(thumbprint);
-      console.log('keyAuthorization:');
-      console.log(keyAuthorization);
 
       return new Promise(function (resolve, reject) {
         if (options.setupChallenge) {
@@ -426,7 +418,6 @@ function create(deps) {
           var location = resp.toJSON().headers.location;
           console.log(location); // the account id url
           console.log(resp.toJSON());
-          //var body = JSON.parse(resp.body);
           me._authorizations = resp.body.authorizations;
           me._order = location;
           me._finalize = resp.body.finalize;
