@@ -1,7 +1,8 @@
 {
   "name": "acme-v2",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A framework for building letsencrypt clients (and other ACME v2 clients), forked from le-acme-core.js.",
+  "homepage": "https://git.coolaj86.com/coolaj86/acme-v2.js",
   "main": "node.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
