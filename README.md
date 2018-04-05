@@ -25,6 +25,8 @@ In progress
 * Mar 21, 2018 - *mostly* matches le-acme-core.js API
 * Apr  5, 2018 - completely match api for acme v1 (le-acme-core.js)
 * Apr  5, 2018 - test wildcard
+* Apr  5, 2018 - test two subdomains
+* Apr  5, 2018 - test subdomains and its wildcard
 
 Todo
 
