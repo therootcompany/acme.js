@@ -218,15 +218,27 @@ ACME._postChallenge = function (me, options, identifier, ch) {
               if (1 === options.removeChallenge.length) {
                 options.removeChallenge(
                   { identifier: identifier
+                  , hostname: identifier.value
                   , type: ch.type
                   , token: ch.token
+                  , thumbprint: thumbprint
+                  , keyAuthorization: keyAuthorization
+                  , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
+                      require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
+                    )
                   }
                 ).then(function () {}, function () {});
               } else if (2 === options.removeChallenge.length) {
                 options.removeChallenge(
                   { identifier: identifier
+                  , hostname: identifier.value
                   , type: ch.type
                   , token: ch.token
+                  , thumbprint: thumbprint
+                  , keyAuthorization: keyAuthorization
+                  , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
+                      require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
+                    )
                   }
                 , function (err) { return err; }
                 );
@@ -403,6 +415,7 @@ ACME._getCertificate = function (me, options) {
     }).then(function (resp) {
       me._nonce = resp.toJSON().headers['replay-nonce'];
       var location = resp.toJSON().headers.location;
+      var auths;
       if (me.debug) {
         console.log(location); // the account id url
         console.log(resp.toJSON());
@@ -418,8 +431,12 @@ ACME._getCertificate = function (me, options) {
       if (me.debug) { console.log("47 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
 
       //return resp.body;
-      return Promise.all(me._authorizations.map(function (authUrl, i) {
-        if (me.debug) { console.log("Authorizations map #" + i); }
+      auths = me._authorizations.slice(0);
+
+      function next() {
+        var authUrl = auths.shift();
+        if (!authUrl) { return; }
+
         return ACME._getChallenges(me, options, authUrl).then(function (results) {
           // var domain = options.domains[i]; // results.identifier.value
           var chType = options.challengeTypes.filter(function (chType) {
@@ -439,8 +456,12 @@ ACME._getCertificate = function (me, options) {
           }
 
           return ACME._postChallenge(me, options, results.identifier, challenge);
+        }).then(function () {
+          return next();
         });
-      })).then(function () {
+      }
+
+      return next().then(function () {
         if (me.debug) { console.log("37 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
         var validatedDomains = body.identifiers.map(function (ident) {
           return ident.value;
