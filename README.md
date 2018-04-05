@@ -31,27 +31,52 @@ Todo
 * export http and dns challenge tests
 * support ECDSA keys
 
+## Let's Encrypt Directory URLs
+
+```
+# Production URL
+https://acme-v02.api.letsencrypt.org/directory
+```
+
+```
+# Staging URL
+https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
 ## API
 
 ```
-var ACME = require('acme-v2.js').ACME.create({
+var ACME = require('acme-v2').ACME.create({
   RSA: require('rsa-compat').RSA
+
+  // other overrides
+, request: require('request')
+, promisify: require('util').promisify
+
+  // used for constructing user-agent
+, os: require('os')
+, process: require('process')
+
+  // used for overriding the default user-agent
+, userAgent: 'My custom UA String'
+, getUserAgentString: function (deps) { return 'My custom UA String'; }
 });
 ```
 
 ```javascript
 // Accounts
-ACME.registerNewAccount(options, cb)        // returns "regr" registration data
+ACME.accounts.create(options)                 // returns Promise<regr> registration data
 
     { email: '<email>'                        //    valid email (server checks MX records)
     , accountKeypair: {                       //    privateKeyPem or privateKeyJwt
         privateKeyPem: '<ASCII PEM>'
       }
-    , agreeToTerms: fn (tosUrl, cb) {}        //    must specify agree=tosUrl to continue (or falsey to end)
+    , agreeToTerms: fn (tosUrl) {}            //    returns Promise with tosUrl
     }
 
+
 // Registration
-ACME.getCertificate(options, cb)            // returns (err, pems={ privkey (key), cert, chain (ca) })
+ACME.certificates.create(options)             // returns Promise<pems={ privkey (key), cert, chain (ca) }>
 
     { newAuthzUrl: '<url>'                    //    specify acmeUrls.newAuthz
     , newCertUrl: '<url>'                     //    specify acmeUrls.newCert
@@ -64,20 +89,19 @@ ACME.getCertificate(options, cb)            // returns (err, pems={ privkey (key
       }
     , domains: [ 'example.com' ]
 
-    , setChallenge: fn (hostname, key, val, cb)
-    , removeChallenge: fn (hostname, key, cb)
+    , setChallenge: fn (hostname, key, val)   // return Promise
+    , removeChallenge: fn (hostname, key)     // return Promise
     }
 
+
 // Discovery URLs
-ACME.getAcmeUrls(acmeDiscoveryUrl, cb)      // returns (err, acmeUrls={newReg,newAuthz,newCert,revokeCert})
+ACME.init(acmeDirectoryUrl)                   // returns Promise<acmeUrls={keyChange,meta,newAccount,newNonce,newOrder,revokeCert}>
 ```
 
 Helpers & Stuff
 
 ```javascript
 // Constants
-ACME.productionServerUrl                // https://acme-v02.api.letsencrypt.org/directory
-ACME.stagingServerUrl                   // https://acme-staging-v02.api.letsencrypt.org/directory
 ACME.acmeChallengePrefix                // /.well-known/acme-challenge/
 ```
 

@@ -1,56 +1,45 @@
 'use strict';
 
-var RSA = require('rsa-compat').RSA;
-var acme2 = require('./').ACME.create({ RSA: RSA });
-
-acme2.getAcmeUrls(acme2.stagingServerUrl).then(function (body) {
-  console.log(body);
-
-  var options = {
-    agreeToTerms: function (tosUrl, agree) {
-      agree(null, tosUrl);
-    }
-    /*
-  , setupChallenge: function (opts) {
-      console.log('type:');
-      console.log(ch.type);
-      console.log('ch.token:');
-      console.log(ch.token);
-      console.log('thumbprint:');
-      console.log(thumbprint);
-      console.log('keyAuthorization:');
-      console.log(keyAuthorization);
-      console.log('dnsAuthorization:');
-      console.log(dnsAuthorization);
-    }
-    */
-    // teardownChallenge
-  , setChallenge: function (hostname, key, val, cb) {
-      console.log('[DEBUG] set challenge', hostname, key, val);
-      console.log("You have 20 seconds to put the string '" + val + "' into a file at '" + hostname + "/" + key + "'");
-      setTimeout(cb, 20 * 1000);
-    }
-  , removeChallenge: function (hostname, key, cb) {
-      console.log('[DEBUG] remove challenge', hostname, key);
-      setTimeout(cb, 1 * 1000);
-    }
-  , challengeType: 'http-01'
-  , email: 'coolaj86@gmail.com'
-  , accountKeypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/account.privkey.pem') })
-  , domainKeypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') })
-  , domains: [ 'test.ppl.family' ]
-  };
-
-  acme2.registerNewAccount(options).then(function (account) {
-    console.log('account:');
-    console.log(account);
-
-    acme2.getCertificate(options, function (fullchainPem) {
-      console.log('[acme-v2] A fullchain.pem:');
-      console.log(fullchainPem);
-    }).then(function (fullchainPem) {
-      console.log('[acme-v2] B fullchain.pem:');
-      console.log(fullchainPem);
-    });
-  });
+var readline = require('readline');
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
 });
+
+function getWeb() {
+	rl.question('What web address(es) would you like to get certificates for? (ex: example.com,*.example.com) ', function (web) {
+		web = (web||'').trim().split(/,/g);
+		if (!web[0]) { getWeb(); return; }
+
+    if (web.some(function (w) { return '*' === w[0]; })) {
+      console.log('Wildcard domains must use dns-01');
+      getEmail(web, 'dns-01');
+    } else {
+      getChallengeType(web);
+    }
+	});
+}
+
+function getChallengeType(web) {
+	rl.question('What challenge will you be testing today? http-01 or dns-01? [http-01] ', function (chType) {
+		chType = (chType||'').trim();
+		if (!chType) { chType = 'http-01'; }
+
+		getEmail(web, chType);
+	});
+}
+
+function getEmail(web, chType) {
+	rl.question('What email should we use? (optional) ', function (email) {
+		email = (email||'').trim();
+		if (!email) { email = null; }
+
+    rl.close();
+    console.log("[DEBUG] rl blah blah");
+    require('./test.compat.js').run(web, chType, email);
+    //require('./test.cb.js').run(web, chType, email);
+    //require('./test.promise.js').run(web, chType, email);
+	});
+}
+
+getWeb();
