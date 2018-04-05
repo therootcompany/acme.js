@@ -33,7 +33,7 @@ module.exports.run = function run(web, chType, email, accountKeypair, domainKeyp
           console.log("");
 
           if ('http-01' === opts.type) {
-            pathname = opts.hostname + acme2.acmeChallengePrefix + "/" + opts.token;
+            pathname = opts.hostname + acme2.acmeChallengePrefixes['http-01'] + "/" + opts.token;
             console.log("Put the string '" + opts.keyAuthorization + "' into a file at '" + pathname + "'");
             console.log("echo '" + opts.keyAuthorization + "' > '" + pathname + "'");
           } else if ('dns-01' === opts.type) {

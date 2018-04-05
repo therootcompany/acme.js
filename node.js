@@ -11,8 +11,42 @@ var ACME = module.exports.ACME = {};
 ACME.acmeChallengePrefix = '/.well-known/acme-challenge/';
 ACME.acmeChallengeDnsPrefix = '_acme-challenge';
 ACME.acmeChallengePrefixes = {
-  'http-01': '/.well-known/acme-challenge/'
+  'http-01': '/.well-known/acme-challenge'
 , 'dns-01': '_acme-challenge'
+};
+ACME.challengeTests = {
+  'http-01': function (me, auth) {
+    var url = 'http://' + auth.hostname + ACME.acmeChallengePrefixes['http-01'] + '/' + auth.token;
+    return me._request({ url: url }).then(function (resp) {
+      var err;
+
+      if (auth.keyAuthorization === resp.body.toString('utf8').trim()) {
+        return true;
+      }
+
+      err = new Error("self check does not pass");
+      err.code = 'E_RETRY';
+      return Promise.reject(err);
+    });
+  }
+, 'dns-01': function (me, auth) {
+    return me._dig({
+      type: 'TXT'
+    , name: ACME.acmeChallengePrefixes['dns-01'] + '.' + auth.hostname
+    }).then(function (ans) {
+      var err;
+
+      if (ans.answer.some(function (txt) {
+        return auth.dnsAuthorization === txt.data[0];
+      })) {
+        return true;
+      }
+
+      err = new Error("self check does not pass");
+      err.code = 'E_RETRY';
+      return Promise.reject(err);
+    });
+  }
 };
 
 ACME._getUserAgentString = function (deps) {
@@ -181,19 +215,153 @@ ACME._wait = function wait(ms) {
 };
 // https://tools.ietf.org/html/draft-ietf-acme-acme-10#section-7.5.1
 ACME._postChallenge = function (me, options, identifier, ch) {
-  var body = { };
-
-  var payload = JSON.stringify(body);
+  var count = 0;
 
   var thumbprint = me.RSA.thumbprint(options.accountKeypair);
   var keyAuthorization = ch.token + '.' + thumbprint;
   //   keyAuthorization = token || '.' || base64url(JWK_Thumbprint(accountKey))
   //   /.well-known/acme-challenge/:token
+  var auth = {
+    identifier: identifier
+  , hostname: identifier.value
+  , type: ch.type
+  , token: ch.token
+  , thumbprint: thumbprint
+  , keyAuthorization: keyAuthorization
+  , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
+      require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
+    )
+  };
 
   return new Promise(function (resolve, reject) {
+    /*
+     POST /acme/authz/1234 HTTP/1.1
+     Host: example.com
+     Content-Type: application/jose+json
+
+     {
+       "protected": base64url({
+         "alg": "ES256",
+         "kid": "https://example.com/acme/acct/1",
+         "nonce": "xWCM9lGbIyCgue8di6ueWQ",
+         "url": "https://example.com/acme/authz/1234"
+       }),
+       "payload": base64url({
+         "status": "deactivated"
+       }),
+       "signature": "srX9Ji7Le9bjszhu...WTFdtujObzMtZcx4"
+     }
+     */
+    function deactivate() {
+      var jws = me.RSA.signJws(
+        options.accountKeypair
+      , undefined
+      , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
+      , new Buffer(JSON.stringify({ "status": "deactivated" }))
+      );
+      me._nonce = null;
+      return me._request({
+        method: 'POST'
+      , url: ch.url
+      , headers: { 'Content-Type': 'application/jose+json' }
+      , json: jws
+      }).then(function (resp) {
+        console.log('[acme-v2.js] deactivate:');
+        console.log(resp.headers);
+        console.log(resp.body);
+        console.log();
+
+        me._nonce = resp.toJSON().headers['replay-nonce'];
+        if (me.debug) { console.log('deactivate challenge: resp.body:'); }
+        if (me.debug) { console.log(resp.body); }
+        return ACME._wait(10 * 1000);
+      });
+    }
+
+    function pollStatus() {
+      if (count >= 5) {
+        return Promise.reject(new Error("[acme-v2] stuck in bad pending/processing state"));
+      }
+
+      count += 1;
+
+      if (me.debug) { console.log('\n[DEBUG] statusChallenge\n'); }
+      return me._request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
+        console.error('poll: resp.body:');
+        console.error(resp.body);
+
+        if ('processing' === resp.body.status) {
+          if (me.debug) { console.log('poll: again'); }
+          return ACME._wait(1 * 1000).then(pollStatus);
+        }
+
+        // This state should never occur
+        if ('pending' === resp.body.status) {
+          if (count >= 4) {
+            return ACME._wait(1 * 1000).then(deactivate).then(testChallenge);
+          }
+          if (me.debug) { console.log('poll: again'); }
+          return ACME._wait(1 * 1000).then(testChallenge);
+        }
+
+        if ('valid' === resp.body.status) {
+          if (me.debug) { console.log('poll: valid'); }
+
+          try {
+            if (1 === options.removeChallenge.length) {
+              options.removeChallenge(auth).then(function () {}, function () {});
+            } else if (2 === options.removeChallenge.length) {
+              options.removeChallenge(auth, function (err) { return err; });
+            } else {
+              options.removeChallenge(identifier.value, ch.token, function () {});
+            }
+          } catch(e) {}
+          return resp.body;
+        }
+
+        if (!resp.body.status) {
+          console.error("[acme-v2] (y) bad challenge state:");
+        }
+        else if ('invalid' === resp.body.status) {
+          console.error("[acme-v2] (x) invalid challenge state:");
+        }
+        else {
+          console.error("[acme-v2] (z) bad challenge state:");
+        }
+
+        return Promise.reject(new Error("[acme-v2] bad challenge state"));
+      });
+    }
+
+    function respondToChallenge() {
+      var jws = me.RSA.signJws(
+        options.accountKeypair
+      , undefined
+      , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
+      , new Buffer(JSON.stringify({ }))
+      );
+      me._nonce = null;
+      return me._request({
+        method: 'POST'
+      , url: ch.url
+      , headers: { 'Content-Type': 'application/jose+json' }
+      , json: jws
+      }).then(function (resp) {
+        console.log('[acme-v2.js] challenge accepted!');
+        console.log(resp.headers);
+        console.log(resp.body);
+        console.log();
+
+        me._nonce = resp.toJSON().headers['replay-nonce'];
+        if (me.debug) { console.log('respond to challenge: resp.body:'); }
+        if (me.debug) { console.log(resp.body); }
+        return ACME._wait(1 * 1000).then(pollStatus).then(resolve, reject);
+      });
+    }
+
     function failChallenge(err) {
       if (err) { reject(err); return; }
-      testChallenge();
+      return testChallenge();
     }
 
     function testChallenge() {
@@ -201,123 +369,21 @@ ACME._postChallenge = function (me, options, identifier, ch) {
       // http-01: GET https://example.org/.well-known/acme-challenge/{{token}} => {{keyAuth}}
       // dns-01: TXT _acme-challenge.example.org. => "{{urlSafeBase64(sha256(keyAuth))}}"
 
-      function pollStatus() {
-        if (me.debug) { console.log('\n[DEBUG] statusChallenge\n'); }
-        return me._request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
-          console.error('poll: resp.body:');
-          console.error(resp.body);
-
-          if ('pending' === resp.body.status) {
-            if (me.debug) { console.log('poll: again'); }
-            return ACME._wait(1 * 1000).then(pollStatus);
-          }
-
-          if ('valid' === resp.body.status) {
-            if (me.debug) { console.log('poll: valid'); }
-            try {
-              if (1 === options.removeChallenge.length) {
-                options.removeChallenge(
-                  { identifier: identifier
-                  , hostname: identifier.value
-                  , type: ch.type
-                  , token: ch.token
-                  , thumbprint: thumbprint
-                  , keyAuthorization: keyAuthorization
-                  , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
-                      require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
-                    )
-                  }
-                ).then(function () {}, function () {});
-              } else if (2 === options.removeChallenge.length) {
-                options.removeChallenge(
-                  { identifier: identifier
-                  , hostname: identifier.value
-                  , type: ch.type
-                  , token: ch.token
-                  , thumbprint: thumbprint
-                  , keyAuthorization: keyAuthorization
-                  , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
-                      require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
-                    )
-                  }
-                , function (err) { return err; }
-                );
-              } else {
-                options.removeChallenge(identifier.value, ch.token, function () {});
-              }
-            } catch(e) {}
-            return resp.body;
-          }
-
-          if (!resp.body.status) {
-            console.error("[acme-v2] (y) bad challenge state:");
-          }
-          else if ('invalid' === resp.body.status) {
-            console.error("[acme-v2] (x) invalid challenge state:");
-          }
-          else {
-            console.error("[acme-v2] (z) bad challenge state:");
-          }
-
-          return Promise.reject(new Error("[acme-v2] bad challenge state"));
-        });
-      }
-
       if (me.debug) {console.log('\n[DEBUG] postChallenge\n'); }
       //console.log('\n[DEBUG] stop to fix things\n'); return;
 
-      function post() {
-        var jws = me.RSA.signJws(
-          options.accountKeypair
-        , undefined
-        , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
-        , new Buffer(payload)
-        );
-        me._nonce = null;
-        return me._request({
-          method: 'POST'
-        , url: ch.url
-        , headers: { 'Content-Type': 'application/jose+json' }
-        , json: jws
-        }).then(function (resp) {
-          me._nonce = resp.toJSON().headers['replay-nonce'];
-          if (me.debug) { console.log('respond to challenge: resp.body:'); }
-          if (me.debug) { console.log(resp.body); }
-          return ACME._wait(1 * 1000).then(pollStatus).then(resolve, reject);
-        });
-      }
-
-      return ACME._wait(1 * 1000).then(post);
+      return ACME._wait(1 * 1000).then(function () {
+        if (!me.skipChallengeTest) {
+          return ACME.challengeTests[ch.type](me, auth);
+        }
+      }).then(respondToChallenge);
     }
 
     try {
       if (1 === options.setChallenge.length) {
-        options.setChallenge(
-          { identifier: identifier
-          , hostname: identifier.value
-          , type: ch.type
-          , token: ch.token
-          , thumbprint: thumbprint
-          , keyAuthorization: keyAuthorization
-          , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
-              require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
-            )
-          }
-        ).then(testChallenge, reject);
+        options.setChallenge(auth).then(testChallenge, reject);
       } else if (2 === options.setChallenge.length) {
-        options.setChallenge(
-          { identifier: identifier
-          , hostname: identifier.value
-          , type: ch.type
-          , token: ch.token
-          , thumbprint: thumbprint
-          , keyAuthorization: keyAuthorization
-          , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
-              require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
-            )
-          }
-        , failChallenge
-        );
+        options.setChallenge(auth, failChallenge);
       } else {
         options.setChallenge(identifier.value, ch.token, keyAuthorization, failChallenge);
       }
@@ -388,7 +454,6 @@ ACME._getCertificate = function (me, options) {
 
   if (me.debug) { console.log('[acme-v2] certificates.create'); }
   return ACME._getNonce(me).then(function () {
-    if (me.debug) { console.log("27 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
     var body = {
       identifiers: options.domains.map(function (hostname) {
         return { type: "dns" , value: hostname };
@@ -484,6 +549,23 @@ ACME.create = function create(me) {
   me.acmeChallengePrefixes = ACME.acmeChallengePrefixes;
   me.RSA = me.RSA || require('rsa-compat').RSA;
   me.request = me.request || require('request');
+  me._dig = function (query) {
+    // TODO use digd.js
+    return new Promise(function (resolve, reject) {
+      var dns = require('dns');
+      dns.resolveTxt(query.name, function (err, records) {
+        if (err) { reject(err); return; }
+
+        resolve({
+          answer: records.map(function (rr) {
+            return {
+              data: rr
+            };
+          })
+        });
+      });
+    });
+  };
   me.promisify = me.promisify || require('util').promisify;
 
 
