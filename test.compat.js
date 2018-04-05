@@ -14,7 +14,7 @@ module.exports.run = function (web, chType, email, accountKeypair, domainKeypair
         agree(null, tosUrl);
       }
     , setChallenge: function (hostname, token, val, cb) {
-        var pathname = hostname + acme2.acmeChallengePrefix + "/" + token;
+        var pathname = hostname + acme2.acmeChallengePrefix + token;
         console.log("Put the string '" + val + "' into a file at '" + pathname + "'");
         console.log("echo '" + val + "' > '" + pathname + "'");
         console.log("\nThen hit the 'any' key to continue...");

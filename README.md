@@ -27,11 +27,12 @@ In progress
 * Apr  5, 2018 - test wildcard
 * Apr  5, 2018 - test two subdomains
 * Apr  5, 2018 - test subdomains and its wildcard
+* Apr  5, 2018 - test http and dns challenges (success and failure)
+* Apr  5, 2018 - export http and dns challenge tests
 
 Todo
 
-* test http and dns challenges
-* export http and dns challenge tests
+* Apr  5, 2018 - appears that sometimes 'pending' status cannot be progressed to 'processing' nor 'deactivated'
 * support ECDSA keys
 
 ## Let's Encrypt Directory URLs
@@ -63,6 +64,9 @@ var ACME = require('acme-v2').ACME.create({
   // used for overriding the default user-agent
 , userAgent: 'My custom UA String'
 , getUserAgentString: function (deps) { return 'My custom UA String'; }
+
+  // don't try to validate challenges locally
+, skipChallengeTest: false
 });
 ```
 
