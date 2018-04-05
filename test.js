@@ -39,8 +39,8 @@ function getEmail(web, chType) {
     var accountKeypair = RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/account.privkey.pem') });
     var domainKeypair = RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') });
     //require('./test.compat.js').run(web, chType, email, accountKeypair, domainKeypair);
-    require('./test.cb.js').run(web, chType, email, accountKeypair, domainKeypair);
-    //require('./test.promise.js').run(web, chType, email, accountKeypair, domainKeypair);
+    //require('./test.cb.js').run(web, chType, email, accountKeypair, domainKeypair);
+    require('./test.promise.js').run(web, chType, email, accountKeypair, domainKeypair);
   });
 }
 

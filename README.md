@@ -23,10 +23,11 @@ In progress
 * Mar 20, 2018 - SUCCESS - got a test certificate (hard-coded)
 * Mar 21, 2018 - can now accept values (not hard coded)
 * Mar 21, 2018 - *mostly* matches le-acme-core.js API
+* Apr  5, 2018 - completely match api for acme v1 (le-acme-core.js)
 
 Todo
 
-* completely match api for acme v1 (le-acme-core.js)
+* test wildcard
 * test http and dns challenges
 * export http and dns challenge tests
 * support ECDSA keys

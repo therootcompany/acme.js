@@ -35,7 +35,7 @@ module.exports.run = function run(web, chType, email, accountKeypair, domainKeyp
           console.log("Put the string '" + opts.keyAuthorization + "' into a file at '" + pathname + "'");
           console.log("echo '" + opts.keyAuthorization + "' > '" + pathname + "'");
         } else if ('dns-01' === opts.type) {
-          pathname = acme2.acmeChallengeDnsPrefix + "." + opts.hostname;
+          pathname = acme2.acmeChallengeDnsPrefix + "." + opts.hostname.replace(/^\*\./, '');
           console.log("Put the string '" + opts.dnsAuthorization + "' into the TXT record '" + pathname + "'");
           console.log("ddig TXT " + pathname + " '" + opts.dnsAuthorization + "'");
         } else {
