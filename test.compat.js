@@ -2,22 +2,22 @@
 
 var RSA = require('rsa-compat').RSA;
 
-module.exports.run = function (web, chType, email) {
+module.exports.run = function (web, chType, email, accountKeypair, domainKeypair) {
   console.log('[DEBUG] run', web, chType, email);
 
   var acme2 = require('./compat.js').ACME.create({ RSA: RSA });
-  acme2.getAcmeUrls(acme2.stagingServerUrl, function (err, body) {
+  acme2.getAcmeUrls(acme2.stagingServerUrl, function (err/*, directoryUrls*/) {
     if (err) { console.log('err 1'); throw err; }
-    console.log(body);
 
     var options = {
       agreeToTerms: function (tosUrl, agree) {
         agree(null, tosUrl);
       }
     , setChallenge: function (hostname, token, val, cb) {
-        console.log("Put the string '" + val + "' into a file at '" + hostname + "/" + acme2.acmeChallengePrefix + "/" + token + "'");
-        console.log("echo '" + val + "' > '" + hostname + "/" + acme2.acmeChallengePrefix + "/" + token + "'");
-        console.log("\nThen hit the 'any' key to continue (must be specifically the 'any' key)...");
+        var pathname = hostname + acme2.acmeChallengePrefix + "/" + token;
+        console.log("Put the string '" + val + "' into a file at '" + pathname + "'");
+        console.log("echo '" + val + "' > '" + pathname + "'");
+        console.log("\nThen hit the 'any' key to continue...");
 
         function onAny() {
           console.log("'any' key was hit");
@@ -37,8 +37,8 @@ module.exports.run = function (web, chType, email) {
       }
     , challengeType: chType
     , email: email
-    , accountKeypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/account.privkey.pem') })
-    , domainKeypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') })
+    , accountKeypair: accountKeypair
+    , domainKeypair: domainKeypair
     , domains: web
     };
 

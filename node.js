@@ -9,6 +9,11 @@
 var ACME = module.exports.ACME = {};
 
 ACME.acmeChallengePrefix = '/.well-known/acme-challenge/';
+ACME.acmeChallengeDnsPrefix = '_acme-challenge';
+ACME.acmeChallengePrefixes = {
+  'http-01': '/.well-known/acme-challenge/'
+, 'dns-01': '_acme-challenge'
+};
 
 ACME._getUserAgentString = function (deps) {
   var uaDefaults = {
@@ -368,6 +373,7 @@ ACME._getCertificate = function (me, options) {
 
   console.log('[acme-v2] certificates.create');
   return ACME._getNonce(me).then(function () {
+    console.log("27 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
     var body = {
       identifiers: options.domains.map(function (hostname) {
         return { type: "dns" , value: hostname };
@@ -401,6 +407,11 @@ ACME._getCertificate = function (me, options) {
       me._finalize = resp.body.finalize;
       //console.log('[DEBUG] finalize:', me._finalize); return;
 
+      if (!me._authorizations) {
+        console.log("&#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
+      }
+      console.log("47 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
+
       //return resp.body;
       return Promise.all(me._authorizations.map(function (authUrl, i) {
         console.log("Authorizations map #" + i);
@@ -425,6 +436,7 @@ ACME._getCertificate = function (me, options) {
           return ACME._postChallenge(me, options, results.identifier, challenge);
         });
       })).then(function () {
+        console.log("37 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
         var validatedDomains = body.identifiers.map(function (ident) {
           return ident.value;
         });
@@ -444,6 +456,8 @@ ACME._getCertificate = function (me, options) {
 ACME.create = function create(me) {
   if (!me) { me = {}; }
   me.acmeChallengePrefix = ACME.acmeChallengePrefix;
+  me.acmeChallengeDnsPrefix = ACME.acmeChallengeDnsPrefix;
+  me.acmeChallengePrefixes = ACME.acmeChallengePrefixes;
   me.RSA = me.RSA || require('rsa-compat').RSA;
   me.request = me.request || require('request');
   me.promisify = me.promisify || require('util').promisify;

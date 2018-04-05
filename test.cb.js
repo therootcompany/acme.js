@@ -1,21 +1,17 @@
 'use strict';
 
-module.exports.run = function run(web, chType, email) {
+module.exports.run = function run(web, chType, email, accountKeypair, domainKeypair) {
   var RSA = require('rsa-compat').RSA;
   var directoryUrl = 'https://acme-staging-v02.api.letsencrypt.org/directory';
-  var acme2 = require('./compat').ACME.create({ RSA: RSA });
+  var acme2 = require('./').ACME.create({ RSA: RSA });
   // [ 'test.ppl.family' ] 'coolaj86@gmail.com''http-01'
-	console.log(web, chType, email);
-	return;
-  acme2.init(directoryUrl).then(function (body) {
-    console.log(body);
-		return;
-
+  acme2.init(directoryUrl).then(function () {
     var options = {
       agreeToTerms: function (tosUrl, agree) {
         agree(null, tosUrl);
       }
     , setChallenge: function (opts, cb) {
+        var pathname;
 
         console.log("");
         console.log('identifier:');
@@ -34,40 +30,50 @@ module.exports.run = function run(web, chType, email) {
         console.log(opts.dnsAuthorization);
         console.log("");
 
-        console.log("Put the string '" + opts.keyAuthorization + "' into a file at '" + opts.hostname + "/" + opts.token + "'");
-        console.log("\nThen hit the 'any' key to continue (must be specifically the 'any' key)...");
+        if ('http-01' === opts.type) {
+          pathname = opts.hostname + acme2.acmeChallengePrefix + "/" + opts.token;
+          console.log("Put the string '" + opts.keyAuthorization + "' into a file at '" + pathname + "'");
+          console.log("echo '" + opts.keyAuthorization + "' > '" + pathname + "'");
+        } else if ('dns-01' === opts.type) {
+          pathname = acme2.acmeChallengeDnsPrefix + "." + opts.hostname;
+          console.log("Put the string '" + opts.dnsAuthorization + "' into the TXT record '" + pathname + "'");
+          console.log("ddig TXT " + pathname + " '" + opts.dnsAuthorization + "'");
+        } else {
+          cb(new Error("[acme-v2] unrecognized challenge type"));
+          return;
+        }
+        console.log("\nThen hit the 'any' key to continue...");
 
         function onAny() {
+          console.log("'any' key was hit");
           process.stdin.pause();
-          process.stdin.removeEventListener('data', onAny);
+          process.stdin.removeListener('data', onAny);
           process.stdin.setRawMode(false);
           cb();
         }
+
         process.stdin.setRawMode(true);
         process.stdin.resume();
         process.stdin.on('data', onAny);
       }
     , removeChallenge: function (opts, cb) {
-				// hostname, key
-        console.log('[DEBUG] remove challenge', hostname, key);
+        // hostname, key
+        console.log('[acme-v2] remove challenge', opts.hostname, opts.keyAuthorization);
         setTimeout(cb, 1 * 1000);
       }
     , challengeType: chType
     , email: email
-    , accountKeypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/account.privkey.pem') })
-    , domainKeypair: RSA.import({ privateKeyPem: require('fs').readFileSync(__dirname + '/privkey.pem') })
+    , accountKeypair: accountKeypair
+    , domainKeypair: domainKeypair
     , domains: web
     };
 
-    acme2.registerNewAccount(options).then(function (account) {
-      console.log('account:');
+    acme2.accounts.create(options).then(function (account) {
+      console.log('[acme-v2] account:');
       console.log(account);
 
-      acme2.getCertificate(options, function (fullchainPem) {
-        console.log('[acme-v2] A fullchain.pem:');
-        console.log(fullchainPem);
-      }).then(function (fullchainPem) {
-        console.log('[acme-v2] B fullchain.pem:');
+      acme2.certificates.create(options).then(function (fullchainPem) {
+        console.log('[acme-v2] fullchain.pem:');
         console.log(fullchainPem);
       });
     });
