@@ -65,7 +65,7 @@ ACME._getNonce = function (me) {
  }
 */
 ACME._registerAccount = function (me, options) {
-  console.log('[acme-v2] accounts.create');
+  if (me.debug) { console.log('[acme-v2] accounts.create'); }
 
   return ACME._getNonce(me).then(function () {
     return new Promise(function (resolve, reject) {
@@ -108,9 +108,9 @@ ACME._registerAccount = function (me, options) {
         , new Buffer(payload)
         );
 
-        console.log('[acme-v2] accounts.create JSON body:');
         delete jws.header;
-        console.log(jws);
+        if (me.debug) { console.log('[acme-v2] accounts.create JSON body:'); }
+        if (me.debug) { console.log(jws); }
         me._nonce = null;
         return me._request({
           method: 'POST'
@@ -120,15 +120,18 @@ ACME._registerAccount = function (me, options) {
         }).then(function (resp) {
           me._nonce = resp.toJSON().headers['replay-nonce'];
           var location = resp.toJSON().headers.location;
-          console.log('[DEBUG] new account location:'); // the account id url
-          console.log(location); // the account id url
-          console.log(resp.toJSON());
+          if (me.debug) {
+            // the account id url
+            console.log('[DEBUG] new account location:');
+            console.log(location); // the account id url
+            console.log(resp.toJSON());
+          }
           me._kid = location;
           return resp.body;
         }).then(resolve, reject);
       }
 
-      console.log('[acme-v2] agreeToTerms');
+      if (me.debug) { console.log('[acme-v2] agreeToTerms'); }
       if (1 === options.agreeToTerms.length) {
         return options.agreeToTerms(me._tos).then(agree, reject);
       }
@@ -166,7 +169,7 @@ ACME._registerAccount = function (me, options) {
  }
 */
 ACME._getChallenges = function (me, options, auth) {
-  console.log('\n[DEBUG] getChallenges\n');
+  if (me.debug) { console.log('\n[DEBUG] getChallenges\n'); }
   return me._request({ method: 'GET', url: auth, json: true }).then(function (resp) {
     return resp.body;
   });
@@ -199,18 +202,18 @@ ACME._postChallenge = function (me, options, identifier, ch) {
       // dns-01: TXT _acme-challenge.example.org. => "{{urlSafeBase64(sha256(keyAuth))}}"
 
       function pollStatus() {
-        console.log('\n[DEBUG] statusChallenge\n');
+        if (me.debug) { console.log('\n[DEBUG] statusChallenge\n'); }
         return me._request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
           console.error('poll: resp.body:');
           console.error(resp.body);
 
           if ('pending' === resp.body.status) {
-            console.log('poll: again');
+            if (me.debug) { console.log('poll: again'); }
             return ACME._wait(1 * 1000).then(pollStatus);
           }
 
           if ('valid' === resp.body.status) {
-            console.log('poll: valid');
+            if (me.debug) { console.log('poll: valid'); }
             try {
               if (1 === options.removeChallenge.length) {
                 options.removeChallenge(
@@ -248,7 +251,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         });
       }
 
-      console.log('\n[DEBUG] postChallenge\n');
+      if (me.debug) {console.log('\n[DEBUG] postChallenge\n'); }
       //console.log('\n[DEBUG] stop to fix things\n'); return;
 
       function post() {
@@ -266,8 +269,8 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         , json: jws
         }).then(function (resp) {
           me._nonce = resp.toJSON().headers['replay-nonce'];
-          console.log('respond to challenge: resp.body:');
-          console.log(resp.body);
+          if (me.debug) { console.log('respond to challenge: resp.body:'); }
+          if (me.debug) { console.log(resp.body); }
           return ACME._wait(1 * 1000).then(pollStatus).then(resolve, reject);
         });
       }
@@ -312,7 +315,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
   });
 };
 ACME._finalizeOrder = function (me, options, validatedDomains) {
-  console.log('finalizeOrder:');
+  if (me.debug) { console.log('finalizeOrder:'); }
   var csr = me.RSA.generateCsrWeb64(options.domainKeypair, validatedDomains);
   var body = { csr: csr };
   var payload = JSON.stringify(body);
@@ -325,7 +328,7 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
     , new Buffer(payload)
     );
 
-    console.log('finalize:', me._finalize);
+    if (me.debug) { console.log('finalize:', me._finalize); }
     me._nonce = null;
     return me._request({
       method: 'POST'
@@ -335,8 +338,8 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
     }).then(function (resp) {
       me._nonce = resp.toJSON().headers['replay-nonce'];
 
-      console.log('order finalized: resp.body:');
-      console.log(resp.body);
+      if (me.debug) { console.log('order finalized: resp.body:'); }
+      if (me.debug) { console.log(resp.body); }
 
       if ('processing' === resp.body.status) {
         return ACME._wait().then(pollCert);
@@ -362,7 +365,7 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
   return pollCert();
 };
 ACME._getCertificate = function (me, options) {
-  console.log('[acme-v2] DEBUG get cert 1');
+  if (me.debug) { console.log('[acme-v2] DEBUG get cert 1'); }
 
   if (!options.challengeTypes) {
     if (!options.challengeType) {
@@ -371,9 +374,9 @@ ACME._getCertificate = function (me, options) {
     options.challengeTypes = [ options.challengeType ];
   }
 
-  console.log('[acme-v2] certificates.create');
+  if (me.debug) { console.log('[acme-v2] certificates.create'); }
   return ACME._getNonce(me).then(function () {
-    console.log("27 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
+    if (me.debug) { console.log("27 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
     var body = {
       identifiers: options.domains.map(function (hostname) {
         return { type: "dns" , value: hostname };
@@ -390,7 +393,7 @@ ACME._getCertificate = function (me, options) {
     , new Buffer(payload)
     );
 
-    console.log('\n[DEBUG] newOrder\n');
+    if (me.debug) { console.log('\n[DEBUG] newOrder\n'); }
     me._nonce = null;
     return me._request({
       method: 'POST'
@@ -400,21 +403,23 @@ ACME._getCertificate = function (me, options) {
     }).then(function (resp) {
       me._nonce = resp.toJSON().headers['replay-nonce'];
       var location = resp.toJSON().headers.location;
-      console.log(location); // the account id url
-      console.log(resp.toJSON());
+      if (me.debug) {
+        console.log(location); // the account id url
+        console.log(resp.toJSON());
+      }
       me._authorizations = resp.body.authorizations;
       me._order = location;
       me._finalize = resp.body.finalize;
       //console.log('[DEBUG] finalize:', me._finalize); return;
 
       if (!me._authorizations) {
-        console.log("&#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
+        console.error("[acme-v2.js] authorizations were not fetched");
       }
-      console.log("47 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
+      if (me.debug) { console.log("47 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
 
       //return resp.body;
       return Promise.all(me._authorizations.map(function (authUrl, i) {
-        console.log("Authorizations map #" + i);
+        if (me.debug) { console.log("Authorizations map #" + i); }
         return ACME._getChallenges(me, options, authUrl).then(function (results) {
           // var domain = options.domains[i]; // results.identifier.value
           var chType = options.challengeTypes.filter(function (chType) {
@@ -436,7 +441,7 @@ ACME._getCertificate = function (me, options) {
           return ACME._postChallenge(me, options, results.identifier, challenge);
         });
       })).then(function () {
-        console.log("37 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
+        if (me.debug) { console.log("37 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
         var validatedDomains = body.identifiers.map(function (ident) {
           return ident.value;
         });
@@ -444,8 +449,6 @@ ACME._getCertificate = function (me, options) {
         return ACME._finalizeOrder(me, options, validatedDomains);
       }).then(function () {
         return me._request({ method: 'GET', url: me._certificate, json: true }).then(function (resp) {
-          console.log('Certificate:');
-          console.log(resp.body);
           return resp.body;
         });
       });
