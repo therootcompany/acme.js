@@ -8,15 +8,13 @@
 
 var ACME = module.exports.ACME = {};
 
-ACME.acmeChallengePrefix = '/.well-known/acme-challenge/';
-ACME.acmeChallengeDnsPrefix = '_acme-challenge';
-ACME.acmeChallengePrefixes = {
+ACME.challengePrefixes = {
   'http-01': '/.well-known/acme-challenge'
 , 'dns-01': '_acme-challenge'
 };
 ACME.challengeTests = {
   'http-01': function (me, auth) {
-    var url = 'http://' + auth.hostname + ACME.acmeChallengePrefixes['http-01'] + '/' + auth.token;
+    var url = 'http://' + auth.hostname + ACME.challengePrefixes['http-01'] + '/' + auth.token;
     return me._request({ url: url }).then(function (resp) {
       var err;
 
@@ -32,7 +30,7 @@ ACME.challengeTests = {
 , 'dns-01': function (me, auth) {
     return me._dig({
       type: 'TXT'
-    , name: ACME.acmeChallengePrefixes['dns-01'] + '.' + auth.hostname
+    , name: ACME.challengePrefixes['dns-01'] + '.' + auth.hostname
     }).then(function (ans) {
       var err;
 
@@ -562,9 +560,7 @@ ACME.create = function create(me) {
   if (!me) { me = {}; }
   //
   me.debug = true;
-  me.acmeChallengePrefix = ACME.acmeChallengePrefix;
-  me.acmeChallengeDnsPrefix = ACME.acmeChallengeDnsPrefix;
-  me.acmeChallengePrefixes = ACME.acmeChallengePrefixes;
+  me.challengePrefixes = ACME.challengePrefixes;
   me.RSA = me.RSA || require('rsa-compat').RSA;
   me.request = me.request || require('request');
   me._dig = function (query) {

@@ -50,6 +50,7 @@ function create(deps) {
   };
   acme2.stagingServerUrl = module.exports.defaults.stagingServerUrl;
   acme2.productionServerUrl = module.exports.defaults.productionServerUrl;
+  acme2.acmeChallengePrefix = module.exports.defaults.acmeChallengePrefix;
   return acme2;
 }
 
@@ -63,11 +64,12 @@ module.exports.defaults = {
 //, keyType:                'rsa' // ecdsa
 //, keySize:                2048 // 256
 , rsaKeySize:             2048 // 256
+, acmeChallengePrefix:    '/.well-known/acme-challenge/';
 };
 Object.keys(module.exports.defaults).forEach(function (key) {
   module.exports.ACME[key] = module.exports.defaults[key];
 });
 Object.keys(ACME2).forEach(function (key) {
   module.exports.ACME[key] = ACME2[key];
-  module.exports.ACME.create = create;
 });
+module.exports.ACME.create = create;
