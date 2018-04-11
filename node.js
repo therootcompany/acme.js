@@ -97,7 +97,7 @@ ACME._getNonce = function (me) {
  }
 */
 ACME._registerAccount = function (me, options) {
-  if (me.debug) { console.log('[acme-v2] accounts.create'); }
+  if (me.debug) console.debug('[acme-v2] accounts.create');
 
   return ACME._getNonce(me).then(function () {
     return new Promise(function (resolve, reject) {
@@ -141,8 +141,8 @@ ACME._registerAccount = function (me, options) {
         );
 
         delete jws.header;
-        if (me.debug) { console.log('[acme-v2] accounts.create JSON body:'); }
-        if (me.debug) { console.log(jws); }
+        if (me.debug) console.debug('[acme-v2] accounts.create JSON body:');
+        if (me.debug) console.debug(jws);
         me._nonce = null;
         return me._request({
           method: 'POST'
@@ -152,18 +152,16 @@ ACME._registerAccount = function (me, options) {
         }).then(function (resp) {
           me._nonce = resp.toJSON().headers['replay-nonce'];
           var location = resp.toJSON().headers.location;
-          if (me.debug) {
-            // the account id url
-            console.log('[DEBUG] new account location:');
-            console.log(location); // the account id url
-            console.log(resp.toJSON());
-          }
+          // the account id url
           me._kid = location;
+          if (me.debug) console.debug('[DEBUG] new account location:');
+          if (me.debug) console.debug(location);
+          if (me.debug) console.debug(resp.toJSON());
           return resp.body;
         }).then(resolve, reject);
       }
 
-      if (me.debug) { console.log('[acme-v2] agreeToTerms'); }
+      if (me.debug) console.debug('[acme-v2] agreeToTerms');
       if (1 === options.agreeToTerms.length) {
         return options.agreeToTerms(me._tos).then(agree, reject);
       }
@@ -201,7 +199,7 @@ ACME._registerAccount = function (me, options) {
  }
 */
 ACME._getChallenges = function (me, options, auth) {
-  if (me.debug) { console.log('\n[DEBUG] getChallenges\n'); }
+  if (me.debug) console.debug('\n[DEBUG] getChallenges\n');
   return me._request({ method: 'GET', url: auth, json: true }).then(function (resp) {
     return resp.body;
   });
@@ -264,14 +262,14 @@ ACME._postChallenge = function (me, options, identifier, ch) {
       , headers: { 'Content-Type': 'application/jose+json' }
       , json: jws
       }).then(function (resp) {
-        console.log('[acme-v2.js] deactivate:');
-        console.log(resp.headers);
-        console.log(resp.body);
-        console.log();
+        if (me.debug) console.debug('[acme-v2.js] deactivate:');
+        if (me.debug) console.debug(resp.headers);
+        if (me.debug) console.debug(resp.body);
+        if (me.debug) console.debug();
 
         me._nonce = resp.toJSON().headers['replay-nonce'];
-        if (me.debug) { console.log('deactivate challenge: resp.body:'); }
-        if (me.debug) { console.log(resp.body); }
+        if (me.debug) console.debug('deactivate challenge: resp.body:');
+        if (me.debug) console.debug(resp.body);
         return ACME._wait(10 * 1000);
       });
     }
@@ -283,13 +281,13 @@ ACME._postChallenge = function (me, options, identifier, ch) {
 
       count += 1;
 
-      if (me.debug) { console.log('\n[DEBUG] statusChallenge\n'); }
+      if (me.debug) console.debug('\n[DEBUG] statusChallenge\n');
       return me._request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
         console.error('poll: resp.body:');
         console.error(resp.body);
 
         if ('processing' === resp.body.status) {
-          if (me.debug) { console.log('poll: again'); }
+          if (me.debug) console.debug('poll: again');
           return ACME._wait(1 * 1000).then(pollStatus);
         }
 
@@ -298,12 +296,12 @@ ACME._postChallenge = function (me, options, identifier, ch) {
           if (count >= 4) {
             return ACME._wait(1 * 1000).then(deactivate).then(testChallenge);
           }
-          if (me.debug) { console.log('poll: again'); }
+          if (me.debug) console.debug('poll: again');
           return ACME._wait(1 * 1000).then(testChallenge);
         }
 
         if ('valid' === resp.body.status) {
-          if (me.debug) { console.log('poll: valid'); }
+          if (me.debug) console.debug('poll: valid');
 
           try {
             if (1 === options.removeChallenge.length) {
@@ -345,14 +343,14 @@ ACME._postChallenge = function (me, options, identifier, ch) {
       , headers: { 'Content-Type': 'application/jose+json' }
       , json: jws
       }).then(function (resp) {
-        console.log('[acme-v2.js] challenge accepted!');
-        console.log(resp.headers);
-        console.log(resp.body);
-        console.log();
+        if (me.debug) console.debug('[acme-v2.js] challenge accepted!');
+        if (me.debug) console.debug(resp.headers);
+        if (me.debug) console.debug(resp.body);
+        if (me.debug) console.debug();
 
         me._nonce = resp.toJSON().headers['replay-nonce'];
-        if (me.debug) { console.log('respond to challenge: resp.body:'); }
-        if (me.debug) { console.log(resp.body); }
+        if (me.debug) console.debug('respond to challenge: resp.body:');
+        if (me.debug) console.debug(resp.body);
         return ACME._wait(1 * 1000).then(pollStatus).then(resolve, reject);
       });
     }
@@ -367,8 +365,8 @@ ACME._postChallenge = function (me, options, identifier, ch) {
       // http-01: GET https://example.org/.well-known/acme-challenge/{{token}} => {{keyAuth}}
       // dns-01: TXT _acme-challenge.example.org. => "{{urlSafeBase64(sha256(keyAuth))}}"
 
-      if (me.debug) {console.log('\n[DEBUG] postChallenge\n'); }
-      //console.log('\n[DEBUG] stop to fix things\n'); return;
+      if (me.debug) {console.debug('\n[DEBUG] postChallenge\n'); }
+      //if (me.debug) console.debug('\n[DEBUG] stop to fix things\n'); return;
 
       return ACME._wait(1 * 1000).then(function () {
         if (!me.skipChallengeTest) {
@@ -391,7 +389,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
   });
 };
 ACME._finalizeOrder = function (me, options, validatedDomains) {
-  if (me.debug) { console.log('finalizeOrder:'); }
+  if (me.debug) console.debug('finalizeOrder:');
   var csr = me.RSA.generateCsrWeb64(options.domainKeypair, validatedDomains);
   var body = { csr: csr };
   var payload = JSON.stringify(body);
@@ -404,7 +402,7 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
     , new Buffer(payload)
     );
 
-    if (me.debug) { console.log('finalize:', me._finalize); }
+    if (me.debug) console.debug('finalize:', me._finalize);
     me._nonce = null;
     return me._request({
       method: 'POST'
@@ -414,8 +412,8 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
     }).then(function (resp) {
       me._nonce = resp.toJSON().headers['replay-nonce'];
 
-      if (me.debug) { console.log('order finalized: resp.body:'); }
-      if (me.debug) { console.log(resp.body); }
+      if (me.debug) console.debug('order finalized: resp.body:');
+      if (me.debug) console.debug(resp.body);
 
       if ('processing' === resp.body.status) {
         return ACME._wait().then(pollCert);
@@ -441,7 +439,7 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
   return pollCert();
 };
 ACME._getCertificate = function (me, options) {
-  if (me.debug) { console.log('[acme-v2] DEBUG get cert 1'); }
+  if (me.debug) console.debug('[acme-v2] DEBUG get cert 1');
 
   if (!options.challengeTypes) {
     if (!options.challengeType) {
@@ -461,7 +459,7 @@ ACME._getCertificate = function (me, options) {
     }
   }
 
-  if (me.debug) { console.log('[acme-v2] certificates.create'); }
+  if (me.debug) console.debug('[acme-v2] certificates.create');
   return ACME._getNonce(me).then(function () {
     var body = {
       identifiers: options.domains.map(function (hostname) {
@@ -479,7 +477,7 @@ ACME._getCertificate = function (me, options) {
     , new Buffer(payload)
     );
 
-    if (me.debug) { console.log('\n[DEBUG] newOrder\n'); }
+    if (me.debug) console.debug('\n[DEBUG] newOrder\n');
     me._nonce = null;
     return me._request({
       method: 'POST'
@@ -490,21 +488,19 @@ ACME._getCertificate = function (me, options) {
       me._nonce = resp.toJSON().headers['replay-nonce'];
       var location = resp.toJSON().headers.location;
       var auths;
-      if (me.debug) {
-        console.log(location); // the account id url
-        console.log(resp.toJSON());
-      }
+      if (me.debug) console.debug(location); // the account id url
+      if (me.debug) console.debug(resp.toJSON());
       me._authorizations = resp.body.authorizations;
       me._order = location;
       me._finalize = resp.body.finalize;
-      //console.log('[DEBUG] finalize:', me._finalize); return;
+      //if (me.debug) console.debug('[DEBUG] finalize:', me._finalize); return;
 
       if (!me._authorizations) {
         console.error("[acme-v2.js] authorizations were not fetched:");
         console.error(resp.body);
         return Promise.reject(new Error("authorizations were not fetched"));
       }
-      if (me.debug) { console.log("47 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
+      if (me.debug) console.debug("47 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
 
       //return resp.body;
       auths = me._authorizations.slice(0);
@@ -538,17 +534,17 @@ ACME._getCertificate = function (me, options) {
       }
 
       return next().then(function () {
-        if (me.debug) { console.log("37 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
+        if (me.debug) console.debug("37 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&");
         var validatedDomains = body.identifiers.map(function (ident) {
           return ident.value;
         });
 
         return ACME._finalizeOrder(me, options, validatedDomains);
       }).then(function () {
-        console.log('acme-v2: order was finalized');
+        if (me.debug) console.debug('acme-v2: order was finalized');
         return me._request({ method: 'GET', url: me._certificate, json: true }).then(function (resp) {
-          console.log('acme-v2: csr submitted and cert received:');
-          console.log(resp.body);
+          if (me.debug) console.debug('acme-v2: csr submitted and cert received:');
+          if (me.debug) console.debug(resp.body);
           return resp.body;
         });
       });
@@ -558,8 +554,7 @@ ACME._getCertificate = function (me, options) {
 
 ACME.create = function create(me) {
   if (!me) { me = {}; }
-  //
-  me.debug = true;
+  // me.debug = true;
   me.challengePrefixes = ACME.challengePrefixes;
   me.RSA = me.RSA || require('rsa-compat').RSA;
   me.request = me.request || require('request');

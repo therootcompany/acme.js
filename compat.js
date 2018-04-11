@@ -10,10 +10,14 @@ function resolveFn(cb) {
 }
 function rejectFn(cb) {
   return function (err) {
-    console.log('reject something or other:');
-    console.log(err.stack);
+    console.error('[acme-v2] handled(?) rejection as errback:');
+    console.error(err.stack);
+
     // nextTick to get out of Promise chain
     process.nextTick(function () { cb(err); });
+
+    // do not resolve promise further
+    return new Promise(function () {});
   };
 }
 
