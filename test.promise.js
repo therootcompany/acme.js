@@ -33,11 +33,11 @@ module.exports.run = function run(web, chType, email, accountKeypair, domainKeyp
           console.log("");
 
           if ('http-01' === opts.type) {
-            pathname = opts.hostname + acme2.acmeChallengePrefixes['http-01'] + "/" + opts.token;
+            pathname = opts.hostname + acme2.challengePrefixes['http-01'] + "/" + opts.token;
             console.log("Put the string '" + opts.keyAuthorization + "' into a file at '" + pathname + "'");
             console.log("echo '" + opts.keyAuthorization + "' > '" + pathname + "'");
           } else if ('dns-01' === opts.type) {
-            pathname = acme2.acmeChallengeDnsPrefix + "." + opts.hostname.replace(/^\*\./, '');;
+            pathname = acme2.challengePrefixes['dns-01'] + "." + opts.hostname.replace(/^\*\./, '');;
             console.log("Put the string '" + opts.dnsAuthorization + "' into the TXT record '" + pathname + "'");
             console.log("ddig TXT " + pathname + " '" + opts.dnsAuthorization + "'");
           } else {
