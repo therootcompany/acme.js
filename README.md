@@ -29,11 +29,12 @@ In progress
 * Apr  5, 2018 - test subdomains and its wildcard
 * Apr  5, 2018 - test http and dns challenges (success and failure)
 * Apr  5, 2018 - export http and dns challenge tests
+* Apr 10, 2018 - tested backwards-compatibility using greenlock.js
 
 Todo
 
-* Apr  5, 2018 - appears that sometimes 'pending' status cannot be progressed to 'processing' nor 'deactivated'
 * support ECDSA keys
+* Apr  5, 2018 - appears that sometimes 'pending' status cannot be progressed to 'processing' nor 'deactivated'
 
 ## Let's Encrypt Directory URLs
 

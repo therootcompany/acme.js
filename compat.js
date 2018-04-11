@@ -24,10 +24,29 @@ function create(deps) {
     acme2.accounts.create(options).then(resolveFn(cb), rejectFn(cb));
   };
   acme2.getCertificate = function (options, cb) {
-    acme2.certificates.create(options).then(resolveFn(cb), rejectFn(cb));
+    options.agreeToTerms = options.agreeToTerms || function (tos) {
+      return Promise.resolve(tos);
+    };
+    acme2.certificates.create(options).then(function (chainPem) {
+      var privkeyPem = acme2.RSA.exportPrivatePem(options.domainKeypair);
+      resolveFn(cb)({
+        cert: chainPem.split(/[\r\n]{2,}/g)[0] + '\r\n'
+      , privkey: privkeyPem 
+      , chain: chainPem.split(/[\r\n]{2,}/g)[1] + '\r\n'
+      });
+    }, rejectFn(cb));
   };
   acme2.getAcmeUrls = function (options, cb) {
     acme2.init(options).then(resolveFn(cb), rejectFn(cb));
+  };
+  acme2.getOptions = function () {
+    var defs = {};
+
+    Object.keys(module.exports.defaults).forEach(function (key) {
+      defs[key] = defs[deps] || module.exports.defaults[key];
+    });
+
+    return defs;
   };
   acme2.stagingServerUrl = module.exports.defaults.stagingServerUrl;
   acme2.productionServerUrl = module.exports.defaults.productionServerUrl;
@@ -41,8 +60,9 @@ module.exports.defaults = {
 , knownEndpoints:         [ 'keyChange', 'meta', 'newAccount', 'newNonce', 'newOrder', 'revokeCert' ]
 , challengeTypes:         [ 'http-01', 'dns-01' ]
 , challengeType:          'http-01'
-, keyType:                'rsa' // ecdsa
-, keySize:                2048 // 256
+//, keyType:                'rsa' // ecdsa
+//, keySize:                2048 // 256
+, rsaKeySize:             2048 // 256
 };
 Object.keys(module.exports.defaults).forEach(function (key) {
   module.exports.ACME[key] = module.exports.defaults[key];
