@@ -3,7 +3,7 @@ acme-v2.js (draft 11)
 
 | Sponsored by [ppl](https://ppl.family)
 
-A framework for building letsencrypt v2 (IETF ACME draft 11), forked from `le-acme-core.js`.
+A framework for building letsencrypt v2 (IETF ACME draft 11) clients, successor to `le-acme-core.js`.
 
 Summary of spec that I'm working off of here: https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8
 
