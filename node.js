@@ -452,6 +452,17 @@ ACME._getCertificate = function (me, options) {
     options.challengeTypes = [ options.challengeType ];
   }
 
+  if (!me._kid) {
+    if (options.accountKid) {
+      me._kid = options.accountKid;
+    } else {
+      //return Promise.reject(new Error("must include KeyID"));
+      return ACME._registerAccount(me, options).then(function () {
+        return ACME._getCertificate(me, options);
+      });
+    }
+  }
+
   if (me.debug) { console.log('[acme-v2] certificates.create'); }
   return ACME._getNonce(me).then(function () {
     var body = {
@@ -491,7 +502,9 @@ ACME._getCertificate = function (me, options) {
       //console.log('[DEBUG] finalize:', me._finalize); return;
 
       if (!me._authorizations) {
-        console.error("[acme-v2.js] authorizations were not fetched");
+        console.error("[acme-v2.js] authorizations were not fetched:");
+        console.error(resp.body);
+        return Promise.reject(new Error("authorizations were not fetched"));
       }
       if (me.debug) { console.log("47 &#&#&#&#&#&#&&##&#&#&#&#&#&#&#&"); }
 
@@ -534,7 +547,10 @@ ACME._getCertificate = function (me, options) {
 
         return ACME._finalizeOrder(me, options, validatedDomains);
       }).then(function () {
+        console.log('acme-v2: order was finalized');
         return me._request({ method: 'GET', url: me._certificate, json: true }).then(function (resp) {
+          console.log('acme-v2: csr submitted and cert received:');
+          console.log(resp.body);
           return resp.body;
         });
       });
@@ -544,6 +560,8 @@ ACME._getCertificate = function (me, options) {
 
 ACME.create = function create(me) {
   if (!me) { me = {}; }
+  //
+  me.debug = true;
   me.acmeChallengePrefix = ACME.acmeChallengePrefix;
   me.acmeChallengeDnsPrefix = ACME.acmeChallengeDnsPrefix;
   me.acmeChallengePrefixes = ACME.acmeChallengePrefixes;
