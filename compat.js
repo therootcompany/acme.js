@@ -68,7 +68,7 @@ module.exports.defaults = {
 //, keyType:                'rsa' // ecdsa
 //, keySize:                2048 // 256
 , rsaKeySize:             2048 // 256
-, acmeChallengePrefix:    '/.well-known/acme-challenge/';
+, acmeChallengePrefix:    '/.well-known/acme-challenge/'
 };
 Object.keys(module.exports.defaults).forEach(function (key) {
   module.exports.ACME[key] = module.exports.defaults[key];
