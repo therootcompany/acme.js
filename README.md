@@ -53,6 +53,8 @@ you can then test it with `examples/https-server.js`.
 examples/cli.js
 examples/genkeypair.js
 tests/compat.js
+examples/https-server.js
+examples/http-server.js
 ```
 
 ## Let's Encrypt Directory URLs
