@@ -112,10 +112,16 @@ ACME._registerAccount = function (me, options) {
         }
 
         var jwk = me.RSA.exportPublicJwk(options.accountKeypair);
+        var contact;
+        if (options.contact) {
+          contact = options.contact.slice(0);
+        } else if (options.email) {
+          contact = [ 'mailto:' + options.email ]
+        }
         var body = {
           termsOfServiceAgreed: tosUrl === me._tos
         , onlyReturnExisting: false
-        , contact: [ 'mailto:' + options.email ]
+        , contact: contact
         };
         if (options.externalAccount) {
           body.externalAccountBinding = me.RSA.signJws(
@@ -150,6 +156,8 @@ ACME._registerAccount = function (me, options) {
         , headers: { 'Content-Type': 'application/jose+json' }
         , json: jws
         }).then(function (resp) {
+          var account = resp.body;
+
           me._nonce = resp.toJSON().headers['replay-nonce'];
           var location = resp.toJSON().headers.location;
           // the account id url
@@ -157,15 +165,33 @@ ACME._registerAccount = function (me, options) {
           if (me.debug) console.debug('[DEBUG] new account location:');
           if (me.debug) console.debug(location);
           if (me.debug) console.debug(resp.toJSON());
-          return resp.body;
+          
+          /*
+          {
+            id: 5925245,
+            key:
+             { kty: 'RSA',
+               n: 'tBr7m1hVaUNQjUeakznGidnrYyegVUQrsQjNrcipljI9Vxvxd0baHc3vvRZWFyFO5BlS7UDl-KHQdbdqb-MQzfP6T2sNXsOHARQ41pCGY5BYzIPRJF0nD48-CY717is-7BKISv8rf9yx5iSjvK1wZ3Ke3YIpxzK2fWRqccVxXQ92VYioxOfGObACgEUSvdoEttWV2B0Uv4Sdi6zZbk5eo2zALvyGb1P4fKVfQycGLXC41AyhHOAuTqzNCyIkiWEkbfh2lZNcYClP2epS0pHRFXYyjJN6-c8InfM3PISo4k6Qew65HZ-oqUow0tTIgNwuen9q5O6Hc73GvU-2npGJVQ',
+               e: 'AQAB' },
+            contact: [],
+            initialIp: '198.199.82.211',
+            createdAt: '2018-04-16T00:41:00.720584972Z',
+            status: 'valid'
+          }
+          */
+          if (!account) { account = { _emptyResponse: true, key: {} }; }
+          account.key.kid = me._kid;
+          return account;
         }).then(resolve, reject);
       }
 
       if (me.debug) console.debug('[acme-v2] agreeToTerms');
       if (1 === options.agreeToTerms.length) {
+        // newer promise API
         return options.agreeToTerms(me._tos).then(agree, reject);
       }
       else if (2 === options.agreeToTerms.length) {
+        // backwards compat cb API
         return options.agreeToTerms(me._tos, function (err, tosUrl) {
           if (!err) { agree(tosUrl); return; }
           reject(err);

@@ -1,11 +1,59 @@
 acme-v2.js (draft 11)
 ==========
 
+| [acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js)
+| [acme-v2-cli.js](https://git.coolaj86.com/coolaj86/acme-v2-cli.js)
+| [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
+| [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
+
 | Sponsored by [ppl](https://ppl.family)
 
-A framework for building letsencrypt v2 (IETF ACME draft 11) clients, successor to `le-acme-core.js`.
+A framework for building Let's Encrypt v2 (ACME draft 11) clients, successor to `le-acme-core.js`.
+Built [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
 
-Summary of spec that I'm working off of here: https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8
+## Looking for Quick 'n' Easy&trade;?
+
+If you're looking for an *ACME-enabled webserver*, try [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
+If you're looking to *build a webserver*, try [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js).
+
+* [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
+* [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
+
+## How to build ACME clients
+
+As this is intended to build ACME clients, there is not a simple 2-line example.
+
+I'd recommend first running the example CLI client with a test domain and then investigating the files used for that example:
+
+```bash
+node examples/cli.js
+```
+
+The example cli has the following prompts:
+
+```
+What web address(es) would you like to get certificates for? (ex: example.com,*.example.com)
+What challenge will you be testing today? http-01 or dns-01? [http-01]
+What email should we use? (optional)
+What API style would you like to test? v1-compat or promise? [v1-compat]
+
+Put the string 'mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM.VNAzCR4THe4czVzo9piNn73B1ZXRLaB2CESwJfKkvRM' into a file at 'example.com/.well-known/acme-challenge/mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM'
+
+echo 'mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM.VNAzCR4THe4czVzo9piNn73B1ZXRLaB2CESwJfKkvRM' > 'example.com/.well-known/acme-challenge/mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM'
+
+Then hit the 'any' key to continue...
+```
+
+When you've completed the challenge you can hit a key to continue the process.
+
+If you place the certificate you receive back in `tests/fullchain.pem`
+you can then test it with `examples/https-server.js`.
+
+```
+examples/cli.js
+examples/genkeypair.js
+tests/compat.js
+```
 
 ## Let's Encrypt Directory URLs
 
@@ -136,7 +184,11 @@ Todo
 Changelog
 ---------
 
-* v1.0.0
+* v1.0.2
+  * use `options.contact` to provide raw contact array
+  * made `options.email` optional
+  * file cleanup
+* v1.0.1
   * Compat API is ready for use
   * Eliminate debug logging
 * Apr 10, 2018 - tested backwards-compatibility using greenlock.js
