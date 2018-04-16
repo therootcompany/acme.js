@@ -1,10 +1,8 @@
 'use strict';
 
-module.exports.run = function run(web, chType, email, accountKeypair, domainKeypair) {
-  var RSA = require('rsa-compat').RSA;
-  var directoryUrl = 'https://acme-staging-v02.api.letsencrypt.org/directory';
-  var acme2 = require('./').ACME.create({ RSA: RSA });
+module.exports.run = function run(directoryUrl, RSA, web, chType, email, accountKeypair, domainKeypair) {
   // [ 'test.ppl.family' ] 'coolaj86@gmail.com''http-01'
+  var acme2 = require('../').ACME.create({ RSA: RSA });
   acme2.init(directoryUrl).then(function () {
     var options = {
       agreeToTerms: function (tosUrl, agree) {
