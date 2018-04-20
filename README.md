@@ -94,6 +94,8 @@ but also provides an updated API more congruent with draft 11.
 
 Status: Stable, Locked, Bugfix-only
 
+See Full Documentation at <https://git.coolaj86.com/coolaj86/le-acme-core.js>
+
 ```
 var RSA = require('rsa-compat').RSA;
 var acme = require('acme-v2/compat.js').ACME.create({ RSA: RSA });
@@ -103,16 +105,15 @@ var acme = require('acme-v2/compat.js').ACME.create({ RSA: RSA });
 //
 ```
 
-See documentation at <https://git.coolaj86.com/coolaj86/le-acme-core.js>
+## Promise API (dev)
 
-## draft API (dev)
-
-Status: Almost stable, not locked
+Status: Almost stable, but **not semver locked**
 
 This API is a simple evolution of le-acme-core,
 but tries to provide a better mapping to the new draft 11 APIs.
 
 ```
+// Create Instance (Dependency Injection)
 var ACME = require('acme-v2').ACME.create({
   RSA: require('rsa-compat').RSA
 
@@ -131,9 +132,12 @@ var ACME = require('acme-v2').ACME.create({
   // don't try to validate challenges locally
 , skipChallengeTest: false
 });
-```
 
-```javascript
+
+// Discover Directory URLs
+ACME.init(acmeDirectoryUrl)                   // returns Promise<acmeUrls={keyChange,meta,newAccount,newNonce,newOrder,revokeCert}>
+
+
 // Accounts
 ACME.accounts.create(options)                 // returns Promise<regr> registration data
 
@@ -162,10 +166,6 @@ ACME.certificates.create(options)             // returns Promise<pems={ privkey 
     , setChallenge: fn (hostname, key, val)   // return Promise
     , removeChallenge: fn (hostname, key)     // return Promise
     }
-
-
-// Discovery URLs
-ACME.init(acmeDirectoryUrl)                   // returns Promise<acmeUrls={keyChange,meta,newAccount,newNonce,newOrder,revokeCert}>
 ```
 
 Helpers & Stuff
