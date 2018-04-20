@@ -1,12 +1,12 @@
-acme-v2.js (draft 11)
-==========
-
+| Sponsored by [ppl](https://ppl.family)
 | [acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js)
 | [acme-v2-cli.js](https://git.coolaj86.com/coolaj86/acme-v2-cli.js)
 | [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
 | [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
+|
 
-| Sponsored by [ppl](https://ppl.family)
+acme-v2.js
+==========
 
 A framework for building Let's Encrypt v2 (ACME draft 11) clients, successor to `le-acme-core.js`.
 Built [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
