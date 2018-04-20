@@ -186,6 +186,8 @@ Todo
 Changelog
 ---------
 
+* v1.0.3
+  * documentation cleanup
 * v1.0.2
   * use `options.contact` to provide raw contact array
   * made `options.email` optional
