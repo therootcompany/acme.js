@@ -309,8 +309,6 @@ ACME._postChallenge = function (me, options, identifier, ch) {
 
       if (me.debug) console.debug('\n[DEBUG] statusChallenge\n');
       return me._request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
-        console.error('poll: resp.body:');
-        console.error(resp.body);
 
         if ('processing' === resp.body.status) {
           if (me.debug) console.debug('poll: again');
@@ -342,16 +340,16 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         }
 
         if (!resp.body.status) {
-          console.error("[acme-v2] (y) bad challenge state:");
+          console.error("[acme-v2] (E_STATE_EMPTY) empty challenge state:");
         }
         else if ('invalid' === resp.body.status) {
-          console.error("[acme-v2] (x) invalid challenge state:");
+          console.error("[acme-v2] (E_STATE_INVALID) invalid challenge state:");
         }
         else {
-          console.error("[acme-v2] (z) bad challenge state:");
+          console.error("[acme-v2] (E_STATE_UKN) unkown challenge state:");
         }
 
-        return Promise.reject(new Error("[acme-v2] bad challenge state"));
+        return Promise.reject(new Error("[acme-v2] challenge state error"));
       });
     }
 
