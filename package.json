@@ -1,6 +1,6 @@
 {
   "name": "acme-v2",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Free SSL. A framework for building Let's Encrypt v2 clients, and other ACME v2 (draft 11) clients. Successor to le-acme-core.js",
   "homepage": "https://git.coolaj86.com/coolaj86/acme-v2.js",
   "main": "node.js",
