@@ -186,8 +186,9 @@ Todo
 Changelog
 ---------
 
-* v1.0.3
-  * documentation cleanup
+* v1.0.5 - cleanup logging
+* v1.0.4 - v6- compat use `promisify` from node's util or bluebird
+* v1.0.3 - documentation cleanup
 * v1.0.2
   * use `options.contact` to provide raw contact array
   * made `options.email` optional
