@@ -176,13 +176,6 @@ ACME.challengePrefixes['http-01']             // '/.well-known/acme-challenge'
 ACME.challengePrefixes['dns-01']              // '_acme-challenge'
 ```
 
-Todo
-----
-
-* support ECDSA keys
-* Apr  5, 2018 - appears that sometimes 'pending' status cannot be progressed to 'processing' nor 'deactivated'
-  * this may be a bug in the staging API as it appears it cannot be cancelled either, but returns success status code
-
 Changelog
 ---------
 
