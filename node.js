@@ -165,7 +165,7 @@ ACME._registerAccount = function (me, options) {
           if (me.debug) console.debug('[DEBUG] new account location:');
           if (me.debug) console.debug(location);
           if (me.debug) console.debug(resp.toJSON());
-          
+
           /*
           {
             id: 5925245,
@@ -601,7 +601,7 @@ ACME.create = function create(me) {
       });
     });
   };
-  me.promisify = me.promisify || require('util').promisify;
+  me.promisify = me.promisify || require('util').promisify /*node v8+*/ || require('bluebird').promisify /*node v6*/;
 
 
   if ('function' !== typeof me.getUserAgentString) {
