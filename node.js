@@ -452,6 +452,8 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
         return ACME._wait().then(pollCert);
       }
 
+      if (me.debug) console.debug("Error: bad status:\n" + JSON.stringify(resp.body, null, 2));
+
       if ('pending' === resp.body.status) {
         return Promise.reject(new Error(
           "Did not finalize order: status 'pending'."
