@@ -434,14 +434,12 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
     , headers: { 'Content-Type': 'application/jose+json' }
     , json: jws
     }).then(function (resp) {
+      // https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
+      // Possible values are: "pending" => ("invalid" || "ready") => "processing" => "valid"
       me._nonce = resp.toJSON().headers['replay-nonce'];
 
       if (me.debug) console.debug('order finalized: resp.body:');
       if (me.debug) console.debug(resp.body);
-
-      if ('processing' === resp.body.status) {
-        return ACME._wait().then(pollCert);
-      }
 
       if ('valid' === resp.body.status) {
         me._expires = resp.body.expires;
@@ -450,13 +448,43 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
         return resp.body;
       }
 
-      if ('invalid' === resp.body.status) {
-        console.error('cannot finalize: badness');
-        return;
+      if ('processing' === resp.body.status) {
+        return ACME._wait().then(pollCert);
       }
 
-      console.error('(x) cannot finalize: badness');
-      return;
+      if ('pending' === resp.body.status) {
+        return Promise.reject(new Error(
+          "Did not finalize order: status 'pending'."
+        + " Best guess: You have not accepted at least one challenge for each domain." + "\n\n"
+        + JSON.stringify(resp.body, null, 2)
+        ));
+      }
+
+      if ('invalid' === resp.body.status) {
+        return Promise.reject(new Error(
+          "Did not finalize order: status 'invalid'."
+        + " Best guess: One or more of the domain challenges could not be verified"
+        + " (or the order was canceled)." + "\n\n"
+        + JSON.stringify(resp.body, null, 2)
+        ));
+      }
+
+      if ('ready' === resp.body.status) {
+        return Promise.reject(new Error(
+          "Did not finalize order: status 'ready'."
+        + " Hmmm... this state shouldn't be possible here. That was the last state."
+        + " This one should at least be 'processing'." + "\n\n"
+        + JSON.stringify(resp.body, null, 2) + "\n\n"
+        + "Please open an issue at https://git.coolaj86.com/coolaj86/acme-v2.js"
+        ));
+      }
+
+      return Promise.reject(new Error(
+        "Didn't finalize order: Unhandled status '" + resp.body.status + "'."
+      + " This is not one of the known statuses...\n\n"
+      + JSON.stringify(resp.body, null, 2) + "\n\n"
+      + "Please open an issue at https://git.coolaj86.com/coolaj86/acme-v2.js"
+      ));
     });
   }
 
