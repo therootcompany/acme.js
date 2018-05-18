@@ -22,15 +22,20 @@ ACME.challengeTests = {
         return true;
       }
 
-      err = new Error("self check does not pass");
-      err.code = 'E_RETRY';
+      err = new Error(
+        "Error: Failed HTTP-01 Dry Run.\n"
+      + "curl '" + url + "' does not return '" + auth.keyAuthorization + "'\n"
+      + "See https://git.coolaj86.com/coolaj86/acme-v2.js/issues/4"
+      );
+      err.code = 'E_FAIL_DRY_CHALLENGE';
       return Promise.reject(err);
     });
   }
 , 'dns-01': function (me, auth) {
+    var hostname = ACME.challengePrefixes['dns-01'] + '.' + auth.hostname;
     return me._dig({
       type: 'TXT'
-    , name: ACME.challengePrefixes['dns-01'] + '.' + auth.hostname
+    , name: hostname
     }).then(function (ans) {
       var err;
 
@@ -40,8 +45,12 @@ ACME.challengeTests = {
         return true;
       }
 
-      err = new Error("self check does not pass");
-      err.code = 'E_RETRY';
+      err = new Error(
+        "Error: Failed DNS-01 Dry Run.\n"
+      + "dig TXT '" + hostname + "' does not return '" + auth.dnsAuthorization + "'\n"
+      + "See https://git.coolaj86.com/coolaj86/acme-v2.js/issues/4"
+      );
+      err.code = 'E_FAIL_DRY_CHALLENGE';
       return Promise.reject(err);
     });
   }
