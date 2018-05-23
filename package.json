@@ -1,6 +1,6 @@
 {
   "name": "acme",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "The bare essentials of the ACME (Let's Encrypt v2) API. This is a low-level library for building high-level clients.",
   "homepage": "https://git.coolaj86.com/coolaj86/acme.js",
   "main": "node.js",
@@ -40,6 +40,7 @@
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
     "acme-v2": "^1.0.7",
+    "js-yaml": "^3.11.0",
     "request": "^2.85.0",
     "rsa-compat": "^1.3.0"
   },
