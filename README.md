@@ -1,63 +1,43 @@
-| Sponsored by [ppl](https://ppl.family)
-| **acme-v2.js** ([npm](https://www.npmjs.com/package/acme-v2))
-| [acme-v2-cli.js](https://git.coolaj86.com/coolaj86/acme-v2-cli.js)
-| [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
-| [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
-|
-
-acme-v2.js
+acme.js
 ==========
 
-A framework for building Let's Encrypt v2 (ACME draft 11) clients, successor to `le-acme-core.js`.
-Built [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
+Free SSL for everybody. The bare essentials of the Let's Encrypt v2 (ACME draft 11) API. Built for [Greenlock](https://git.coolaj86.com/coolaj86/greenlock-express.js), [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
 
-## Looking for Quick 'n' Easy&trade;?
+!["Monthly Downloads"](https://img.shields.io/npm/dm/acme-v2.svg "Monthly Download Count can't be shown")
+!["Weekly Downloads"](https://img.shields.io/npm/dw/acme-v2.svg "Weekly Download Count can't be shown")
+!["Stackoverflow Questions"](https://img.shields.io/stackexchange/stackoverflow/t/greenlock.svg "S.O. Question count can't be shown")
 
-If you're looking for an *ACME-enabled webserver*, try [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
-If you're looking to *build a webserver*, try [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js).
+| Sponsored by [ppl](https://ppl.family)
+| **acme.js** ([npm](https://www.npmjs.com/package/acme))
+| [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js)
+| [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js)
+| [Greenlock for API Integrations](https://git.coolaj86.com/coolaj86/greenlock.js)
+| [Greenlock for Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html)
+|
 
-* [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
+This is intented for building ACME API clients in node.js.
+
+Looking for Quick 'n' Easy&trade;?
+=======
+
+If you're looking to *build* a *browser* client, try [Greenlock Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html).
+If you're looking to *build* a node.js *service* or *cli*, try [Greenlock for node.js](https://git.coolaj86.com/coolaj86/greenlock.js).
+If you're looking for an *ACME-enabled webserver*, try [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js) or [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
+
+* [Greenlock for Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html)
+* [Greenlock for node.js](https://git.coolaj86.com/coolaj86/greenlock.js)
+* [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js)
 * [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
 
-## How to build ACME clients
+Let's Encrypt v2 / ACME draft 11 Support
+========
 
-As this is intended to build ACME clients, there is not a simple 2-line example.
+This library (acme.js) supports ACME [*draft 11*](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
+otherwise known as Let's Encrypt v2 (or v02).
 
-I'd recommend first running the example CLI client with a test domain and then investigating the files used for that example:
-
-```bash
-node examples/cli.js
-```
-
-The example cli has the following prompts:
-
-```
-What web address(es) would you like to get certificates for? (ex: example.com,*.example.com)
-What challenge will you be testing today? http-01 or dns-01? [http-01]
-What email should we use? (optional)
-What API style would you like to test? v1-compat or promise? [v1-compat]
-
-Put the string 'mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM.VNAzCR4THe4czVzo9piNn73B1ZXRLaB2CESwJfKkvRM' into a file at 'example.com/.well-known/acme-challenge/mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM'
-
-echo 'mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM.VNAzCR4THe4czVzo9piNn73B1ZXRLaB2CESwJfKkvRM' > 'example.com/.well-known/acme-challenge/mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM'
-
-Then hit the 'any' key to continue...
-```
-
-When you've completed the challenge you can hit a key to continue the process.
-
-If you place the certificate you receive back in `tests/fullchain.pem`
-you can then test it with `examples/https-server.js`.
-
-```
-examples/cli.js
-examples/genkeypair.js
-tests/compat.js
-examples/https-server.js
-examples/http-server.js
-```
-
-## Let's Encrypt Directory URLs
+  * ACME draft 11
+  * Let's Encrypt v2
+  * Let's Encrypt v02
 
 ```
 # Production URL
@@ -69,52 +49,94 @@ https://acme-v02.api.letsencrypt.org/directory
 https://acme-staging-v02.api.letsencrypt.org/directory
 ```
 
-## Two API versions, Two Implementations
+Demonstration
+=============
 
-This library (acme-v2.js) supports ACME [*draft 11*](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
-otherwise known as Let's Encrypt v2 (or v02).
+As this is intended to build ACME clients, there is not a simple 2-line example.
 
-  * ACME draft 11
-  * Let's Encrypt v2
-  * Let's Encrypt v02
+I'd recommend first trying out one of the [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js)
+examples, which are guaranteed to work and have great error checking to help you debug.
 
-The predecessor (le-acme-core) supports Let's Encrypt v1 (or v01), which was a
-[hodge-podge of various drafts](https://github.com/letsencrypt/boulder/blob/master/docs/acme-divergences.md)
-of the ACME spec early on.
+Then I'd recommend running the example CLI client with a test domain and then investigating the files used for that example:
 
-  * ACME early draft
-  * Let's Encrypt v1
-  * Let's Encrypt v01
-
-This library maintains compatibility with le-acme-core so that it can be used as a **drop-in replacement**
-and requires **no changes to existing code**,
-but also provides an updated API more congruent with draft 11.
-
-## le-acme-core-compatible API (recommended)
-
-Status: Stable, Locked, Bugfix-only
-
-See Full Documentation at <https://git.coolaj86.com/coolaj86/le-acme-core.js>
-
-```
-var RSA = require('rsa-compat').RSA;
-var acme = require('acme-v2/compat.js').ACME.create({ RSA: RSA });
-
-//
-// Use exactly the same as le-acme-core
-//
+```bash
+git clone https://git.coolaj86.com/coolaj86/acme.js.git
+pushd acme.js/
+node examples/cli.js
 ```
 
-## Promise API (dev)
+The example cli has the following prompts:
 
-Status: Almost stable, but **not semver locked**
+```
+What web address(es) would you like to get certificates for? (ex: example.com,*.example.com)
+What challenge will you be testing today? http-01 or dns-01? [http-01]
+What email should we use? (optional)
+What directoryUrl should we use? [https://acme-staging-v02.api.letsencrypt.org/directory]
 
-This API is a simple evolution of le-acme-core,
+Put the string 'mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM.VNAzCR4THe4czVzo9piNn73B1ZXRLaB2CESwJfKkvRM' into a file at 'example.com/.well-known/acme-challenge/mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM'
+
+echo 'mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM.VNAzCR4THe4czVzo9piNn73B1ZXRLaB2CESwJfKkvRM' > 'example.com/.well-known/acme-challenge/mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM'
+
+Then hit the 'any' key to continue...
+```
+
+When you've completed the challenge you can hit a key to continue the process.
+
+If you place the certificate you receive back in `tests/fullchain.pem`
+then you can test it with `examples/https-server.js`.
+
+```
+examples/cli.js
+examples/genkeypair.js
+examples/https-server.js
+examples/http-server.js
+```
+
+Install
+=======
+
+Install via npm
+
+```bash
+npm install --save acme
+```
+
+Install via git
+
+```bash
+npm install https://git.coolaj86.com/coolaj86/acme.js.git
+```
+
+API
+===
+
+This API is an evolution of le-acme-core,
 but tries to provide a better mapping to the new draft 11 APIs.
 
+Status: Almost stable, but **not semver locked**.
+
+Patch versions will not introduce breaking changes,
+but may introduce lower-level APIs.
+Minor versions may change return values to include more information.
+
+Overview:
+
 ```
+var ACME = require('acme').ACME;
+
+ACME.create(opts)
+
+acme.init(acmeDirectoryUrl)
+acme.accounts.create(opts)
+acme.certificates.create(opts)
+```
+
+Detailed Explanation:
+```
+var ACME = require('acme').ACME;
+
 // Create Instance (Dependency Injection)
-var ACME = require('acme-v2').ACME.create({
+var acme = ACME.create({
   RSA: require('rsa-compat').RSA
 
   // other overrides
@@ -135,11 +157,11 @@ var ACME = require('acme-v2').ACME.create({
 
 
 // Discover Directory URLs
-ACME.init(acmeDirectoryUrl)                   // returns Promise<acmeUrls={keyChange,meta,newAccount,newNonce,newOrder,revokeCert}>
+acme.init(acmeDirectoryUrl)                   // returns Promise<acmeUrls={keyChange,meta,newAccount,newNonce,newOrder,revokeCert}>
 
 
 // Accounts
-ACME.accounts.create(options)                 // returns Promise<regr> registration data
+acme.accounts.create(options)                 // returns Promise<regr> registration data
 
     { email: '<email>'                        //    valid email (server checks MX records)
     , accountKeypair: {                       //    privateKeyPem or privateKeyJwt
@@ -150,7 +172,7 @@ ACME.accounts.create(options)                 // returns Promise<regr> registrat
 
 
 // Registration
-ACME.certificates.create(options)             // returns Promise<pems={ privkey (key), cert, chain (ca) }>
+acme.certificates.create(options)             // returns Promise<pems={ privkey (key), cert, chain (ca) }>
 
     { newAuthzUrl: '<url>'                    //    specify acmeUrls.newAuthz
     , newCertUrl: '<url>'                     //    specify acmeUrls.newCert
@@ -179,6 +201,9 @@ ACME.challengePrefixes['dns-01']              // '_acme-challenge'
 Changelog
 ---------
 
+* v1.0.8 - rename to acme.js
+* v1.0.7 - improved error handling again, after user testing
+* v1.0.6 - improved error handling
 * v1.0.5 - cleanup logging
 * v1.0.4 - v6- compat use `promisify` from node's util or bluebird
 * v1.0.3 - documentation cleanup
