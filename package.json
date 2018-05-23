@@ -1,6 +1,6 @@
 {
   "name": "acme",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "description": "Free SSL for everybody. The bare essentials of the Let's Encrypt v2 (ACME draft 11) API. Built for Greenlock.",
   "homepage": "https://git.coolaj86.com/coolaj86/acme.js",
   "main": "node.js",
