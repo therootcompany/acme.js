@@ -5,8 +5,6 @@ Free SSL for everybody. The bare essentials of the Let's Encrypt v2 (ACME draft 
 Built for [Greenlock](https://git.coolaj86.com/coolaj86/greenlock-express.js),
 [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
 
-This is intented for building ACME API clients in node.js.
-
 | Sponsored by [ppl](https://ppl.family) |
 !["Monthly Downloads"](https://img.shields.io/npm/dm/acme-v2.svg "Monthly Download Count can't be shown")
 !["Weekly Downloads"](https://img.shields.io/npm/dw/acme-v2.svg "Weekly Download Count can't be shown")
@@ -14,34 +12,16 @@ This is intented for building ACME API clients in node.js.
 Looking for Quick 'n' Easy&trade;?
 =======
 
-If you're looking to *build* a *browser* client, try [Greenlock Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html).
-If you're looking to *build* a node.js *service* or *cli*, try [Greenlock for node.js](https://git.coolaj86.com/coolaj86/greenlock.js).
-If you're looking for an *ACME-enabled webserver*, try [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js) or [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
+This is intented for building ACME API clients in node.js. It is *not* a high-level, fully-integrated solution.
 
-* [Greenlock for Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html)
-* [Greenlock for node.js](https://git.coolaj86.com/coolaj86/greenlock.js)
-* [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js)
-* [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
+You may be more interested in one of these:
 
-Let's Encrypt v2 / ACME draft 11 Support
-========
-
-This library (acme.js) supports ACME [*draft 11*](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
-otherwise known as Let's Encrypt v2 (or v02).
-
-  * ACME draft 11
-  * Let's Encrypt v2
-  * Let's Encrypt v02
-
-```
-# Production URL
-https://acme-v02.api.letsencrypt.org/directory
-```
-
-```
-# Staging URL
-https://acme-staging-v02.api.letsencrypt.org/directory
-```
+* <https://greenlock.domains> Instant Certificates in your Browser
+* [Greenlock for Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html) (Browser JavaScript)
+* [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js) (Command line, like certbot)
+* [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js) (Automated HTTPS for Express.js apps)
+* [Greenlock for node.js](https://git.coolaj86.com/coolaj86/greenlock.js) (Automated HTTPS for Proxies, Load-Balances, Servers, CLIs)
+* [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js) (A Full-Blown WebServer)
 
 Demonstration
 =============
@@ -84,6 +64,26 @@ examples/cli.js
 examples/genkeypair.js
 examples/https-server.js
 examples/http-server.js
+```
+
+Let's Encrypt v2 / ACME draft 11 Support
+========
+
+This library (acme.js) supports ACME [*draft 11*](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
+otherwise known as Let's Encrypt v2 (or v02).
+
+  * ACME draft 11
+  * Let's Encrypt v2
+  * Let's Encrypt v02
+
+```
+# Production URL
+https://acme-v02.api.letsencrypt.org/directory
+```
+
+```
+# Staging URL
+https://acme-staging-v02.api.letsencrypt.org/directory
 ```
 
 Install
