@@ -1,21 +1,15 @@
 acme.js
 ==========
 
-Free SSL for everybody. The bare essentials of the Let's Encrypt v2 (ACME draft 11) API. Built for [Greenlock](https://git.coolaj86.com/coolaj86/greenlock-express.js), [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
-
-!["Monthly Downloads"](https://img.shields.io/npm/dm/acme-v2.svg "Monthly Download Count can't be shown")
-!["Weekly Downloads"](https://img.shields.io/npm/dw/acme-v2.svg "Weekly Download Count can't be shown")
-!["Stackoverflow Questions"](https://img.shields.io/stackexchange/stackoverflow/t/greenlock.svg "S.O. Question count can't be shown")
-
-| Sponsored by [ppl](https://ppl.family)
-| **acme.js** ([npm](https://www.npmjs.com/package/acme))
-| [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js)
-| [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js)
-| [Greenlock for API Integrations](https://git.coolaj86.com/coolaj86/greenlock.js)
-| [Greenlock for Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html)
-|
+Free SSL for everybody. The bare essentials of the Let's Encrypt v2 (ACME draft 11) API.
+Built for [Greenlock](https://git.coolaj86.com/coolaj86/greenlock-express.js),
+[by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
 
 This is intented for building ACME API clients in node.js.
+
+| Sponsored by [ppl](https://ppl.family) |
+!["Monthly Downloads"](https://img.shields.io/npm/dm/acme-v2.svg "Monthly Download Count can't be shown")
+!["Weekly Downloads"](https://img.shields.io/npm/dw/acme-v2.svg "Weekly Download Count can't be shown")
 
 Looking for Quick 'n' Easy&trade;?
 =======
@@ -119,7 +113,7 @@ Patch versions will not introduce breaking changes,
 but may introduce lower-level APIs.
 Minor versions may change return values to include more information.
 
-Overview:
+### Overview
 
 ```
 var ACME = require('acme').ACME;
@@ -131,7 +125,8 @@ acme.accounts.create(opts)
 acme.certificates.create(opts)
 ```
 
-Detailed Explanation:
+### Detailed Explanation
+
 ```
 var ACME = require('acme').ACME;
 
