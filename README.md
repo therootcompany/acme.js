@@ -1,7 +1,7 @@
 acme.js
 ==========
 
-Free SSL for everybody. The bare essentials of the Let's Encrypt v2 (ACME draft 11) API.
+Free SSL for everybody. The bare essentials of the Let's Encrypt v2 (ACME) API.
 Built for [Greenlock](https://git.coolaj86.com/coolaj86/greenlock-express.js),
 [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
 
@@ -12,11 +12,11 @@ Built for [Greenlock](https://git.coolaj86.com/coolaj86/greenlock-express.js),
 Looking for Quick 'n' Easy&trade;?
 =======
 
-This is intented for building ACME API clients in node.js. It is *not* a high-level, fully-integrated solution.
+This is intented for building ACME API clients in node.js. It is **not** a high-level, fully-integrated solution.
 
 You may be more interested in one of these:
 
-* <https://greenlock.domains> Instant Certificates in your Browser
+* <https://greenlock.domains> Instant SSL Certificates in your Browser
 * [Greenlock for Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html) (Browser JavaScript)
 * [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js) (Command line, like certbot)
 * [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js) (Automated HTTPS for Express.js apps)
@@ -26,7 +26,7 @@ You may be more interested in one of these:
 Demonstration
 =============
 
-As this is intended to build ACME clients, there is not a simple 2-line example.
+As this is intended to *build* ACME clients, there is not a simple 2-line example.
 
 I'd recommend first trying out one of the [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js)
 examples, which are guaranteed to work and have great error checking to help you debug.
@@ -196,7 +196,8 @@ ACME.challengePrefixes['dns-01']              // '_acme-challenge'
 Changelog
 ---------
 
-* v1.0.8 - rename to acme.js
+* v1.0.9 - update docs
+* v1.0.8 - rename to acme.js, remove backwards compat
 * v1.0.7 - improved error handling again, after user testing
 * v1.0.6 - improved error handling
 * v1.0.5 - cleanup logging
