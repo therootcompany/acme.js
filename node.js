@@ -384,13 +384,8 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         me._nonce = resp.toJSON().headers['replay-nonce'];
         if (me.debug) console.debug('respond to challenge: resp.body:');
         if (me.debug) console.debug(resp.body);
-        return ACME._wait(1 * 1000).then(pollStatus).then(resolve, reject);
+        return ACME._wait(1 * 1000).then(pollStatus);
       });
-    }
-
-    function failChallenge(err) {
-      if (err) { reject(err); return; }
-      return testChallenge();
     }
 
     function testChallenge() {
@@ -410,11 +405,23 @@ ACME._postChallenge = function (me, options, identifier, ch) {
 
     try {
       if (1 === options.setChallenge.length) {
-        options.setChallenge(auth).then(testChallenge, reject);
+        options.setChallenge(auth).then(testChallenge).then(resolve, reject);
       } else if (2 === options.setChallenge.length) {
-        options.setChallenge(auth, failChallenge);
+        options.setChallenge(auth, function(err) {
+          if(err) {
+            reject(err);
+          } else {
+            testChallenge().then(resolve, reject);
+          }
+        });
       } else {
-        options.setChallenge(identifier.value, ch.token, keyAuthorization, failChallenge);
+        options.setChallenge(identifier.value, ch.token, keyAuthorization, function(err) {
+          if(err) {
+            reject(err);
+          } else {
+            testChallenge().then(resolve, reject);
+          }
+        });
       }
     } catch(e) {
       reject(e);
