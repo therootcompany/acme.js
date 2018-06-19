@@ -140,7 +140,7 @@ ACME._registerAccount = function (me, options) {
             , kid: options.externalAccount.id
             , url: me._directoryUrls.newAccount
             }
-          , new Buffer(JSON.stringify(jwk))
+          , Buffer.from(JSON.stringify(jwk))
           );
         }
         var payload = JSON.stringify(body);
@@ -152,7 +152,7 @@ ACME._registerAccount = function (me, options) {
           , url: me._directoryUrls.newAccount
           , jwk: jwk
           }
-        , new Buffer(payload)
+        , Buffer.from(payload)
         );
 
         delete jws.header;
@@ -288,7 +288,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         options.accountKeypair
       , undefined
       , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
-      , new Buffer(JSON.stringify({ "status": "deactivated" }))
+      , Buffer.from(JSON.stringify({ "status": "deactivated" }))
       );
       me._nonce = null;
       return me._request({
@@ -367,7 +367,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         options.accountKeypair
       , undefined
       , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
-      , new Buffer(JSON.stringify({ }))
+      , Buffer.from(JSON.stringify({ }))
       );
       me._nonce = null;
       return me._request({
@@ -439,7 +439,7 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
       options.accountKeypair
     , undefined
     , { nonce: me._nonce, alg: 'RS256', url: me._finalize, kid: me._kid }
-    , new Buffer(payload)
+    , Buffer.from(payload)
     );
 
     if (me.debug) console.debug('finalize:', me._finalize);
@@ -544,7 +544,7 @@ ACME._getCertificate = function (me, options) {
       options.accountKeypair
     , undefined
     , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newOrder, kid: me._kid }
-    , new Buffer(payload)
+    , Buffer.from(payload)
     );
 
     if (me.debug) console.debug('\n[DEBUG] newOrder\n');
@@ -627,7 +627,7 @@ ACME.create = function create(me) {
   // me.debug = true;
   me.challengePrefixes = ACME.challengePrefixes;
   me.RSA = me.RSA || require('rsa-compat').RSA;
-  me.request = me.request || require('request');
+  me.request = me.request || require('@coolaj86/urequest');
   me._dig = function (query) {
     // TODO use digd.js
     return new Promise(function (resolve, reject) {
