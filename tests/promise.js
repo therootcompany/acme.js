@@ -35,9 +35,9 @@ module.exports.run = function run(directoryUrl, RSA, web, chType, email, account
             console.log("Put the string '" + opts.keyAuthorization + "' into a file at '" + pathname + "'");
             console.log("echo '" + opts.keyAuthorization + "' > '" + pathname + "'");
           } else if ('dns-01' === opts.type) {
-            pathname = acme2.challengePrefixes['dns-01'] + "." + opts.hostname.replace(/^\*\./, '');;
+            pathname = acme2.challengePrefixes['dns-01'] + "." + opts.hostname.replace(/^\*\./, '');
             console.log("Put the string '" + opts.dnsAuthorization + "' into the TXT record '" + pathname + "'");
-            console.log("ddig TXT " + pathname + " '" + opts.dnsAuthorization + "'");
+            console.log("dig TXT " + pathname + " '" + opts.dnsAuthorization + "'");
           } else {
             reject(new Error("[acme-v2] unrecognized challenge type"));
             return;
