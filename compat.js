@@ -1,4 +1,5 @@
 'use strict';
+/* global Promise */
 
 var ACME2 = require('./').ACME;
 
@@ -31,13 +32,10 @@ function create(deps) {
     options.agreeToTerms = options.agreeToTerms || function (tos) {
       return Promise.resolve(tos);
     };
-    acme2.certificates.create(options).then(function (chainPem) {
+    acme2.certificates.create(options).then(function (certs) {
       var privkeyPem = acme2.RSA.exportPrivatePem(options.domainKeypair);
-      resolveFn(cb)({
-        cert: chainPem.split(/[\r\n]{2,}/g)[0] + '\r\n'
-      , privkey: privkeyPem 
-      , chain: chainPem.split(/[\r\n]{2,}/g)[1] + '\r\n'
-      });
+      certs.privkey = privkeyPem;
+      resolveFn(cb)(certs);
     }, rejectFn(cb));
   };
   acme2.getAcmeUrls = function (options, cb) {
