@@ -12,10 +12,23 @@ module.exports.run = function (directoryUrl, RSA, web, chType, email, accountKey
         agree(null, tosUrl);
       }
     , setChallenge: function (hostname, token, val, cb) {
-        var pathname = hostname + acme2.acmeChallengePrefix + token;
-        console.log("Put the string '" + val + "' into a file at '" + pathname + "'");
-        console.log("echo '" + val + "' > '" + pathname + "'");
-        console.log("\nThen hit the 'any' key to continue...");
+        var pathname;
+
+        if ('http-01' === cb.type) {
+          pathname = hostname + acme2.acmeChallengePrefix + token;
+          console.log("Put the string '" + val /*keyAuthorization*/ + "' into a file at '" + pathname + "'");
+          console.log("echo '" + val /*keyAuthorization*/ + "' > '" + pathname + "'");
+          console.log("\nThen hit the 'any' key to continue...");
+        } else if ('dns-01' === cb.type) {
+          // forwards-backwards compat
+          pathname = acme2.challengePrefixes['dns-01'] + "." + hostname.replace(/^\*\./, '');
+          console.log("Put the string '" + cb.dnsAuthorization + "' into the TXT record '" + pathname + "'");
+          console.log("dig TXT " + pathname + " '" + cb.dnsAuthorization + "'");
+          console.log("\nThen hit the 'any' key to continue...");
+        } else {
+          cb(new Error("[acme-v2] unrecognized challenge type"));
+          return;
+        }
 
         function onAny() {
           console.log("'any' key was hit");
