@@ -416,7 +416,15 @@ ACME._postChallenge = function (me, options, identifier, ch) {
       if (1 === options.setChallenge.length) {
         options.setChallenge(auth).then(testChallenge).then(resolve, reject);
       } else if (2 === options.setChallenge.length) {
-        var challengeCb = function (err) {
+        options.setChallenge(auth, function (err) {
+          if(err) {
+            reject(err);
+          } else {
+            testChallenge().then(resolve, reject);
+          }
+        });
+      } else {
+        var challengeCb = function(err) {
           if(err) {
             reject(err);
           } else {
@@ -426,15 +434,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         Object.keys(auth).forEach(function (key) {
           challengeCb[key] = auth[key];
         });
-        options.setChallenge(auth, challengeCb);
-      } else {
-        options.setChallenge(identifier.value, ch.token, keyAuthorization, function(err) {
-          if(err) {
-            reject(err);
-          } else {
-            testChallenge().then(resolve, reject);
-          }
-        });
+        options.setChallenge(identifier.value, ch.token, keyAuthorization, challengeCb);
       }
     } catch(e) {
       reject(e);
