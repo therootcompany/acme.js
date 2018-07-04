@@ -1,3 +1,4 @@
+*.pem
 letsencrypt.work
 letsencrypt.logs
 letsencrypt.config

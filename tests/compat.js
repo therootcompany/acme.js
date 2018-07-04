@@ -26,7 +26,7 @@ module.exports.run = function (directoryUrl, RSA, web, chType, email, accountKey
           console.log("dig TXT " + pathname + " '" + cb.dnsAuthorization + "'");
           console.log("\nThen hit the 'any' key to continue...");
         } else {
-          cb(new Error("[acme-v2] unrecognized challenge type"));
+          cb(new Error("[acme-v2] unrecognized challenge type: " + cb.type));
           return;
         }
 
