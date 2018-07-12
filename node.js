@@ -176,6 +176,10 @@ ACME._registerAccount = function (me, options) {
         }).then(function (resp) {
           var account = resp.body;
 
+          if (2 !== Math.floor(resp.statusCode / 100)) {
+            throw new Error('account error: ' + JSON.stringify(body));
+          }
+
           me._nonce = resp.toJSON().headers['replay-nonce'];
           var location = resp.toJSON().headers.location;
           // the account id url
@@ -186,18 +190,14 @@ ACME._registerAccount = function (me, options) {
 
           /*
           {
-            id: 5925245,
-            key:
-             { kty: 'RSA',
-               n: 'tBr7m1hVaUNQjUeakznGidnrYyegVUQrsQjNrcipljI9Vxvxd0baHc3vvRZWFyFO5BlS7UDl-KHQdbdqb-MQzfP6T2sNXsOHARQ41pCGY5BYzIPRJF0nD48-CY717is-7BKISv8rf9yx5iSjvK1wZ3Ke3YIpxzK2fWRqccVxXQ92VYioxOfGObACgEUSvdoEttWV2B0Uv4Sdi6zZbk5eo2zALvyGb1P4fKVfQycGLXC41AyhHOAuTqzNCyIkiWEkbfh2lZNcYClP2epS0pHRFXYyjJN6-c8InfM3PISo4k6Qew65HZ-oqUow0tTIgNwuen9q5O6Hc73GvU-2npGJVQ',
-               e: 'AQAB' },
-            contact: [],
-            initialIp: '198.199.82.211',
-            createdAt: '2018-04-16T00:41:00.720584972Z',
+            contact: ["mailto:jon@example.com"],
+            orders: "https://some-url",
             status: 'valid'
           }
           */
           if (!account) { account = { _emptyResponse: true, key: {} }; }
+          // https://git.coolaj86.com/coolaj86/acme-v2.js/issues/8
+          if (!account.key) { account.key = {}; }
           account.key.kid = me._kid;
           return account;
         }).then(resolve, reject);
