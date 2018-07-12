@@ -629,6 +629,7 @@ ACME._getCertificate = function (me, options) {
           if (me.debug) { console.debug('acme-v2: csr submitted and cert received:'); }
           // https://github.com/certbot/certbot/issues/5721
           var certsarr = ACME.splitPemChain(ACME.formatPemChain((resp.body||'')));
+          //  cert, chain, fullchain, privkey, /*TODO, subject, altnames, issuedAt, expiresAt */
           var certs = {
             expires: order.expires
           , identifiers: order.identifiers
