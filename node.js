@@ -255,6 +255,10 @@ ACME._wait = function wait(ms) {
 };
 // https://tools.ietf.org/html/draft-ietf-acme-acme-10#section-7.5.1
 ACME._postChallenge = function (me, options, identifier, ch) {
+  var RETRY_INTERVAL = me.retryInterval || 1000;
+  var DEAUTH_INTERVAL = me.deauthWait || 10 * 1000;
+  var MAX_POLL = me.retryPoll || 8;
+  var MAX_PEND = me.retryPending || 4;
   var count = 0;
 
   var thumbprint = me.RSA.thumbprint(options.accountKeypair);
@@ -314,12 +318,12 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         me._nonce = resp.toJSON().headers['replay-nonce'];
         if (me.debug) { console.debug('deactivate challenge: resp.body:'); }
         if (me.debug) { console.debug(resp.body); }
-        return ACME._wait(10 * 1000);
+        return ACME._wait(DEAUTH_INTERVAL);
       });
     }
 
     function pollStatus() {
-      if (count >= 5) {
+      if (count >= MAX_POLL) {
         return Promise.reject(new Error("[acme-v2] stuck in bad pending/processing state"));
       }
 
@@ -330,16 +334,16 @@ ACME._postChallenge = function (me, options, identifier, ch) {
 
         if ('processing' === resp.body.status) {
           if (me.debug) { console.debug('poll: again'); }
-          return ACME._wait(1 * 1000).then(pollStatus);
+          return ACME._wait(RETRY_INTERVAL).then(pollStatus);
         }
 
         // This state should never occur
         if ('pending' === resp.body.status) {
-          if (count >= 4) {
-            return ACME._wait(1 * 1000).then(deactivate).then(testChallenge);
+          if (count >= MAX_PEND) {
+            return ACME._wait(RETRY_INTERVAL).then(deactivate).then(testChallenge);
           }
           if (me.debug) { console.debug('poll: again'); }
-          return ACME._wait(1 * 1000).then(testChallenge);
+          return ACME._wait(RETRY_INTERVAL).then(testChallenge);
         }
 
         if ('valid' === resp.body.status) {
@@ -361,13 +365,13 @@ ACME._postChallenge = function (me, options, identifier, ch) {
           console.error("[acme-v2] (E_STATE_EMPTY) empty challenge state:");
         }
         else if ('invalid' === resp.body.status) {
-          console.error("[acme-v2] (E_STATE_INVALID) invalid challenge state:");
+          console.error("[acme-v2] (E_STATE_INVALID) challenge state: '" + resp.body.status + "'");
         }
         else {
-          console.error("[acme-v2] (E_STATE_UKN) unkown challenge state:");
+          console.error("[acme-v2] (E_STATE_UKN) challenge state: '" + resp.body.status + "'");
         }
 
-        return Promise.reject(new Error("[acme-v2] challenge state error"));
+        return Promise.reject(new Error("[acme-v2] [error] unacceptable challenge state '" + resp.body.status + "'"));
       });
     }
 
@@ -393,7 +397,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         me._nonce = resp.toJSON().headers['replay-nonce'];
         if (me.debug) { console.debug('respond to challenge: resp.body:'); }
         if (me.debug) { console.debug(resp.body); }
-        return ACME._wait(1 * 1000).then(pollStatus);
+        return ACME._wait(RETRY_INTERVAL).then(pollStatus);
       });
     }
 
@@ -405,7 +409,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
       if (me.debug) {console.debug('\n[DEBUG] postChallenge\n'); }
       //if (me.debug) console.debug('\n[DEBUG] stop to fix things\n'); return;
 
-      return ACME._wait(1 * 1000).then(function () {
+      return ACME._wait(RETRY_INTERVAL).then(function () {
         if (!me.skipChallengeTest) {
           return ACME.challengeTests[ch.type](me, auth);
         }

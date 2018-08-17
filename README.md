@@ -129,8 +129,17 @@ var ACME = require('acme-v2').ACME.create({
 , userAgent: 'My custom UA String'
 , getUserAgentString: function (deps) { return 'My custom UA String'; }
 
+
   // don't try to validate challenges locally
 , skipChallengeTest: false
+  // ask if the certificate can be issued up to 10 times before failing
+, retryPoll: 8
+  // ask if the certificate has been validated up to 6 times before cancelling
+, retryPending: 4
+  // Wait 1000ms between retries
+, retryInterval: 1000
+  // Wait 10,000ms after deauthorizing a challenge before retrying
+, deauthWait: 10 * 1000
 });
 
 
