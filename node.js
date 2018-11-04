@@ -27,13 +27,16 @@ ACME.challengeTests = {
     return me._request({ url: url }).then(function (resp) {
       var err;
 
+      // TODO limit the number of bytes that are allowed to be downloaded
       if (auth.keyAuthorization === resp.body.toString('utf8').trim()) {
         return true;
       }
 
       err = new Error(
         "Error: Failed HTTP-01 Dry Run.\n"
-      + "curl '" + url + "' does not return '" + auth.keyAuthorization + "'\n"
+      + "curl '" + url + "'\n"
+      + "Expected: '" + auth.keyAuthorization + "'\n"
+      + "Got: '" + resp.body + "'\n"
       + "See https://git.coolaj86.com/coolaj86/acme-v2.js/issues/4"
       );
       err.code = 'E_FAIL_DRY_CHALLENGE';
