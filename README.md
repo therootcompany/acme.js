@@ -1,27 +1,33 @@
-| Sponsored by [ppl](https://ppl.family)
 | **acme-v2.js** ([npm](https://www.npmjs.com/package/acme-v2))
 | [acme-v2-cli.js](https://git.coolaj86.com/coolaj86/acme-v2-cli.js)
 | [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
 | [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
 |
 
-acme-v2.js
-==========
+| A [Root](https://therootcompany.com) Project
 
-A framework for building Let's Encrypt v2 (ACME draft 11) clients, successor to `le-acme-core.js`.
+# [acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js)
+
+A lightweight, **Low Dependency**&#42; framework for building
+Let's Encrypt v2 (ACME draft 12) clients, successor to `le-acme-core.js`.
 Built [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
+
+&#42; <small>although `node-forge` and `ursa` are included as `optionalDependencies`
+for backwards compatibility with older versions of node, there are no other
+dependencies except those that I wrote for this (and related) projects.</small>
 
 ## Looking for Quick 'n' Easy&trade;?
 
-If you're looking for an *ACME-enabled webserver*, try [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
 If you're looking to *build a webserver*, try [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js).
+If you're looking for an *ACME-enabled webserver*, try [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
 
 * [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
 * [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
 
 ## How to build ACME clients
 
-As this is intended to build ACME clients, there is not a simple 2-line example.
+As this is intended to build ACME clients, there is not a simple 2-line example
+(and if you want that, see [greenlock-express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js)).
 
 I'd recommend first running the example CLI client with a test domain and then investigating the files used for that example:
 
@@ -185,9 +191,17 @@ ACME.challengePrefixes['http-01']             // '/.well-known/acme-challenge'
 ACME.challengePrefixes['dns-01']              // '_acme-challenge'
 ```
 
-Changelog
----------
+# Changelog
 
+* v1.3
+  * Use node RSA keygen by default
+  * No non-optional external deps!
+* v1.2
+  * fix some API out-of-specness
+  * doc some magic numbers (status)
+  * updated deps
+* v1.1.0
+  * reduce dependencies (use lightweight @coolaj86/request instead of request)
 * v1.0.5 - cleanup logging
 * v1.0.4 - v6- compat use `promisify` from node's util or bluebird
 * v1.0.3 - documentation cleanup
@@ -219,3 +233,10 @@ Changelog
 * Mar 15, 2018 - generate account keypair
 * Mar 15, 2018 - get nonce
 * Mar 15, 2018 - get directory
+
+# Legal
+
+[acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js) |
+MPL-2.0 |
+[Terms of Use](https://therootcompany.com/legal/#terms) |
+[Privacy Policy](https://therootcompany.com/legal/#privacy)
