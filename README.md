@@ -1,16 +1,14 @@
-acme.js
-==========
+# [acme.js](https://git.coolaj86.com/coolaj86/acme.js)
 
 Free SSL for everybody. The bare essentials of the Let's Encrypt v2 (ACME) API.
 Built for [Greenlock](https://git.coolaj86.com/coolaj86/greenlock-express.js),
 [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
 
-| Sponsored by [ppl](https://ppl.family) |
+| A [Root](https://therootcompany.com) Project |
 !["Monthly Downloads"](https://img.shields.io/npm/dm/acme-v2.svg "Monthly Download Count can't be shown")
 !["Weekly Downloads"](https://img.shields.io/npm/dw/acme-v2.svg "Weekly Download Count can't be shown")
 
-Looking for Quick 'n' Easy&trade;?
-=======
+# Looking for Quick 'n' Easy&trade;?
 
 This is intented for building ACME API clients in node.js. It is **not** a high-level, fully-integrated solution.
 
@@ -23,13 +21,13 @@ You may be more interested in one of these:
 * [Greenlock for node.js](https://git.coolaj86.com/coolaj86/greenlock.js) (Automated HTTPS for Proxies, Load-Balances, Servers, CLIs)
 * [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js) (A Full-Blown WebServer)
 
-Demonstration
-=============
+# Demonstration
 
 As this is intended to *build* ACME clients, there is not a simple 2-line example.
 
-I'd recommend first trying out one of the [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js)
-examples, which are guaranteed to work and have great error checking to help you debug.
+I'd recommend first trying out one of the [greenlock-express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js)
+or [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js) examples,
+which are guaranteed to work and have great error checking to help you debug.
 
 Then I'd recommend running the example CLI client with a test domain and then investigating the files used for that example:
 
@@ -66,8 +64,7 @@ examples/https-server.js
 examples/http-server.js
 ```
 
-Let's Encrypt v2 / ACME draft 11 Support
-========
+# Let's Encrypt v2 / ACME draft 11 Support
 
 This library (acme.js) supports ACME [*draft 11*](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
 otherwise known as Let's Encrypt v2 (or v02).
@@ -86,8 +83,7 @@ https://acme-v02.api.letsencrypt.org/directory
 https://acme-staging-v02.api.letsencrypt.org/directory
 ```
 
-Install
-=======
+# Install
 
 Install via npm
 
@@ -101,8 +97,7 @@ Install via git
 npm install https://git.coolaj86.com/coolaj86/acme.js.git
 ```
 
-API
-===
+# API
 
 This API is an evolution of le-acme-core,
 but tries to provide a better mapping to the new draft 11 APIs.
@@ -193,8 +188,7 @@ ACME.challengePrefixes['http-01']             // '/.well-known/acme-challenge'
 ACME.challengePrefixes['dns-01']              // '_acme-challenge'
 ```
 
-Changelog
----------
+# Changelog
 
 * v1.0.9 - update docs
 * v1.0.8 - rename to acme.js, remove backwards compat
@@ -231,3 +225,10 @@ Changelog
 * Mar 15, 2018 - generate account keypair
 * Mar 15, 2018 - get nonce
 * Mar 15, 2018 - get directory
+
+# Legal
+
+[acme.js](https://git.coolaj86.com/coolaj86/acme.js) |
+MPL-2.0 |
+[Terms of Use](https://therootcompany.com/legal/#terms) |
+[Privacy Policy](https://therootcompany.com/legal/#privacy)
