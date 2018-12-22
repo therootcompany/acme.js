@@ -193,6 +193,8 @@ ACME.challengePrefixes['dns-01']              // '_acme-challenge'
 
 # Changelog
 
+* v1.5
+  * perform full test challenge first (even before nonce)
 * v1.3
   * Use node RSA keygen by default
   * No non-optional external deps!
