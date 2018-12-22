@@ -35,7 +35,7 @@ ACME.challengeTests = {
       }
 
       err = new Error(
-        "Error: Failed HTTP-01 Dry Run.\n"
+        "Error: Failed HTTP-01 Pre-Flight / Dry Run.\n"
       + "curl '" + url + "'\n"
       + "Expected: '" + auth.keyAuthorization + "'\n"
       + "Got: '" + resp.body + "'\n"
@@ -60,7 +60,7 @@ ACME.challengeTests = {
       }
 
       err = new Error(
-        "Error: Failed DNS-01 Dry Run.\n"
+        "Error: Failed DNS-01 Pre-Flight Dry Run.\n"
       + "dig TXT '" + hostname + "' does not return '" + auth.dnsAuthorization + "'\n"
       + "See https://git.coolaj86.com/coolaj86/acme-v2.js/issues/4"
       );
@@ -359,7 +359,9 @@ ACME._postChallenge = function (me, options, identifier, ch) {
 
   function pollStatus() {
     if (count >= MAX_POLL) {
-      return Promise.reject(new Error("[acme-v2] stuck in bad pending/processing state"));
+      return Promise.reject(new Error(
+        "[acme-v2] stuck in bad pending/processing state for '" + identifier.value + "'"
+      ));
     }
 
     count += 1;
@@ -395,17 +397,18 @@ ACME._postChallenge = function (me, options, identifier, ch) {
         return resp.body;
       }
 
+      var errmsg;
       if (!resp.body.status) {
-        console.error("[acme-v2] (E_STATE_EMPTY) empty challenge state:");
+        errmsg = "[acme-v2] (E_STATE_EMPTY) empty challenge state for '" + identifier.value + "':";
       }
       else if ('invalid' === resp.body.status) {
-        console.error("[acme-v2] (E_STATE_INVALID) challenge state: '" + resp.body.status + "'");
+        errmsg = "[acme-v2] (E_STATE_INVALID) challenge state for '" + identifier.value + "': '" + resp.body.status + "'";
       }
       else {
-        console.error("[acme-v2] (E_STATE_UKN) challenge state: '" + resp.body.status + "'");
+        errmsg = "[acme-v2] (E_STATE_UKN) challenge state for '" + identifier.value + "': '" + resp.body.status + "'";
       }
 
-      return Promise.reject(new Error("[acme-v2] [error] unacceptable challenge state '" + resp.body.status + "'"));
+      return Promise.reject(new Error(errmsg));
     });
   }
 
@@ -511,7 +514,9 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
       if ('pending' === resp.body.status) {
         return Promise.reject(new Error(
           "Did not finalize order: status 'pending'."
-        + " Best guess: You have not accepted at least one challenge for each domain." + "\n\n"
+        + " Best guess: You have not accepted at least one challenge for each domain:\n"
+        + "Requested: '" + options.domains.join(', ') + "'\n"
+        + "Validated: '" + validatedDomains.join(', ') + "'\n"
         + JSON.stringify(resp.body, null, 2)
         ));
       }
@@ -520,7 +525,9 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
         return Promise.reject(new Error(
           "Did not finalize order: status 'invalid'."
         + " Best guess: One or more of the domain challenges could not be verified"
-        + " (or the order was canceled)." + "\n\n"
+        + " (or the order was canceled).\n"
+        + "Requested: '" + options.domains.join(', ') + "'\n"
+        + "Validated: '" + validatedDomains.join(', ') + "'\n"
         + JSON.stringify(resp.body, null, 2)
         ));
       }
@@ -529,7 +536,9 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
         return Promise.reject(new Error(
           "Did not finalize order: status 'ready'."
         + " Hmmm... this state shouldn't be possible here. That was the last state."
-        + " This one should at least be 'processing'." + "\n\n"
+        + " This one should at least be 'processing'.\n"
+        + "Requested: '" + options.domains.join(', ') + "'\n"
+        + "Validated: '" + validatedDomains.join(', ') + "'\n"
         + JSON.stringify(resp.body, null, 2) + "\n\n"
         + "Please open an issue at https://git.coolaj86.com/coolaj86/acme-v2.js"
         ));
@@ -537,7 +546,9 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
 
       return Promise.reject(new Error(
         "Didn't finalize order: Unhandled status '" + resp.body.status + "'."
-      + " This is not one of the known statuses...\n\n"
+      + " This is not one of the known statuses...\n"
+      + "Requested: '" + options.domains.join(', ') + "'\n"
+      + "Validated: '" + validatedDomains.join(', ') + "'\n"
       + JSON.stringify(resp.body, null, 2) + "\n\n"
       + "Please open an issue at https://git.coolaj86.com/coolaj86/acme-v2.js"
       ));
@@ -605,9 +616,10 @@ ACME._getCertificate = function (me, options) {
         //if (me.debug) console.debug('[DEBUG] finalize:', me._finalize); return;
 
         if (!me._authorizations) {
-          console.error("[acme-v2.js] authorizations were not fetched:");
-          console.error(resp.body);
-          return Promise.reject(new Error("authorizations were not fetched"));
+          return Promise.reject(new Error(
+            "[acme-v2.js] authorizations were not fetched for '" + options.domains.join() + "':\n"
+            + JSON.stringify(resp.body)
+          ));
         }
         if (me.debug) { console.debug("[acme-v2] POST newOrder has authorizations"); }
 
@@ -633,7 +645,9 @@ ACME._getCertificate = function (me, options) {
             })[0];
 
             if (!challenge) {
-              return Promise.reject(new Error("Server didn't offer any challenge we can handle."));
+              return Promise.reject(new Error(
+                "Server didn't offer any challenge we can handle for '" + options.domains.join() + "'."
+              ));
             }
 
             return ACME._postChallenge(me, options, results.identifier, challenge);
