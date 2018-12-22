@@ -16,6 +16,9 @@ ACME.splitPemChain = function splitPemChain(str) {
   });
 };
 
+
+// http-01: GET https://example.org/.well-known/acme-challenge/{{token}} => {{keyAuth}}
+// dns-01: TXT _acme-challenge.example.org. => "{{urlSafeBase64(sha256(keyAuth))}}"
 ACME.challengePrefixes = {
   'http-01': '/.well-known/acme-challenge'
 , 'dns-01': '_acme-challenge'
@@ -255,6 +258,37 @@ ACME._wait = function wait(ms) {
     setTimeout(resolve, (ms || 1100));
   });
 };
+
+ACME._testChallenges = function (me, options) {
+  if (me.skipChallengeTest) {
+    return Promise.resolve();
+  }
+
+  return Promise.all(options.domains.map(function (identifierValue) {
+    // TODO we really only need one to pass, not all to pass
+    return Promise.all(options.challengeTypes.map(function (chType) {
+      var chToken = require('crypto').randomBytes(16).toString('hex');
+      var thumbprint = me.RSA.thumbprint(options.accountKeypair);
+      var keyAuthorization = chToken + '.' + thumbprint;
+      var auth = {
+        identifier: { type: "dns", value: identifierValue }
+      , hostname: identifierValue
+      , type: chType
+      , token: chToken
+      , thumbprint: thumbprint
+      , keyAuthorization: keyAuthorization
+      , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
+          require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
+        )
+      };
+
+      return ACME._setChallenge(me, options, auth).then(function () {
+        return ACME.challengeTests[chType](me, auth);
+      });
+    }));
+  }));
+};
+
 // https://tools.ietf.org/html/draft-ietf-acme-acme-10#section-7.5.1
 ACME._postChallenge = function (me, options, identifier, ch) {
   var RETRY_INTERVAL = me.retryInterval || 1000;
@@ -279,172 +313,157 @@ ACME._postChallenge = function (me, options, identifier, ch) {
     )
   };
 
-  return new Promise(function (resolve, reject) {
-    /*
-     POST /acme/authz/1234 HTTP/1.1
-     Host: example.com
-     Content-Type: application/jose+json
+  /*
+   POST /acme/authz/1234 HTTP/1.1
+   Host: example.com
+   Content-Type: application/jose+json
 
-     {
-       "protected": base64url({
-         "alg": "ES256",
-         "kid": "https://example.com/acme/acct/1",
-         "nonce": "xWCM9lGbIyCgue8di6ueWQ",
-         "url": "https://example.com/acme/authz/1234"
-       }),
-       "payload": base64url({
-         "status": "deactivated"
-       }),
-       "signature": "srX9Ji7Le9bjszhu...WTFdtujObzMtZcx4"
-     }
-     */
-    function deactivate() {
-      var jws = me.RSA.signJws(
-        options.accountKeypair
-      , undefined
-      , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
-      , Buffer.from(JSON.stringify({ "status": "deactivated" }))
-      );
-      me._nonce = null;
-      return me._request({
-        method: 'POST'
-      , url: ch.url
-      , headers: { 'Content-Type': 'application/jose+json' }
-      , json: jws
-      }).then(function (resp) {
-        if (me.debug) { console.debug('[acme-v2.js] deactivate:'); }
-        if (me.debug) { console.debug(resp.headers); }
-        if (me.debug) { console.debug(resp.body); }
-        if (me.debug) { console.debug(); }
+   {
+     "protected": base64url({
+       "alg": "ES256",
+       "kid": "https://example.com/acme/acct/1",
+       "nonce": "xWCM9lGbIyCgue8di6ueWQ",
+       "url": "https://example.com/acme/authz/1234"
+     }),
+     "payload": base64url({
+       "status": "deactivated"
+     }),
+     "signature": "srX9Ji7Le9bjszhu...WTFdtujObzMtZcx4"
+   }
+   */
+  function deactivate() {
+    var jws = me.RSA.signJws(
+      options.accountKeypair
+    , undefined
+    , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
+    , Buffer.from(JSON.stringify({ "status": "deactivated" }))
+    );
+    me._nonce = null;
+    return me._request({
+      method: 'POST'
+    , url: ch.url
+    , headers: { 'Content-Type': 'application/jose+json' }
+    , json: jws
+    }).then(function (resp) {
+      if (me.debug) { console.debug('[acme-v2.js] deactivate:'); }
+      if (me.debug) { console.debug(resp.headers); }
+      if (me.debug) { console.debug(resp.body); }
+      if (me.debug) { console.debug(); }
 
-        me._nonce = resp.toJSON().headers['replay-nonce'];
-        if (me.debug) { console.debug('deactivate challenge: resp.body:'); }
-        if (me.debug) { console.debug(resp.body); }
-        return ACME._wait(DEAUTH_INTERVAL);
-      });
+      me._nonce = resp.toJSON().headers['replay-nonce'];
+      if (me.debug) { console.debug('deactivate challenge: resp.body:'); }
+      if (me.debug) { console.debug(resp.body); }
+      return ACME._wait(DEAUTH_INTERVAL);
+    });
+  }
+
+  function pollStatus() {
+    if (count >= MAX_POLL) {
+      return Promise.reject(new Error("[acme-v2] stuck in bad pending/processing state"));
     }
 
-    function pollStatus() {
-      if (count >= MAX_POLL) {
-        return Promise.reject(new Error("[acme-v2] stuck in bad pending/processing state"));
+    count += 1;
+
+    if (me.debug) { console.debug('\n[DEBUG] statusChallenge\n'); }
+    return me._request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
+      if ('processing' === resp.body.status) {
+        if (me.debug) { console.debug('poll: again'); }
+        return ACME._wait(RETRY_INTERVAL).then(pollStatus);
       }
 
-      count += 1;
-
-      if (me.debug) { console.debug('\n[DEBUG] statusChallenge\n'); }
-      return me._request({ method: 'GET', url: ch.url, json: true }).then(function (resp) {
-
-        if ('processing' === resp.body.status) {
-          if (me.debug) { console.debug('poll: again'); }
-          return ACME._wait(RETRY_INTERVAL).then(pollStatus);
+      // This state should never occur
+      if ('pending' === resp.body.status) {
+        if (count >= MAX_PEND) {
+          return ACME._wait(RETRY_INTERVAL).then(deactivate).then(respondToChallenge);
         }
+        if (me.debug) { console.debug('poll: again'); }
+        return ACME._wait(RETRY_INTERVAL).then(respondToChallenge);
+      }
 
-        // This state should never occur
-        if ('pending' === resp.body.status) {
-          if (count >= MAX_PEND) {
-            return ACME._wait(RETRY_INTERVAL).then(deactivate).then(testChallenge);
+      if ('valid' === resp.body.status) {
+        if (me.debug) { console.debug('poll: valid'); }
+
+        try {
+          if (1 === options.removeChallenge.length) {
+            options.removeChallenge(auth).then(function () {}, function () {});
+          } else if (2 === options.removeChallenge.length) {
+            options.removeChallenge(auth, function (err) { return err; });
+          } else {
+            options.removeChallenge(identifier.value, ch.token, function () {});
           }
-          if (me.debug) { console.debug('poll: again'); }
-          return ACME._wait(RETRY_INTERVAL).then(testChallenge);
-        }
+        } catch(e) {}
+        return resp.body;
+      }
 
-        if ('valid' === resp.body.status) {
-          if (me.debug) { console.debug('poll: valid'); }
+      if (!resp.body.status) {
+        console.error("[acme-v2] (E_STATE_EMPTY) empty challenge state:");
+      }
+      else if ('invalid' === resp.body.status) {
+        console.error("[acme-v2] (E_STATE_INVALID) challenge state: '" + resp.body.status + "'");
+      }
+      else {
+        console.error("[acme-v2] (E_STATE_UKN) challenge state: '" + resp.body.status + "'");
+      }
 
-          try {
-            if (1 === options.removeChallenge.length) {
-              options.removeChallenge(auth).then(function () {}, function () {});
-            } else if (2 === options.removeChallenge.length) {
-              options.removeChallenge(auth, function (err) { return err; });
-            } else {
-              options.removeChallenge(identifier.value, ch.token, function () {});
-            }
-          } catch(e) {}
-          return resp.body;
-        }
+      return Promise.reject(new Error("[acme-v2] [error] unacceptable challenge state '" + resp.body.status + "'"));
+    });
+  }
 
-        if (!resp.body.status) {
-          console.error("[acme-v2] (E_STATE_EMPTY) empty challenge state:");
-        }
-        else if ('invalid' === resp.body.status) {
-          console.error("[acme-v2] (E_STATE_INVALID) challenge state: '" + resp.body.status + "'");
-        }
-        else {
-          console.error("[acme-v2] (E_STATE_UKN) challenge state: '" + resp.body.status + "'");
-        }
+  function respondToChallenge() {
+    var jws = me.RSA.signJws(
+      options.accountKeypair
+    , undefined
+    , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
+    , Buffer.from(JSON.stringify({ }))
+    );
+    me._nonce = null;
+    return me._request({
+      method: 'POST'
+    , url: ch.url
+    , headers: { 'Content-Type': 'application/jose+json' }
+    , json: jws
+    }).then(function (resp) {
+      if (me.debug) { console.debug('[acme-v2.js] challenge accepted!'); }
+      if (me.debug) { console.debug(resp.headers); }
+      if (me.debug) { console.debug(resp.body); }
+      if (me.debug) { console.debug(); }
 
-        return Promise.reject(new Error("[acme-v2] [error] unacceptable challenge state '" + resp.body.status + "'"));
-      });
-    }
+      me._nonce = resp.toJSON().headers['replay-nonce'];
+      if (me.debug) { console.debug('respond to challenge: resp.body:'); }
+      if (me.debug) { console.debug(resp.body); }
+      return ACME._wait(RETRY_INTERVAL).then(pollStatus);
+    });
+  }
 
-    function respondToChallenge() {
-      var jws = me.RSA.signJws(
-        options.accountKeypair
-      , undefined
-      , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
-      , Buffer.from(JSON.stringify({ }))
-      );
-      me._nonce = null;
-      return me._request({
-        method: 'POST'
-      , url: ch.url
-      , headers: { 'Content-Type': 'application/jose+json' }
-      , json: jws
-      }).then(function (resp) {
-        if (me.debug) { console.debug('[acme-v2.js] challenge accepted!'); }
-        if (me.debug) { console.debug(resp.headers); }
-        if (me.debug) { console.debug(resp.body); }
-        if (me.debug) { console.debug(); }
-
-        me._nonce = resp.toJSON().headers['replay-nonce'];
-        if (me.debug) { console.debug('respond to challenge: resp.body:'); }
-        if (me.debug) { console.debug(resp.body); }
-        return ACME._wait(RETRY_INTERVAL).then(pollStatus);
-      });
-    }
-
-    function testChallenge() {
-      // TODO put check dns / http checks here?
-      // http-01: GET https://example.org/.well-known/acme-challenge/{{token}} => {{keyAuth}}
-      // dns-01: TXT _acme-challenge.example.org. => "{{urlSafeBase64(sha256(keyAuth))}}"
-
-      if (me.debug) {console.debug('\n[DEBUG] postChallenge\n'); }
-      //if (me.debug) console.debug('\n[DEBUG] stop to fix things\n'); return;
-
-      return ACME._wait(RETRY_INTERVAL).then(function () {
-        if (!me.skipChallengeTest) {
-          return ACME.challengeTests[ch.type](me, auth);
-        }
-      }).then(respondToChallenge);
-    }
-
+  return ACME._setChallenge(me, options, auth).then(respondToChallenge);
+};
+ACME._setChallenge = function (me, options, auth) {
+  return new Promise(function (resolve, reject) {
     try {
       if (1 === options.setChallenge.length) {
-        options.setChallenge(auth).then(testChallenge).then(resolve, reject);
+        options.setChallenge(auth).then(resolve).catch(reject);
       } else if (2 === options.setChallenge.length) {
         options.setChallenge(auth, function (err) {
-          if(err) {
-            reject(err);
-          } else {
-            testChallenge().then(resolve, reject);
-          }
+          if(err) { reject(err); } else { resolve(); }
         });
       } else {
         var challengeCb = function(err) {
-          if(err) {
-            reject(err);
-          } else {
-            testChallenge().then(resolve, reject);
-          }
+          if(err) { reject(err); } else { resolve(); }
         };
+        // for backwards compat adding extra keys without changing params length
         Object.keys(auth).forEach(function (key) {
           challengeCb[key] = auth[key];
         });
-        options.setChallenge(identifier.value, ch.token, keyAuthorization, challengeCb);
+        options.setChallenge(auth.identifier.value, auth.token, auth.keyAuthorization, challengeCb);
       }
     } catch(e) {
       reject(e);
     }
+  }).then(function () {
+    // TODO: Do we still need this delay? Or shall we leave it to plugins to account for themselves?
+    var DELAY = me.setChallengeWait || 500;
+    if (me.debug) { console.debug('\n[DEBUG] waitChallengeDelay %s\n', DELAY); }
+    return ACME._wait(DELAY);
   });
 };
 ACME._finalizeOrder = function (me, options, validatedDomains) {
@@ -548,104 +567,106 @@ ACME._getCertificate = function (me, options) {
     }
   }
 
-  if (me.debug) { console.debug('[acme-v2] certificates.create'); }
-  return ACME._getNonce(me).then(function () {
-    var body = {
-      identifiers: options.domains.map(function (hostname) {
-        return { type: "dns" , value: hostname };
-      })
-      //, "notBefore": "2016-01-01T00:00:00Z"
-      //, "notAfter": "2016-01-08T00:00:00Z"
-    };
+  return ACME._testChallenges(me, options).then(function () {
+    if (me.debug) { console.debug('[acme-v2] certificates.create'); }
+    return ACME._getNonce(me).then(function () {
+      var body = {
+        identifiers: options.domains.map(function (hostname) {
+          return { type: "dns" , value: hostname };
+        })
+        //, "notBefore": "2016-01-01T00:00:00Z"
+        //, "notAfter": "2016-01-08T00:00:00Z"
+      };
 
-    var payload = JSON.stringify(body);
-    var jws = me.RSA.signJws(
-      options.accountKeypair
-    , undefined
-    , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newOrder, kid: me._kid }
-    , Buffer.from(payload)
-    );
+      var payload = JSON.stringify(body);
+      var jws = me.RSA.signJws(
+        options.accountKeypair
+      , undefined
+      , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newOrder, kid: me._kid }
+      , Buffer.from(payload)
+      );
 
-    if (me.debug) { console.debug('\n[DEBUG] newOrder\n'); }
-    me._nonce = null;
-    return me._request({
-      method: 'POST'
-    , url: me._directoryUrls.newOrder
-    , headers: { 'Content-Type': 'application/jose+json' }
-    , json: jws
-    }).then(function (resp) {
-      me._nonce = resp.toJSON().headers['replay-nonce'];
-      var location = resp.toJSON().headers.location;
-      var auths;
-      if (me.debug) { console.debug(location); } // the account id url
-      if (me.debug) { console.debug(resp.toJSON()); }
-      me._authorizations = resp.body.authorizations;
-      me._order = location;
-      me._finalize = resp.body.finalize;
-      //if (me.debug) console.debug('[DEBUG] finalize:', me._finalize); return;
+      if (me.debug) { console.debug('\n[DEBUG] newOrder\n'); }
+      me._nonce = null;
+      return me._request({
+        method: 'POST'
+      , url: me._directoryUrls.newOrder
+      , headers: { 'Content-Type': 'application/jose+json' }
+      , json: jws
+      }).then(function (resp) {
+        me._nonce = resp.toJSON().headers['replay-nonce'];
+        var location = resp.toJSON().headers.location;
+        var auths;
+        if (me.debug) { console.debug(location); } // the account id url
+        if (me.debug) { console.debug(resp.toJSON()); }
+        me._authorizations = resp.body.authorizations;
+        me._order = location;
+        me._finalize = resp.body.finalize;
+        //if (me.debug) console.debug('[DEBUG] finalize:', me._finalize); return;
 
-      if (!me._authorizations) {
-        console.error("[acme-v2.js] authorizations were not fetched:");
-        console.error(resp.body);
-        return Promise.reject(new Error("authorizations were not fetched"));
-      }
-      if (me.debug) { console.debug("[acme-v2] POST newOrder has authorizations"); }
+        if (!me._authorizations) {
+          console.error("[acme-v2.js] authorizations were not fetched:");
+          console.error(resp.body);
+          return Promise.reject(new Error("authorizations were not fetched"));
+        }
+        if (me.debug) { console.debug("[acme-v2] POST newOrder has authorizations"); }
 
-      //return resp.body;
-      auths = me._authorizations.slice(0);
+        //return resp.body;
+        auths = me._authorizations.slice(0);
 
-      function next() {
-        var authUrl = auths.shift();
-        if (!authUrl) { return; }
+        function next() {
+          var authUrl = auths.shift();
+          if (!authUrl) { return; }
 
-        return ACME._getChallenges(me, options, authUrl).then(function (results) {
-          // var domain = options.domains[i]; // results.identifier.value
-          var chType = options.challengeTypes.filter(function (chType) {
-            return results.challenges.some(function (ch) {
-              return ch.type === chType;
-            });
-          })[0];
+          return ACME._getChallenges(me, options, authUrl).then(function (results) {
+            // var domain = options.domains[i]; // results.identifier.value
+            var chType = options.challengeTypes.filter(function (chType) {
+              return results.challenges.some(function (ch) {
+                return ch.type === chType;
+              });
+            })[0];
 
-          var challenge = results.challenges.filter(function (ch) {
-            if (chType === ch.type) {
-              return ch;
+            var challenge = results.challenges.filter(function (ch) {
+              if (chType === ch.type) {
+                return ch;
+              }
+            })[0];
+
+            if (!challenge) {
+              return Promise.reject(new Error("Server didn't offer any challenge we can handle."));
             }
-          })[0];
 
-          if (!challenge) {
-            return Promise.reject(new Error("Server didn't offer any challenge we can handle."));
-          }
+            return ACME._postChallenge(me, options, results.identifier, challenge);
+          }).then(function () {
+            return next();
+          });
+        }
 
-          return ACME._postChallenge(me, options, results.identifier, challenge);
-        }).then(function () {
-          return next();
-        });
-      }
+        return next().then(function () {
+          if (me.debug) { console.debug("[getCertificate] next.then"); }
+          var validatedDomains = body.identifiers.map(function (ident) {
+            return ident.value;
+          });
 
-      return next().then(function () {
-        if (me.debug) { console.debug("[getCertificate] next.then"); }
-        var validatedDomains = body.identifiers.map(function (ident) {
-          return ident.value;
-        });
-
-        return ACME._finalizeOrder(me, options, validatedDomains);
-      }).then(function (order) {
-        if (me.debug) { console.debug('acme-v2: order was finalized'); }
-        return me._request({ method: 'GET', url: me._certificate, json: true }).then(function (resp) {
-          if (me.debug) { console.debug('acme-v2: csr submitted and cert received:'); }
-          // https://github.com/certbot/certbot/issues/5721
-          var certsarr = ACME.splitPemChain(ACME.formatPemChain((resp.body||'')));
-          //  cert, chain, fullchain, privkey, /*TODO, subject, altnames, issuedAt, expiresAt */
-          var certs = {
-            expires: order.expires
-          , identifiers: order.identifiers
-          //, authorizations: order.authorizations
-          , cert: certsarr.shift()
-          //, privkey: privkeyPem
-          , chain: certsarr.join('\n')
-          };
-          if (me.debug) { console.debug(certs); }
-          return certs;
+          return ACME._finalizeOrder(me, options, validatedDomains);
+        }).then(function (order) {
+          if (me.debug) { console.debug('acme-v2: order was finalized'); }
+          return me._request({ method: 'GET', url: me._certificate, json: true }).then(function (resp) {
+            if (me.debug) { console.debug('acme-v2: csr submitted and cert received:'); }
+            // https://github.com/certbot/certbot/issues/5721
+            var certsarr = ACME.splitPemChain(ACME.formatPemChain((resp.body||'')));
+            //  cert, chain, fullchain, privkey, /*TODO, subject, altnames, issuedAt, expiresAt */
+            var certs = {
+              expires: order.expires
+            , identifiers: order.identifiers
+            //, authorizations: order.authorizations
+            , cert: certsarr.shift()
+            //, privkey: privkeyPem
+            , chain: certsarr.join('\n')
+            };
+            if (me.debug) { console.debug(certs); }
+            return certs;
+          });
         });
       });
     });
