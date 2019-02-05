@@ -46,7 +46,8 @@ ACME.challengeTests = {
     });
   }
 , 'dns-01': function (me, auth) {
-    var hostname = ACME.challengePrefixes['dns-01'] + '.' + auth.hostname;
+    // remove leading *. on wildcard domains
+    var hostname = ACME.challengePrefixes['dns-01'] + '.' + auth.hostname.replace(/^\*\./, '');
     return me._dig({
       type: 'TXT'
     , name: hostname
