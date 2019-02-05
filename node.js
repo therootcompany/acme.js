@@ -637,6 +637,13 @@ ACME._getCertificate = function (me, options) {
               return results.challenges.some(function (ch) {
                 return ch.type === chType;
               });
+            }).sort(function (aType, bType) {
+              var a = results.challenges.filter(function (ch) { return ch.type === aType; })[0];
+              var b = results.challenges.filter(function (ch) { return ch.type === bType; })[0];
+
+              if ('valid' === a.status) { return 1; }
+              if ('valid' === b.status) { return -1; }
+              return 0;
             })[0];
 
             var challenge = results.challenges.filter(function (ch) {
@@ -649,6 +656,10 @@ ACME._getCertificate = function (me, options) {
               return Promise.reject(new Error(
                 "Server didn't offer any challenge we can handle for '" + options.domains.join() + "'."
               ));
+            }
+
+            if ("valid" === challenge.status) {
+              return;
             }
 
             return ACME._postChallenge(me, options, results.identifier, challenge);
