@@ -148,6 +148,7 @@ ACME._registerAccount = function (me, options) {
         , contact: contact
         };
         if (options.externalAccount) {
+          // TODO is this really done by HMAC or is it arbitrary?
           body.externalAccountBinding = me.RSA.signJws(
             options.externalAccount.secret
           , undefined
