@@ -261,6 +261,36 @@ ACME._wait = function wait(ms) {
   });
 };
 
+ACME._testChallengeOptions = function () {
+  var chToken = require('crypto').randomBytes(16).toString('hex');
+  return [
+    {
+      "type": "http-01",
+      "status": "pending",
+      "url": "https://acme-staging-v02.example.com/0",
+      "token": "test-" + chToken + "-0"
+    }
+  , {
+      "type": "dns-01",
+      "status": "pending",
+      "url": "https://acme-staging-v02.example.com/1",
+      "token": "test-" + chToken + "-1",
+      "_wildcard": true
+    }
+  , {
+      "type": "tls-sni-01",
+      "status": "pending",
+      "url": "https://acme-staging-v02.example.com/2",
+      "token": "test-" + chToken + "-2"
+    }
+  , {
+      "type": "tls-alpn-01",
+      "status": "pending",
+      "url": "https://acme-staging-v02.example.com/3",
+      "token": "test-" + chToken + "-3"
+    }
+  ];
+};
 ACME._testChallenges = function (me, options) {
   if (me.skipChallengeTest) {
     return Promise.resolve();
@@ -268,27 +298,57 @@ ACME._testChallenges = function (me, options) {
 
   return Promise.all(options.domains.map(function (identifierValue) {
     // TODO we really only need one to pass, not all to pass
-    return Promise.all(options.challengeTypes.map(function (chType) {
-      var chToken = require('crypto').randomBytes(16).toString('hex');
+    var results = ACME._testChallengeOptions();
+    if (identifierValue.inludes("*")) {
+      results = results.filter(function (ch) { return ch._wildcard; });
+    }
+    var challenge = ACME._chooseChallenge(options, results);
+    if (!challenge) {
+      // For example, wildcards require dns-01 and, if we don't have that, we have to bail
+      var enabled = options.challengeTypes.join(', ') || 'none';
+      var suitable = results.map(function (r) { return r.type; }).join(', ') || 'none';
+      return Promise.reject(new Error(
+        "None of the challenge types that you've enabled ( " + enabled + " )"
+          + " are suitable for validating the domain you've selected (" + identifierValue + ")."
+          + " You must enable one of ( " + suitable + " )."
+      ));
+    }
+    return Promise.resolve().then(function () {
       var thumbprint = me.RSA.thumbprint(options.accountKeypair);
-      var keyAuthorization = chToken + '.' + thumbprint;
+      var keyAuthorization = challenge.token + '.' + thumbprint;
       var auth = {
         identifier: { type: "dns", value: identifierValue }
       , hostname: identifierValue
-      , type: chType
-      , token: chToken
+      , type: challenge.type
+      , token: challenge.token
       , thumbprint: thumbprint
       , keyAuthorization: keyAuthorization
-      , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
+      , dnsAuthorization: ACME._toWebsafeBase64(
           require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
         )
       };
 
       return ACME._setChallenge(me, options, auth).then(function () {
-        return ACME.challengeTests[chType](me, auth);
+        return ACME.challengeTests[challenge.type](me, auth);
       });
-    }));
+    });
   }));
+};
+ACME._chooseChallenge = function(options, results) {
+  // For each of the challenge types that we support
+  var challenge;
+  options.challengesTypes.some(function (chType) {
+    // And for each of the challenge types that are allowed
+    return results.challenges.some(function (ch) {
+      // Check to see if there are any matches
+      if (ch.type === chType) {
+        challenge = ch;
+        return true;
+      }
+    });
+  });
+
+  return challenge;
 };
 
 // https://tools.ietf.org/html/draft-ietf-acme-acme-10#section-7.5.1
@@ -310,7 +370,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
   , token: ch.token
   , thumbprint: thumbprint
   , keyAuthorization: keyAuthorization
-  , dnsAuthorization: me.RSA.utils.toWebsafeBase64(
+  , dnsAuthorization: ACME._toWebsafeBase64(
       require('crypto').createHash('sha256').update(keyAuthorization).digest('base64')
     )
   };
@@ -337,7 +397,7 @@ ACME._postChallenge = function (me, options, identifier, ch) {
     var jws = me.RSA.signJws(
       options.accountKeypair
     , undefined
-    , { nonce: me._nonce, alg: 'RS256', url: ch.url, kid: me._kid }
+    , { nonce: me._nonce, alg: (me._alg || 'RS256'), url: ch.url, kid: me._kid }
     , Buffer.from(JSON.stringify({ "status": "deactivated" }))
     );
     me._nonce = null;
@@ -562,24 +622,50 @@ ACME._finalizeOrder = function (me, options, validatedDomains) {
 ACME._getCertificate = function (me, options) {
   if (me.debug) { console.debug('[acme-v2] DEBUG get cert 1'); }
 
-  if (!options.challengeTypes) {
-    if (!options.challengeType) {
-      return Promise.reject(new Error("challenge type must be specified"));
-    }
-    options.challengeTypes = [ options.challengeType ];
+  // Lot's of error checking to inform the user of mistakes
+  if (!(options.challengeTypes||[]).length) {
+    options.challengeTypes = Object.keys(options.challenges||{});
   }
+  if (!options.challengeTypes.length) {
+    options.challengeTypes = [ options.challengeType ].filter(Boolean);
+  }
+  if (options.challengeType) {
+    options.challengeTypes.sort(function (a, b) {
+      if (a === options.challengeType) { return -1; }
+      if (b === options.challengeType) { return 1; }
+      return 0;
+    });
+    if (options.challengeType !== options.challengeTypes[0]) {
+      return Promise.reject(new Error("options.challengeType is '" + options.challengeType + "',"
+        + " which does not exist in the supplied types '" + options.challengeTypes.join(',') + "'"));
+    }
+  }
+  // TODO check that all challengeTypes are represented in challenges
+  if (!options.challengeTypes.length) {
+    return Promise.reject(new Error("options.challengesTypes (string array) must be specified"
+      + " (and in order of preferential priority)."));
+  }
+  if (!(options.domains && options.domains.length)) {
+    return Promise.reject(new Error("options.domains must be a list of string domain names,"
+    + " with the first being the subject of the domain (or options.subject must specified)."));
+  }
+  if (!options.subject) { options.subject = options.domains[0]; }
 
+  // It's just fine if there's no account, we'll go get the key id we need via the public key
   if (!me._kid) {
-    if (options.accountKid) {
-      me._kid = options.accountKid;
+    if (options.accountKid || options.account.kid) {
+      me._kid = options.accountKid || options.account.kid;
     } else {
       //return Promise.reject(new Error("must include KeyID"));
+      // This is an idempotent request. It'll return the same account for the same public key.
       return ACME._registerAccount(me, options).then(function () {
+        // start back from the top
         return ACME._getCertificate(me, options);
       });
     }
   }
 
+  // Do a little dry-run / self-test
   return ACME._testChallenges(me, options).then(function () {
     if (me.debug) { console.debug('[acme-v2] certificates.create'); }
     return ACME._getNonce(me).then(function () {
@@ -592,11 +678,14 @@ ACME._getCertificate = function (me, options) {
       };
 
       var payload = JSON.stringify(body);
+      // determine the signing algorithm to use in protected header // TODO isn't that handled by the signer?
+      me._kty = (options.accountKeypair.privateKeyJwk && options.accountKeypair.privateKeyJwk.kty || 'RSA');
+      me._alg = ('EC' === me._kty) ? 'ES256' : 'RS256'; // TODO vary with bitwidth of key (if not handled)
       var jws = me.RSA.signJws(
         options.accountKeypair
       , undefined
-      , { nonce: me._nonce, alg: 'RS256', url: me._directoryUrls.newOrder, kid: me._kid }
-      , Buffer.from(payload)
+      , { nonce: me._nonce, alg: me._alg, url: me._directoryUrls.newOrder, kid: me._kid }
+      , Buffer.from(payload, 'utf8')
       );
 
       if (me.debug) { console.debug('\n[DEBUG] newOrder\n'); }
@@ -634,33 +723,18 @@ ACME._getCertificate = function (me, options) {
 
           return ACME._getChallenges(me, options, authUrl).then(function (results) {
             // var domain = options.domains[i]; // results.identifier.value
-            var chType = options.challengeTypes.filter(function (chType) {
-              return results.challenges.some(function (ch) {
-                return ch.type === chType;
-              });
-            }).sort(function (aType, bType) {
-              var a = results.challenges.filter(function (ch) { return ch.type === aType; })[0];
-              var b = results.challenges.filter(function (ch) { return ch.type === bType; })[0];
 
-              if ('valid' === a.status) { return 1; }
-              if ('valid' === b.status) { return -1; }
-              return 0;
-            })[0];
+            // If it's already valid, we're golden it regardless
+            if (results.challenges.some(function (ch) { return 'valid' === ch.status; })) {
+              return;
+            }
 
-            var challenge = results.challenges.filter(function (ch) {
-              if (chType === ch.type) {
-                return ch;
-              }
-            })[0];
-
+            var challenge = ACME._chooseChallenge(options, results);
             if (!challenge) {
+              // For example, wildcards require dns-01 and, if we don't have that, we have to bail
               return Promise.reject(new Error(
                 "Server didn't offer any challenge we can handle for '" + options.domains.join() + "'."
               ));
-            }
-
-            if ("valid" === challenge.status) {
-              return;
             }
 
             return ACME._postChallenge(me, options, results.identifier, challenge);
@@ -705,6 +779,7 @@ ACME.create = function create(me) {
   // me.debug = true;
   me.challengePrefixes = ACME.challengePrefixes;
   me.RSA = me.RSA || require('rsa-compat').RSA;
+  //me.Keypairs = me.Keypairs || require('keypairs');
   me.request = me.request || require('@coolaj86/urequest');
   me._dig = function (query) {
     // TODO use digd.js
@@ -766,4 +841,8 @@ ACME.create = function create(me) {
     }
   };
   return me;
+};
+
+ACME._toWebsafeBase64 = function (b64) {
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g,"");
 };
