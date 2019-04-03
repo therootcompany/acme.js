@@ -315,8 +315,8 @@ ACME._testChallenges = function (me, options) {
       ));
     }
     if ('dns-01' === challenge.type) {
-      // nameservers take a second to propagate
-      CHECK_DELAY = 5 * 1000;
+      // Give the nameservers a moment to propagate
+      CHECK_DELAY = 1.5 * 1000;
     }
 
     return Promise.resolve().then(function () {
