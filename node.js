@@ -324,10 +324,10 @@ ACME._testChallenges = function (me, options) {
         identifier: {
           type: "dns"
         , value: identifierValue.replace(/^\*\./, '')
-        , wildcard: identifierValue.includes('*.') || undefined
         }
       , challenges: [ challenge ]
       , expires: new Date(Date.now() + (60 * 1000)).toISOString()
+      , wildcard: identifierValue.includes('*.') || undefined
       };
       var dryrun = true;
       var auth = ACME._challengeToAuth(me, options, results, challenge, dryrun);
