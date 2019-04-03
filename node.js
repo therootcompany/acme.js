@@ -541,7 +541,7 @@ ACME._postChallenge = function (me, options, auth) {
     });
   }
 
-  return ACME._setChallenge(me, options, auth).then(respondToChallenge);
+  return respondToChallenge();
 };
 ACME._setChallenge = function (me, options, auth) {
   return new Promise(function (resolve, reject) {
