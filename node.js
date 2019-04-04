@@ -698,7 +698,7 @@ ACME._getCertificate = function (me, options) {
 
   // It's just fine if there's no account, we'll go get the key id we need via the public key
   if (!me._kid) {
-    if (options.accountKid || options.account.kid) {
+    if (options.accountKid || options.account && options.account.kid) {
       me._kid = options.accountKid || options.account.kid;
     } else {
       //return Promise.reject(new Error("must include KeyID"));
