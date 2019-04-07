@@ -378,20 +378,28 @@ ACME._challengeToAuth = function (me, options, request, challenge, dryrun) {
   // { type, status, url, token }
   // (note the duplicate status overwrites the one above, but they should be the same)
   Object.keys(challenge).forEach(function (key) {
-    auth[key] = challenge[key];
+    // don't confused devs with the id url
+    if ('url' === key) {
+      //auth.uri = challenge.url;
+    } else {
+      auth[key] = challenge[key];
+    }
   });
 
   // batteries-included helpers
-  auth.hostname = request.identifier.value;
+  auth.hostname = auth.identifier.value;
+  // because I'm not 100% clear if the wildcard identifier does or doesn't have the leading *. in all cases
+  auth.altname = ACME._untame(auth.identifier.value, auth.wildcard);
   auth.thumbprint = me.RSA.thumbprint(options.accountKeypair);
   //   keyAuthorization = token || '.' || base64url(JWK_Thumbprint(accountKey))
   auth.keyAuthorization = challenge.token + '.' + auth.thumbprint;
+  // conflicts with ACME challenge id url, if we ever decide to use it, but this just makes sense
+  // (as opposed to httpUrl or challengeUrl or uri, etc - I'd be happier to call the id url a uri)
+  auth.url = 'http://' + auth.identifier.value + ACME.challengePrefixes['http-01'] + '/' + auth.token;
   auth.dnsHost = dnsPrefix + '.' + auth.hostname.replace('*.', '');
   auth.dnsAuthorization = ACME._toWebsafeBase64(
     require('crypto').createHash('sha256').update(auth.keyAuthorization).digest('base64')
   );
-  // because I'm not 100% clear if the wildcard identifier does or doesn't have the leading *. in all cases
-  auth.altname = ACME._untame(request.identifier.value, request.wildcard);
 
   return auth;
 };
