@@ -379,11 +379,7 @@ ACME._challengeToAuth = function (me, options, request, challenge, dryrun) {
   // (note the duplicate status overwrites the one above, but they should be the same)
   Object.keys(challenge).forEach(function (key) {
     // don't confused devs with the id url
-    if ('url' === key) {
-      //auth.uri = challenge.url;
-    } else {
-      auth[key] = challenge[key];
-    }
+    auth[key] = challenge[key];
   });
 
   // batteries-included helpers
@@ -395,7 +391,7 @@ ACME._challengeToAuth = function (me, options, request, challenge, dryrun) {
   auth.keyAuthorization = challenge.token + '.' + auth.thumbprint;
   // conflicts with ACME challenge id url, if we ever decide to use it, but this just makes sense
   // (as opposed to httpUrl or challengeUrl or uri, etc - I'd be happier to call the id url a uri)
-  auth.url = 'http://' + auth.identifier.value + ACME.challengePrefixes['http-01'] + '/' + auth.token;
+  auth.challengeUrl = 'http://' + auth.identifier.value + ACME.challengePrefixes['http-01'] + '/' + auth.token;
   auth.dnsHost = dnsPrefix + '.' + auth.hostname.replace('*.', '');
   auth.dnsAuthorization = ACME._toWebsafeBase64(
     require('crypto').createHash('sha256').update(auth.keyAuthorization).digest('base64')
