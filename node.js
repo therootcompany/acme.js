@@ -389,8 +389,7 @@ ACME._challengeToAuth = function (me, options, request, challenge, dryrun) {
   auth.thumbprint = me.RSA.thumbprint(options.accountKeypair);
   //   keyAuthorization = token || '.' || base64url(JWK_Thumbprint(accountKey))
   auth.keyAuthorization = challenge.token + '.' + auth.thumbprint;
-  // conflicts with ACME challenge id url, if we ever decide to use it, but this just makes sense
-  // (as opposed to httpUrl or challengeUrl or uri, etc - I'd be happier to call the id url a uri)
+  // conflicts with ACME challenge id url is already in use, so we call this challengeUrl instead
   auth.challengeUrl = 'http://' + auth.identifier.value + ACME.challengePrefixes['http-01'] + '/' + auth.token;
   auth.dnsHost = dnsPrefix + '.' + auth.hostname.replace('*.', '');
   auth.dnsAuthorization = ACME._toWebsafeBase64(
