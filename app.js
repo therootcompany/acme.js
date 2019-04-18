@@ -41,7 +41,7 @@ function run() {
     , namedCurve: $('input[name="ec-crv"]:checked').value
     , modulusLength: $('input[name="rsa-len"]:checked').value
     };
-    console.log(opts);
+    console.log('opts', opts);
     Keypairs.generate(opts).then(function (results) {
       $('.js-jwk').innerText = JSON.stringify(results, null, 2);
       //
