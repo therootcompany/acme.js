@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <title>BlueCrypt</title>
+  </head>
+  <body>
+    <h1>BlueCrypt for the Browser</h1>
+    <p>BlueCrypt is universal crypto for the browser. It's lightweight, fast, and based on native webcrypto.
+    This means it's easy-to-use crypto in kilobytes, not megabytes.</p>
+
+    <h2>Keypair Generation</h2>
+    <form class="js-keygen">
+      <p>Key Type:</p>
+      <div>
+        <input type="radio" id="-ktyEC"
+         name="kty" value="EC" checked>
+        <label for="-ktyEC">ECDSA</label>
+        <input type="radio" id="-ktyRSA"
+         name="kty" value="RSA">
+        <label for="-ktyRSA">RSA</label>
+      </div>
+      <div class="js-ec-opts">
+        <p>EC Options:</p>
+        <input type="radio" id="-crv2"
+         name="ec-crv" value="P-256" checked>
+        <label for="-crv2">P-256</label>
+        <input type="radio" id="-crv3"
+         name="ec-crv" value="P-384">
+        <label for="-crv3">P-384</label>
+        <!-- input type="radio" id="-crv5"
+         name="ec-crv" value="P-521">
+        <label for="-crv5">P-521</label -->
+      </div>
+      <div class="js-rsa-opts" hidden>
+        <p>RSA Options:</p>
+        <input type="radio" id="-modlen2"
+         name="rsa-len" value="2048" checked>
+        <label for="-modlen2">2048</label>
+        <input type="radio" id="-modlen3"
+         name="rsa-len" value="3072">
+        <label for="-modlen3">3072</label>
+        <input type="radio" id="-modlen5"
+         name="rsa-len" value="4096">
+        <label for="-modlen5">4096</label>
+      </div>
+      <button class="js-generate" hidden>Generate</button>
+    <form>
+
+    <div class="js-loading" hidden>Loading</div>
+    <pre><code class="js-jwk">&nbsp;</code></pre>
+
+    <script src="./lib/keypairs.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
