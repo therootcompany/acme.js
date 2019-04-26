@@ -43,10 +43,29 @@
         <label for="-modlen5">4096</label>
       </div>
       <button class="js-generate" hidden>Generate</button>
-    <form>
+    </form>
+
+    <h2>ACME Account</h2>
+    <form class="js-acme-account">
+      <label for="-acmeEmail">Email:</label>
+      <input class="js-email" type="email" id="-acmeEmail">
+      <button class="js-create-account" hidden>Create Account</button>
+    </form>
 
     <div class="js-loading" hidden>Loading</div>
-    <pre><code class="js-jwk">&nbsp;</code></pre>
+
+    <details class="js-toc-jwk" hidden>
+      <summary>JWK Keypair</summary>
+      <pre><code class="js-jwk">&nbsp;</code></pre>
+    </details>
+    <details class="js-toc-acme-account-request" hidden>
+      <summary>ACME Account Request</summary>
+      <pre><code class="js-acme-account-request">&nbsp;</code></pre>
+    </details>
+    <details class="js-toc-acme-account-response" hidden>
+      <summary>ACME Account Response</summary>
+      <pre><code class="js-acme-account-response">&nbsp;</code></pre>
+    </details>
 
     <script src="./lib/ecdsa.js"></script>
     <script src="./lib/rsa.js"></script>

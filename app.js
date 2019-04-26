@@ -49,10 +49,19 @@ function run() {
       $('.js-jwk').hidden = false;
       $$('input').map(function ($el) { $el.disabled = false; });
       $$('button').map(function ($el) { $el.disabled = false; });
+      $('.js-toc-jwk').hidden = false;
     });
   });
 
+  $('form.js-acme-account').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    $('.js-loading').hidden = false;
+    ACME.accounts.create
+  });
+
   $('.js-generate').hidden = false;
+  $('.js-create-account').hidden = false;
 }
 
 window.addEventListener('load', run);
