@@ -59,7 +59,7 @@
           })
         }
 
-        $('.js-der').innerText = JSON.stringify(der, null, 2);
+        $('.js-der').innerText = der;
         $('.js-toc-der').hidden = false;
         $('.js-jwk').innerText = JSON.stringify(results, null, 2);
         $('.js-loading').hidden = true;
