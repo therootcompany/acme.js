@@ -43,6 +43,9 @@ function run() {
     };
     console.log('opts', opts);
     Keypairs.generate(opts).then(function (results) {
+      var der = x509.packPkcs8(results.private);
+      console.log(der)
+      // Pem.encode(x509.packPkcs8(privateJwk))
       $('.js-jwk').innerText = JSON.stringify(results, null, 2);
       //
       $('.js-loading').hidden = true;
