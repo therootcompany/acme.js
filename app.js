@@ -45,17 +45,23 @@
       };
       console.log('opts', opts);
       Keypairs.generate(opts).then(function (results) {
+        var der;
         if (opts.kty == 'EC') {
-          var der = x509.packPkcs8(results.private);
+          der = x509.packPkcs8(results.private);
           var pem = Eckles.export({ jwk: results.private })
-          $('.js-der').innerText = JSON.stringify(der, null, 2);
           $('.js-input-pem').innerText = pem;
-          $('.js-toc-der').hidden = false;
           $('.js-toc-pem').hidden = false;
+        } else {
+          der = x509.packPkcs8(results.private);
+          var pem = Rasha.pack({ jwk: results.private }).then(function (pem) {
+            $('.js-input-pem').innerText = pem;
+            $('.js-toc-pem').hidden = false;
+          })
         }
 
+        $('.js-der').innerText = JSON.stringify(der, null, 2);
+        $('.js-toc-der').hidden = false;
         $('.js-jwk').innerText = JSON.stringify(results, null, 2);
-        //
         $('.js-loading').hidden = true;
         $('.js-jwk').hidden = false;
         $$('input').map(function ($el) { $el.disabled = false; });
