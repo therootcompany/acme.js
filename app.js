@@ -34,8 +34,10 @@
       ev.stopPropagation();
       $('.js-loading').hidden = false;
       $('.js-jwk').hidden = true;
-      $('.js-toc-der').hidden = true;
-      $('.js-toc-pem').hidden = true;
+      $('.js-toc-der-public').hidden = true;
+      $('.js-toc-pem-public').hidden = true;
+      $('.js-toc-der-private').hidden = true;
+      $('.js-toc-pem-private').hidden = true;
       $$('input').map(function ($el) { $el.disabled = true; });
       $$('button').map(function ($el) { $el.disabled = true; });
       var opts = {
@@ -45,22 +47,33 @@
       };
       console.log('opts', opts);
       Keypairs.generate(opts).then(function (results) {
-        var der;
+        var der_public, der_private;
         if (opts.kty == 'EC') {
-          der = x509.packPkcs8(results.private);
-          var pem = Eckles.export({ jwk: results.private })
-          $('.js-input-pem').innerText = pem;
-          $('.js-toc-pem').hidden = false;
+          der_public = x509.packSpki(results.public);
+          der_private = x509.packPkcs8(results.private);
+          var pem_private = Eckles.export({ jwk: results.private })
+          var pem_public = Eckles.export({ jwk: results.public, public: true })
+          $('.js-input-pem-public').innerText = pem_public;
+          $('.js-toc-pem-public').hidden = false;
+          $('.js-input-pem-private').innerText = pem_private;
+          $('.js-toc-pem-private').hidden = false;
         } else {
-          der = x509.packPkcs8(results.private);
-          var pem = Rasha.pack({ jwk: results.private }).then(function (pem) {
-            $('.js-input-pem').innerText = pem;
-            $('.js-toc-pem').hidden = false;
+          der_private = x509.packPkcs8(results.private);
+          der_public = x509.packPkcs8(results.public);
+          Rasha.pack({ jwk: results.private }).then(function (pem) {
+            $('.js-input-pem-private').innerText = pem;
+            $('.js-toc-pem-private').hidden = false;
+          })
+          Rasha.pack({ jwk: results.public }).then(function (pem) {
+            $('.js-input-pem-public').innerText = pem;
+            $('.js-toc-pem-public').hidden = false;
           })
         }
 
-        $('.js-der').innerText = der;
-        $('.js-toc-der').hidden = false;
+        $('.js-der-public').innerText = der_public;
+        $('.js-toc-der-public').hidden = false;
+        $('.js-der-private').innerText = der_private;
+        $('.js-toc-der-private').hidden = false;
         $('.js-jwk').innerText = JSON.stringify(results, null, 2);
         $('.js-loading').hidden = true;
         $('.js-jwk').hidden = false;

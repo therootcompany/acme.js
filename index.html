@@ -7,7 +7,7 @@
         height: 10em;
       }
       /* need to word wrap the binary no space der */
-      .js-der{
+      .js-der-public, .js-der-private{
         white-space: pre-wrap;      /* CSS3 */   
         white-space: -moz-pre-wrap; /* Firefox */    
         white-space: -pre-wrap;     /* Opera <7 */   
@@ -72,13 +72,21 @@
       <summary>JWK Keypair</summary>
       <pre><code class="js-jwk">&nbsp;</code></pre>
     </details>
-    <details class="js-toc-der" hidden>
-      <summary>DER Binary</summary>
-      <pre><code class="js-der">&nbsp;</code></pre>
+    <details class="js-toc-der-private" hidden>
+      <summary>DER Private Binary</summary>
+      <pre><code class="js-der-private">&nbsp;</code></pre>
     </details>
-    <details class="js-toc-pem" hidden>
-      <summary>PEM (base64-encoded DER)</summary>
-      <textarea class="js-input-pem" readonly></textarea>
+    <details class="js-toc-der-public" hidden>
+      <summary>DER Public Binary</summary>
+      <pre><code class="js-der-public">&nbsp;</code></pre>
+    </details>
+    <details class="js-toc-pem-private" hidden>
+      <summary>PEM Private (base64-encoded DER)</summary>
+      <pre><code  class="js-input-pem-private" ></code></pre>
+    </details>
+    <details class="js-toc-pem-public" hidden>
+      <summary>PEM Public (base64-encoded DER)</summary>
+      <pre><code  class="js-input-pem-public" ></code></pre>
     </details>
     <details class="js-toc-acme-account-request" hidden>
       <summary>ACME Account Request</summary>
