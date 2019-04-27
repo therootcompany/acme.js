@@ -8,10 +8,10 @@
       }
       /* need to word wrap the binary no space der */
       .js-der-public, .js-der-private{
-        white-space: pre-wrap;      /* CSS3 */   
-        white-space: -moz-pre-wrap; /* Firefox */    
-        white-space: -pre-wrap;     /* Opera <7 */   
-        white-space: -o-pre-wrap;   /* Opera 7 */    
+        white-space: pre-wrap;      /* CSS3 */
+        white-space: -moz-pre-wrap; /* Firefox */
+        white-space: -pre-wrap;     /* Opera <7 */
+        white-space: -o-pre-wrap;   /* Opera 7 */
         word-wrap: break-word;      /* IE */
       }
     </style>
@@ -80,13 +80,25 @@
       <summary>DER Public Binary</summary>
       <pre><code class="js-der-public">&nbsp;</code></pre>
     </details>
-    <details class="js-toc-pem-private" hidden>
-      <summary>PEM Private (base64-encoded DER)</summary>
-      <pre><code  class="js-input-pem-private" ></code></pre>
+    <details class="js-toc-pem js-toc-pem-pkcs1-private" hidden>
+      <summary>PEM Private (base64-encoded PKCS1 DER)</summary>
+      <pre><code  class="js-input-pem-pkcs1-private" ></code></pre>
     </details>
-    <details class="js-toc-pem-public" hidden>
-      <summary>PEM Public (base64-encoded DER)</summary>
-      <pre><code  class="js-input-pem-public" ></code></pre>
+    <details class="js-toc-pem js-toc-pem-sec1-private" hidden>
+      <summary>PEM Private (base64-encoded SEC1 DER)</summary>
+      <pre><code  class="js-input-pem-sec1-private" ></code></pre>
+    </details>
+    <details class="js-toc-pem js-toc-pem-pkcs8-private" hidden>
+      <summary>PEM Private (base64-encoded PKCS8 DER)</summary>
+      <pre><code  class="js-input-pem-pkcs8-private" ></code></pre>
+    </details>
+    <details class="js-toc-pem js-toc-pem-pkcs1-public" hidden>
+      <summary>PEM Public (base64-encoded PKCS1 DER)</summary>
+      <pre><code  class="js-input-pem-pkcs1-public" ></code></pre>
+    </details>
+    <details class="js-toc-pem js-toc-pem-spki-public" hidden>
+      <summary>PEM Public (base64-encoded SPKI/PKIX DER)</summary>
+      <pre><code  class="js-input-pem-spki-public" ></code></pre>
     </details>
     <details class="js-toc-acme-account-request" hidden>
       <summary>ACME Account Request</summary>
@@ -97,9 +109,9 @@
       <pre><code class="js-acme-account-response">&nbsp;</code></pre>
     </details>
     <script src="./lib/bluecrypt-encoding.js"></script>
-    <script src="./lib/ecdsa.js"></script>
     <script src="./lib/asn1-packer.js"></script>
     <script src="./lib/x509.js"></script>
+    <script src="./lib/ecdsa.js"></script>
     <script src="./lib/rsa.js"></script>
     <script src="./lib/keypairs.js"></script>
     <script src="./lib/acme.js"></script>

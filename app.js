@@ -2,6 +2,9 @@
   'use strict';
 
   var Keypairs = window.Keypairs;
+  var Rasha = window.Rasha;
+  var Eckles = window.Eckles;
+  var x509 = window.x509;
 
   function $(sel) {
     return document.querySelector(sel);
@@ -35,9 +38,10 @@
       $('.js-loading').hidden = false;
       $('.js-jwk').hidden = true;
       $('.js-toc-der-public').hidden = true;
-      $('.js-toc-pem-public').hidden = true;
       $('.js-toc-der-private').hidden = true;
-      $('.js-toc-pem-private').hidden = true;
+      $$('.js-toc-pem').forEach(function ($el) {
+        $el.hidden = true;
+      });
       $$('input').map(function ($el) { $el.disabled = true; });
       $$('button').map(function ($el) { $el.disabled = true; });
       var opts = {
@@ -47,32 +51,47 @@
       };
       console.log('opts', opts);
       Keypairs.generate(opts).then(function (results) {
-        var der_public, der_private;
-        if (opts.kty == 'EC') {
-          der_public = x509.packSpki(results.public);
-          der_private = x509.packPkcs8(results.private);
-          var pem_private = Eckles.export({ jwk: results.private })
-          var pem_public = Eckles.export({ jwk: results.public, public: true })
-          $('.js-input-pem-public').innerText = pem_public;
-          $('.js-toc-pem-public').hidden = false;
-          $('.js-input-pem-private').innerText = pem_private;
-          $('.js-toc-pem-private').hidden = false;
+        var pubDer;
+        var privDer;
+        if (/EC/i.test(opts.kty)) {
+          privDer = x509.packPkcs8(results.private);
+          pubDer = x509.packSpki(results.public);
+          Eckles.export({ jwk: results.private, format: 'sec1' }).then(function (pem) {
+            $('.js-input-pem-sec1-private').innerText = pem;
+            $('.js-toc-pem-sec1-private').hidden = false;
+          });
+          Eckles.export({ jwk: results.private, format: 'pkcs8' }).then(function (pem) {
+            $('.js-input-pem-pkcs8-private').innerText = pem;
+            $('.js-toc-pem-pkcs8-private').hidden = false;
+          });
+          Eckles.export({ jwk: results.public, public: true }).then(function (pem) {
+            $('.js-input-pem-spki-public').innerText = pem;
+            $('.js-toc-pem-spki-public').hidden = false;
+          });
         } else {
-          der_private = x509.packPkcs8(results.private);
-          der_public = x509.packPkcs8(results.public);
-          Rasha.pack({ jwk: results.private }).then(function (pem) {
-            $('.js-input-pem-private').innerText = pem;
-            $('.js-toc-pem-private').hidden = false;
-          })
-          Rasha.pack({ jwk: results.public }).then(function (pem) {
-            $('.js-input-pem-public').innerText = pem;
-            $('.js-toc-pem-public').hidden = false;
-          })
+          privDer = x509.packPkcs8(results.private);
+          pubDer = x509.packSpki(results.public);
+          Rasha.export({ jwk: results.private, format: 'pkcs1' }).then(function (pem) {
+            $('.js-input-pem-pkcs1-private').innerText = pem;
+            $('.js-toc-pem-pkcs1-private').hidden = false;
+          });
+          Rasha.export({ jwk: results.private, format: 'pkcs8' }).then(function (pem) {
+            $('.js-input-pem-pkcs8-private').innerText = pem;
+            $('.js-toc-pem-pkcs8-private').hidden = false;
+          });
+          Rasha.export({ jwk: results.public, format: 'pkcs1' }).then(function (pem) {
+            $('.js-input-pem-pkcs1-public').innerText = pem;
+            $('.js-toc-pem-pkcs1-public').hidden = false;
+          });
+          Rasha.export({ jwk: results.public, format: 'spki' }).then(function (pem) {
+            $('.js-input-pem-spki-public').innerText = pem;
+            $('.js-toc-pem-spki-public').hidden = false;
+          });
         }
 
-        $('.js-der-public').innerText = der_public;
+        $('.js-der-public').innerText = pubDer;
         $('.js-toc-der-public').hidden = false;
-        $('.js-der-private').innerText = der_private;
+        $('.js-der-private').innerText = privDer;
         $('.js-toc-der-private').hidden = false;
         $('.js-jwk').innerText = JSON.stringify(results, null, 2);
         $('.js-loading').hidden = true;
@@ -87,7 +106,7 @@
       ev.preventDefault();
       ev.stopPropagation();
       $('.js-loading').hidden = false;
-      ACME.accounts.create
+      //ACME.accounts.create
     });
 
     $('.js-generate').hidden = false;
