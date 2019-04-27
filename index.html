@@ -1,6 +1,12 @@
 <html>
   <head>
     <title>BlueCrypt</title>
+    <style>
+      textarea {
+        width: 42em;
+        height: 10em;
+      }
+    </style>
   </head>
   <body>
     <h1>BlueCrypt for the Browser</h1>
@@ -57,6 +63,14 @@
     <details class="js-toc-jwk" hidden>
       <summary>JWK Keypair</summary>
       <pre><code class="js-jwk">&nbsp;</code></pre>
+    </details>
+    <details class="js-toc-der" hidden>
+      <summary>DER Binary</summary>
+      <pre><code class="js-der">&nbsp;</code></pre>
+    </details>
+    <details class="js-toc-pem" hidden>
+      <summary>PEM (base64-encoded DER)</summary>
+      <textarea class="js-input-pem" readonly></textarea>
     </details>
     <details class="js-toc-acme-account-request" hidden>
       <summary>ACME Account Request</summary>

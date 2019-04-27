@@ -44,15 +44,19 @@ function run() {
     console.log('opts', opts);
     Keypairs.generate(opts).then(function (results) {
       var der = x509.packPkcs8(results.private);
-      console.log(der)
-      // Pem.encode(x509.packPkcs8(privateJwk))
+      var pem = Eckles.export({jwk:results.private})
+ 
       $('.js-jwk').innerText = JSON.stringify(results, null, 2);
+      $('.js-der').innerText = JSON.stringify(der, null, 2);
+      $('.js-input-pem').innerText = pem;
       //
       $('.js-loading').hidden = true;
       $('.js-jwk').hidden = false;
       $$('input').map(function ($el) { $el.disabled = false; });
       $$('button').map(function ($el) { $el.disabled = false; });
       $('.js-toc-jwk').hidden = false;
+      $('.js-toc-der').hidden = false;
+      $('.js-toc-pem').hidden = false;
     });
   });
 
