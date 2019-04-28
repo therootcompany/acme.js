@@ -5,6 +5,7 @@
   var Rasha = window.Rasha;
   var Eckles = window.Eckles;
   var x509 = window.x509;
+  var ACME = window.ACME;
 
   function $(sel) {
     return document.querySelector(sel);
@@ -106,7 +107,22 @@
       ev.preventDefault();
       ev.stopPropagation();
       $('.js-loading').hidden = false;
-      //ACME.accounts.create
+      var acme = ACME.create({
+        Keypairs: Keypairs
+      });
+      acme.init('https://acme-staging-v02.api.letsencrypt.org/directory').then(function (result) {
+        console.log('acme result', result);
+        return acme.accounts.create({
+          email: $('.js-email').innerText
+        , agreeToTerms: function (tos) {
+            console.log("TODO checkbox for agree to terms");
+            return tos;
+          }
+        , accountKeypair: {
+            privateKeyJwk: JSON.parse($('.js-jwk').innerText).private
+          }
+        });
+      });
     });
 
     $('.js-generate').hidden = false;
