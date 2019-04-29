@@ -163,6 +163,7 @@
         }).catch(function (err) {
           console.error("A bad thing happened:");
           console.error(err);
+          window.alert(err.message || JSON.stringify(err, null, 2));
         });
       });
     });
