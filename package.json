@@ -1,0 +1,36 @@
+{
+  "name": "bluecrypt-keypairs",
+  "version": "0.1.0",
+  "description": "Zero-Dependency Native Browser support for ECDSA P-256 and P-384, and RSA 2048/3072/4096 written in VanillaJS",
+  "main": "server.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "node server.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.coolaj86.com/coolaj86/bluecrypt-keypairs.js.git"
+  },
+  "keywords": [
+    "browser",
+    "EC",
+    "RSA",
+    "ECDSA",
+    "P-256",
+    "P-384",
+    "bluecrypt",
+    "keypairs",
+    "greenlock",
+    "VanillaJS"
+  ],
+  "author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "dig.js": "^1.3.9",
+    "dns-suite": "^1.2.12",
+    "express": "^4.16.4"
+  }
+}
