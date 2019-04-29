@@ -1,3 +1,4 @@
+/*global Promise*/
 (function () {
   'use strict';
 
@@ -47,8 +48,8 @@
       $$('button').map(function ($el) { $el.disabled = true; });
       var opts = {
         kty: $('input[name="kty"]:checked').value
-        , namedCurve: $('input[name="ec-crv"]:checked').value
-        , modulusLength: $('input[name="rsa-len"]:checked').value
+      , namedCurve: $('input[name="ec-crv"]:checked').value
+      , modulusLength: $('input[name="rsa-len"]:checked').value
       };
       console.log('opts', opts);
       Keypairs.generate(opts).then(function (results) {
@@ -112,15 +113,56 @@
       });
       acme.init('https://acme-staging-v02.api.letsencrypt.org/directory').then(function (result) {
         console.log('acme result', result);
+        var privJwk = JSON.parse($('.js-jwk').innerText).private;
+        var email = $('.js-email').innerText;
+        function checkTos(tos) {
+          console.log("TODO checkbox for agree to terms");
+          return tos;
+        }
         return acme.accounts.create({
-          email: $('.js-email').innerText
-        , agreeToTerms: function (tos) {
-            console.log("TODO checkbox for agree to terms");
-            return tos;
-          }
-        , accountKeypair: {
-            privateKeyJwk: JSON.parse($('.js-jwk').innerText).private
-          }
+          email: email
+        , agreeToTerms: checkTos
+        , accountKeypair: { privateKeyJwk: privJwk }
+        }).then(function (account) {
+          console.log("account created result:", account);
+          return Keypairs.generate({
+            kty: 'RSA'
+          , modulusLength: 2048
+          }).then(function (pair) {
+            console.log('domain keypair:', pair);
+            var domains = ($('.js-domains').innerText||'example.com').split(/[, ]+/g);
+            return acme.certificates.create({
+              accountKeypair: { privateKeyJwk: privJwk }
+            , account: account
+            , domainKeypair: { privateKeyJwk: pair.private }
+            , email: email
+            , domains: domains
+            , agreeToTerms: checkTos
+            , challenges: {
+                'dns-01': {
+                  set: function (opts) {
+                    console.log('dns-01 set challenge:');
+                    console.log(JSON.stringify(opts, null, 2));
+                    return new Promise(function (resolve) {
+                      while (!window.confirm("Did you set the challenge?")) {}
+                      resolve();
+                    });
+                  }
+                , remove: function (opts) {
+                    console.log('dns-01 remove challenge:');
+                    console.log(JSON.stringify(opts, null, 2));
+                    return new Promise(function (resolve) {
+                      while (!window.confirm("Did you delete the challenge?")) {}
+                      resolve();
+                    });
+                  }
+                }
+              }
+            });
+          });
+        }).catch(function (err) {
+          console.error("A bad thing happened:");
+          console.error(err);
         });
       });
     });
