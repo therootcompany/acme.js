@@ -1,4 +1,3 @@
-/*global Promise*/
 (function () {
   'use strict';
 
@@ -6,7 +5,6 @@
   var Rasha = window.Rasha;
   var Eckles = window.Eckles;
   var x509 = window.x509;
-  var ACME = window.ACME;
 
   function $(sel) {
     return document.querySelector(sel);
@@ -104,69 +102,6 @@
       });
     });
 
-    $('form.js-acme-account').addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      $('.js-loading').hidden = false;
-      var acme = ACME.create({
-        Keypairs: Keypairs
-      });
-      acme.init('https://acme-staging-v02.api.letsencrypt.org/directory').then(function (result) {
-        console.log('acme result', result);
-        var privJwk = JSON.parse($('.js-jwk').innerText).private;
-        var email = $('.js-email').innerText;
-        function checkTos(tos) {
-          console.log("TODO checkbox for agree to terms");
-          return tos;
-        }
-        return acme.accounts.create({
-          email: email
-        , agreeToTerms: checkTos
-        , accountKeypair: { privateKeyJwk: privJwk }
-        }).then(function (account) {
-          console.log("account created result:", account);
-          return Keypairs.generate({
-            kty: 'RSA'
-          , modulusLength: 2048
-          }).then(function (pair) {
-            console.log('domain keypair:', pair);
-            var domains = ($('.js-domains').innerText||'example.com').split(/[, ]+/g);
-            return acme.certificates.create({
-              accountKeypair: { privateKeyJwk: privJwk }
-            , account: account
-            , domainKeypair: { privateKeyJwk: pair.private }
-            , email: email
-            , domains: domains
-            , agreeToTerms: checkTos
-            , challenges: {
-                'dns-01': {
-                  set: function (opts) {
-                    console.log('dns-01 set challenge:');
-                    console.log(JSON.stringify(opts, null, 2));
-                    return new Promise(function (resolve) {
-                      while (!window.confirm("Did you set the challenge?")) {}
-                      resolve();
-                    });
-                  }
-                , remove: function (opts) {
-                    console.log('dns-01 remove challenge:');
-                    console.log(JSON.stringify(opts, null, 2));
-                    return new Promise(function (resolve) {
-                      while (!window.confirm("Did you delete the challenge?")) {}
-                      resolve();
-                    });
-                  }
-                }
-              }
-            });
-          });
-        }).catch(function (err) {
-          console.error("A bad thing happened:");
-          console.error(err);
-          window.alert(err.message || JSON.stringify(err, null, 2));
-        });
-      });
-    });
 
     $('.js-generate').hidden = false;
     $('.js-create-account').hidden = false;

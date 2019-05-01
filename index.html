@@ -59,17 +59,6 @@
       <button class="js-generate" hidden>Generate</button>
     </form>
 
-    <h2>ACME Account</h2>
-    <form class="js-acme-account">
-      <label for="-acmeEmail">Email:</label>
-      <input class="js-email" type="email" id="-acmeEmail">
-      <br>
-      <label for="-acmeDomains">Domains:</label>
-      <input class="js-domains" type="text" id="-acmeDomains">
-      <br>
-      <button class="js-create-account" hidden>Create Account</button>
-    </form>
-
     <div class="js-loading" hidden>Loading</div>
 
     <details class="js-toc-jwk" hidden>
@@ -104,14 +93,7 @@
       <summary>PEM Public (base64-encoded SPKI/PKIX DER)</summary>
       <pre><code  class="js-input-pem-spki-public" ></code></pre>
     </details>
-    <details class="js-toc-acme-account-request" hidden>
-      <summary>ACME Account Request</summary>
-      <pre><code class="js-acme-account-request">&nbsp;</code></pre>
-    </details>
-    <details class="js-toc-acme-account-response" hidden>
-      <summary>ACME Account Response</summary>
-      <pre><code class="js-acme-account-response">&nbsp;</code></pre>
-    </details>
+
     <script src="./lib/bluecrypt-encoding.js"></script>
     <script src="./lib/asn1-packer.js"></script>
     <script src="./lib/x509.js"></script>
