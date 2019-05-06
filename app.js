@@ -1,3 +1,4 @@
+/*global Promise*/
 (function () {
   'use strict';
 
@@ -5,12 +6,20 @@
   var Rasha = window.Rasha;
   var Eckles = window.Eckles;
   var x509 = window.x509;
+  var CSR = window.CSR;
+  var ACME = window.ACME;
+  var accountStuff = {};
 
   function $(sel) {
     return document.querySelector(sel);
   }
   function $$(sel) {
     return Array.prototype.slice.call(document.querySelectorAll(sel));
+  }
+
+  function checkTos(tos) {
+    console.log("TODO checkbox for agree to terms");
+    return tos;
   }
 
   function run() {
@@ -49,8 +58,10 @@
       , namedCurve: $('input[name="ec-crv"]:checked').value
       , modulusLength: $('input[name="rsa-len"]:checked').value
       };
+      var then = Date.now();
       console.log('opts', opts);
       Keypairs.generate(opts).then(function (results) {
+        console.log("Key generation time:", (Date.now() - then) + "ms");
         var pubDer;
         var privDer;
         if (/EC/i.test(opts.kty)) {
@@ -99,12 +110,13 @@
         $$('input').map(function ($el) { $el.disabled = false; });
         $$('button').map(function ($el) { $el.disabled = false; });
         $('.js-toc-jwk').hidden = false;
+
+        $('.js-create-account').hidden = false;
+        $('.js-create-csr').hidden = false;
       });
     });
 
-
     $('.js-generate').hidden = false;
-    $('.js-create-account').hidden = false;
   }
 
   window.addEventListener('load', run);

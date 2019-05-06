@@ -34,27 +34,21 @@
       </div>
       <div class="js-ec-opts">
         <p>EC Options:</p>
-        <input type="radio" id="-crv2"
-         name="ec-crv" value="P-256" checked>
-        <label for="-crv2">P-256</label>
-        <input type="radio" id="-crv3"
-         name="ec-crv" value="P-384">
-        <label for="-crv3">P-384</label>
-        <!-- input type="radio" id="-crv5"
-         name="ec-crv" value="P-521">
-        <label for="-crv5">P-521</label -->
+        <label for="-crv2"><input type="radio" id="-crv2"
+         name="ec-crv" value="P-256" checked>P-256</label>
+        <label for="-crv3"><input type="radio" id="-crv3"
+         name="ec-crv" value="P-384">P-384</label>
+        <!-- label for="-crv5"><input type="radio" id="-crv5"
+         name="ec-crv" value="P-521">P-521</label -->
       </div>
       <div class="js-rsa-opts" hidden>
         <p>RSA Options:</p>
-        <input type="radio" id="-modlen2"
-         name="rsa-len" value="2048" checked>
-        <label for="-modlen2">2048</label>
-        <input type="radio" id="-modlen3"
-         name="rsa-len" value="3072">
-        <label for="-modlen3">3072</label>
-        <input type="radio" id="-modlen5"
-         name="rsa-len" value="4096">
-        <label for="-modlen5">4096</label>
+        <label for="-modlen2"><input type="radio" id="-modlen2"
+         name="rsa-len" value="2048" checked>2048</label>
+        <label for="-modlen3"><input type="radio" id="-modlen3"
+         name="rsa-len" value="3072">3072</label>
+        <label for="-modlen5"><input type="radio" id="-modlen5"
+         name="rsa-len" value="4096">4096</label>
       </div>
       <button class="js-generate" hidden>Generate</button>
     </form>
@@ -100,7 +94,6 @@
     <script src="./lib/ecdsa.js"></script>
     <script src="./lib/rsa.js"></script>
     <script src="./lib/keypairs.js"></script>
-    <script src="./lib/acme.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
