@@ -17,11 +17,6 @@
     return Array.prototype.slice.call(document.querySelectorAll(sel));
   }
 
-  function checkTos(tos) {
-    console.log("TODO checkbox for agree to terms");
-    return tos;
-  }
-
   function run() {
     console.log('hello');
 
