@@ -53,6 +53,39 @@
       <button class="js-generate" hidden>Generate</button>
     </form>
 
+    <h2>ACME Account</h2>
+    <form class="js-acme-account">
+      <label for="-acmeEmail">Email:</label>
+      <input class="js-email" type="email" id="-acmeEmail" value="john.doe@gmail.com">
+      <br>
+      <label for="-acmeTos"><input class="js-tos" name="tos" type="checkbox" id="-acmeTos" checked>
+        Agree to Let's Encrypt Terms of Service</label>
+      <br>
+      <button class="js-create-account" hidden>Create Account</button>
+    </form>
+
+    <h2>Certificate Signing Request</h2>
+    <form class="js-csr">
+      <label for="-acmeDomains">Domains:</label>
+      <input class="js-domains" type="text" id="-acmeDomains" value="example.com www.example.com">
+      <br>
+      <button class="js-create-csr" hidden>Create CSR</button>
+    </form>
+
+    <h2>ACME Certificate Order</h2>
+    <form class="js-acme-order">
+      Challenge type:
+      <label for="-http01"><input type="radio" id="-http01"
+       name="acme-challenge-type" value="http-01" checked>http-01</label>
+      <label for="-dns01"><input type="radio" id="-dns01"
+       name="acme-challenge-type" value="dns-01">dns-01</label>
+      <br>
+      <label for="-skipDryrun"><input class="js-skip-dryrun" name="skip-dryrun"
+        type="checkbox" id="-skipDryrun" checked> Skip dry-run challenge</label>
+      <br>
+      <button class="js-create-order" hidden>Create Order</button>
+    </form>
+
     <div class="js-loading" hidden>Loading</div>
 
     <details class="js-toc-jwk" hidden>
@@ -87,13 +120,23 @@
       <summary>PEM Public (base64-encoded SPKI/PKIX DER)</summary>
       <pre><code  class="js-input-pem-spki-public" ></code></pre>
     </details>
-
+    <details class="js-toc-acme-account-response" hidden>
+      <summary>ACME Account Request</summary>
+      <pre><code class="js-acme-account-response">&nbsp;</code></pre>
+    </details>
+    <details class="js-toc-acme-order-response" hidden>
+      <summary>ACME Order Response</summary>
+      <pre><code class="js-acme-order-response">&nbsp;</code></pre>
+    </details>
     <script src="./lib/bluecrypt-encoding.js"></script>
     <script src="./lib/asn1-packer.js"></script>
     <script src="./lib/x509.js"></script>
     <script src="./lib/ecdsa.js"></script>
     <script src="./lib/rsa.js"></script>
     <script src="./lib/keypairs.js"></script>
+    <script src="./lib/asn1-parser.js"></script>
+    <script src="./lib/csr.js"></script>
+    <script src="./lib/acme.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

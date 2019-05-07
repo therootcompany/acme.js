@@ -17,6 +17,14 @@
     return Array.prototype.slice.call(document.querySelectorAll(sel));
   }
 
+  function checkTos(tos) {
+    if ($('input[name="tos"]:checked')) {
+      return tos;
+    } else {
+      return '';
+    }
+  }
+
   function run() {
     console.log('hello');
 
@@ -111,7 +119,155 @@
       });
     });
 
+    $('form.js-acme-account').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      $('.js-loading').hidden = false;
+      var acme = ACME.create({
+        Keypairs: Keypairs
+      , CSR: CSR
+      });
+      acme.init('https://acme-staging-v02.api.letsencrypt.org/directory').then(function (result) {
+        console.log('acme result', result);
+        var privJwk = JSON.parse($('.js-jwk').innerText).private;
+        var email = $('.js-email').value;
+        return acme.accounts.create({
+          email: email
+        , agreeToTerms: checkTos
+        , accountKeypair: { privateKeyJwk: privJwk }
+        }).then(function (account) {
+          console.log("account created result:", account);
+          accountStuff.account = account;
+          accountStuff.privateJwk = privJwk;
+          accountStuff.email = email;
+          accountStuff.acme = acme;
+          $('.js-create-order').hidden = false;
+          $('.js-toc-acme-account-response').hidden = false;
+          $('.js-acme-account-response').innerText = JSON.stringify(account, null, 2);
+        }).catch(function (err) {
+          console.error("A bad thing happened:");
+          console.error(err);
+          window.alert(err.message || JSON.stringify(err, null, 2));
+        });
+      });
+    });
+
+    $('form.js-csr').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      generateCsr();
+    });
+
+    $('form.js-acme-order').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var account = accountStuff.account;
+      var privJwk = accountStuff.privateJwk;
+      var email = accountStuff.email;
+      var acme = accountStuff.acme;
+
+
+      var domains = ($('.js-domains').value||'example.com').split(/[, ]+/g);
+      return getDomainPrivkey().then(function (domainPrivJwk) {
+        console.log('Has CSR already?');
+        console.log(accountStuff.csr);
+        return acme.certificates.create({
+          accountKeypair: { privateKeyJwk: privJwk }
+        , account: account
+        , serverKeypair: { privateKeyJwk: domainPrivJwk }
+        , csr: accountStuff.csr
+        , domains: domains
+        , skipDryRun: $('input[name="skip-dryrun"]:checked') && true
+        , agreeToTerms: checkTos
+        , challenges: {
+            'dns-01': {
+              set: function (opts) {
+                console.info('dns-01 set challenge:');
+                console.info('TXT', opts.dnsHost);
+                console.info(opts.dnsAuthorization);
+                return new Promise(function (resolve) {
+                  while (!window.confirm("Did you set the challenge?")) {}
+                  resolve();
+                });
+              }
+            , remove: function (opts) {
+                console.log('dns-01 remove challenge:');
+                console.info('TXT', opts.dnsHost);
+                console.info(opts.dnsAuthorization);
+                return new Promise(function (resolve) {
+                  while (!window.confirm("Did you delete the challenge?")) {}
+                  resolve();
+                });
+              }
+            }
+          , 'http-01': {
+              set: function (opts) {
+                console.info('http-01 set challenge:');
+                console.info(opts.challengeUrl);
+                console.info(opts.keyAuthorization);
+                return new Promise(function (resolve) {
+                  while (!window.confirm("Did you set the challenge?")) {}
+                  resolve();
+                });
+              }
+            , remove: function (opts) {
+                console.log('http-01 remove challenge:');
+                console.info(opts.challengeUrl);
+                console.info(opts.keyAuthorization);
+                return new Promise(function (resolve) {
+                  while (!window.confirm("Did you delete the challenge?")) {}
+                  resolve();
+                });
+              }
+            }
+          }
+        , challengeTypes: [$('input[name="acme-challenge-type"]:checked').value]
+        }).then(function (results) {
+          console.log('Got Certificates:');
+          console.log(results);
+          $('.js-toc-acme-order-response').hidden = false;
+          $('.js-acme-order-response').innerText = JSON.stringify(results, null, 2);
+        }).catch(function (err) {
+          console.error("challenge failed:");
+          console.error(err);
+          window.alert("failed! " + err.message || JSON.stringify(err));
+        });
+      });
+    });
+
     $('.js-generate').hidden = false;
+  }
+
+  function getDomainPrivkey() {
+    if (accountStuff.domainPrivateJwk) { return Promise.resolve(accountStuff.domainPrivateJwk); }
+    return Keypairs.generate({
+      kty: $('input[name="kty"]:checked').value
+    , namedCurve: $('input[name="ec-crv"]:checked').value
+    , modulusLength: $('input[name="rsa-len"]:checked').value
+    }).then(function (pair) {
+      console.log('domain keypair:', pair);
+      accountStuff.domainPrivateJwk = pair.private;
+      return pair.private;
+    });
+  }
+
+  function generateCsr() {
+    var domains = ($('.js-domains').value||'example.com').split(/[, ]+/g);
+    //var privJwk = JSON.parse($('.js-jwk').innerText).private;
+    return getDomainPrivkey().then(function (privJwk) {
+      accountStuff.domainPrivateJwk = privJwk;
+      return CSR({ jwk: privJwk, domains: domains }).then(function (pem) {
+        // Verify with https://www.sslshopper.com/csr-decoder.html
+        accountStuff.csr = pem;
+        console.log('Created CSR:');
+        console.log(pem);
+
+        console.log('CSR info:');
+        console.log(CSR._info(pem));
+
+        return pem;
+      });
+    });
   }
 
   window.addEventListener('load', run);
