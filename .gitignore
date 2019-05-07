@@ -1,0 +1,4 @@
+*.gz
+.*.sw*
+.ignore
+node_modules
