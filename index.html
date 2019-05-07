@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>BlueCrypt</title>
+    <title>Bluecrypt ACME - A Root Project</title>
     <style>
       textarea {
         width: 42em;
@@ -17,11 +17,11 @@
     </style>
   </head>
   <body>
-    <h1>BlueCrypt for the Browser</h1>
-    <p>BlueCrypt is universal crypto for the browser. It's lightweight, fast, and based on native webcrypto.
-    This means it's easy-to-use crypto in kilobytes, not megabytes.</p>
+    <h1>@bluecrypt/acme: Let's&nbsp;Encrypt&nbsp;for&nbsp;the&nbsp;Browser</h1>
 
-    <h2>Keypair Generation</h2>
+    <p>This is intended to be explored with your JavaScript console open.</p>
+
+    <h2>1. Keypair Generation</h2>
     <form class="js-keygen">
       <p>Key Type:</p>
       <div>
@@ -53,7 +53,7 @@
       <button class="js-generate" hidden>Generate</button>
     </form>
 
-    <h2>ACME Account</h2>
+    <h2>2. ACME Account</h2>
     <form class="js-acme-account">
       <label for="-acmeEmail">Email:</label>
       <input class="js-email" type="email" id="-acmeEmail" value="john.doe@gmail.com">
@@ -64,7 +64,7 @@
       <button class="js-create-account" hidden>Create Account</button>
     </form>
 
-    <h2>Certificate Signing Request</h2>
+    <h2>3. (optional) Certificate Signing Request</h2>
     <form class="js-csr">
       <label for="-acmeDomains">Domains:</label>
       <input class="js-domains" type="text" id="-acmeDomains" value="example.com www.example.com">
@@ -72,7 +72,7 @@
       <button class="js-create-csr" hidden>Create CSR</button>
     </form>
 
-    <h2>ACME Certificate Order</h2>
+    <h2>4. ACME Certificate Order</h2>
     <form class="js-acme-order">
       Challenge type:
       <label for="-http01"><input type="radio" id="-http01"
@@ -129,6 +129,10 @@
       <pre><code class="js-acme-order-response">&nbsp;</code></pre>
     </details>
 
+    <br>
+    <p>Bluecrypt&trade; is a collection of lightweight, zero-dependency, libraries written in VanillaJS.
+    They are fast, tiny, and secure, using the native features of modern browsers where possible.
+    This means it's easy-to-use crypto in kilobytes, not megabytes.</p>
     <br>
     <footer>View source: <a href="https://git.rootprojects.org/root/bluecrypt-acme.js">@bluecrypt/acme</a></footer>
 
