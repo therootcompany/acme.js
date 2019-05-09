@@ -179,7 +179,7 @@ Bluecrypt&trade; and Greenlock&trade; are [trademarks](https://rootprojects.org/
 
 The rule of thumb is "attribute, but don't confuse". For example:
 
-> Built with [Root](https://rootprojects.org)'s [Bluecrypt ACME](https://git.rootprojects.org/root/bluecrypt-acme.js).
+> Built with [Bluecrypt ACME](https://git.rootprojects.org/root/bluecrypt-acme.js) (a [Root](https://rootprojects.org) project).
 
 Please [contact us](mailto:aj@therootcompany.com) if have any questions in regards to our trademark,
 attribution, and/or visible source policies. We want to help to community as we build great software.
