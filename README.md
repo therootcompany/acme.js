@@ -182,7 +182,7 @@ The rule of thumb is "attribute, but don't confuse". For example:
 > Built with [Bluecrypt ACME](https://git.rootprojects.org/root/bluecrypt-acme.js) (a [Root](https://rootprojects.org) project).
 
 Please [contact us](mailto:aj@therootcompany.com) if have any questions in regards to our trademark,
-attribution, and/or visible source policies. We want to help to community as we build great software.
+attribution, and/or visible source policies. We want to build great software and a great community.
 
 [bluecrypt.js](https://git.coolaj86.com/coolaj86/bluecrypt.js) |
 MPL-2.0 |
