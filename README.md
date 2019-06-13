@@ -8,21 +8,21 @@
 
 # [acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js)
 
-A lightweight, **Low Dependency**&#42; framework for building
+A lightweight, **Low Dependency**\* framework for building
 Let's Encrypt v2 (ACME draft 12) clients, successor to `le-acme-core.js`.
 Built [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
 
-&#42; <small>although `node-forge` and `ursa` are included as `optionalDependencies`
+\* <small>although `node-forge` and `ursa` are included as `optionalDependencies`
 for backwards compatibility with older versions of node, there are no other
 dependencies except those that I wrote for this (and related) projects.</small>
 
 ## Looking for Quick 'n' Easy&trade;?
 
-If you're looking to *build a webserver*, try [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js).
-If you're looking for an *ACME-enabled webserver*, try [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
+If you're looking to _build a webserver_, try [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js).
+If you're looking for an _ACME-enabled webserver_, try [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
 
-* [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
-* [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
+- [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
+- [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
 
 ## How to build ACME clients
 
@@ -77,20 +77,20 @@ https://acme-staging-v02.api.letsencrypt.org/directory
 
 ## Two API versions, Two Implementations
 
-This library (acme-v2.js) supports ACME [*draft 11*](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
+This library (acme-v2.js) supports ACME [_draft 11_](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
 otherwise known as Let's Encrypt v2 (or v02).
 
-  * ACME draft 11
-  * Let's Encrypt v2
-  * Let's Encrypt v02
+- ACME draft 11
+- Let's Encrypt v2
+- Let's Encrypt v02
 
 The predecessor (le-acme-core) supports Let's Encrypt v1 (or v01), which was a
 [hodge-podge of various drafts](https://github.com/letsencrypt/boulder/blob/master/docs/acme-divergences.md)
 of the ACME spec early on.
 
-  * ACME early draft
-  * Let's Encrypt v1
-  * Let's Encrypt v01
+- ACME early draft
+- Let's Encrypt v1
+- Let's Encrypt v01
 
 This library maintains compatibility with le-acme-core so that it can be used as a **drop-in replacement**
 and requires **no changes to existing code**,
@@ -102,7 +102,7 @@ Status: Stable, Locked, Bugfix-only
 
 See Full Documentation at <https://git.coolaj86.com/coolaj86/le-acme-core.js>
 
-```
+```js
 var RSA = require('rsa-compat').RSA;
 var acme = require('acme-v2/compat.js').ACME.create({ RSA: RSA });
 
@@ -118,7 +118,7 @@ Status: Almost stable, but **not semver locked**
 This API is a simple evolution of le-acme-core,
 but tries to provide a better mapping to the new draft 11 APIs.
 
-```
+```js
 // Create Instance (Dependency Injection)
 var ACME = require('acme-v2').ACME.create({
   RSA: require('rsa-compat').RSA
@@ -187,54 +187,54 @@ Helpers & Stuff
 
 ```javascript
 // Constants
-ACME.challengePrefixes['http-01']             // '/.well-known/acme-challenge'
-ACME.challengePrefixes['dns-01']              // '_acme-challenge'
+ACME.challengePrefixes['http-01']; // '/.well-known/acme-challenge'
+ACME.challengePrefixes['dns-01']; // '_acme-challenge'
 ```
 
 # Changelog
 
-* v1.5
-  * perform full test challenge first (even before nonce)
-* v1.3
-  * Use node RSA keygen by default
-  * No non-optional external deps!
-* v1.2
-  * fix some API out-of-specness
-  * doc some magic numbers (status)
-  * updated deps
-* v1.1.0
-  * reduce dependencies (use lightweight @coolaj86/request instead of request)
-* v1.0.5 - cleanup logging
-* v1.0.4 - v6- compat use `promisify` from node's util or bluebird
-* v1.0.3 - documentation cleanup
-* v1.0.2
-  * use `options.contact` to provide raw contact array
-  * made `options.email` optional
-  * file cleanup
-* v1.0.1
-  * Compat API is ready for use
-  * Eliminate debug logging
-* Apr 10, 2018 - tested backwards-compatibility using greenlock.js
-* Apr  5, 2018 - export http and dns challenge tests
-* Apr  5, 2018 - test http and dns challenges (success and failure)
-* Apr  5, 2018 - test subdomains and its wildcard
-* Apr  5, 2018 - test two subdomains
-* Apr  5, 2018 - test wildcard
-* Apr  5, 2018 - completely match api for acme v1 (le-acme-core.js)
-* Mar 21, 2018 - *mostly* matches le-acme-core.js API
-* Mar 21, 2018 - can now accept values (not hard coded)
-* Mar 20, 2018 - SUCCESS - got a test certificate (hard-coded)
-* Mar 20, 2018 - download certificate
-* Mar 20, 2018 - poll for status
-* Mar 20, 2018 - finalize order (submit csr)
-* Mar 20, 2018 - generate domain keypair
-* Mar 20, 2018 - respond to challenges
-* Mar 16, 2018 - get challenges
-* Mar 16, 2018 - new order
-* Mar 15, 2018 - create account
-* Mar 15, 2018 - generate account keypair
-* Mar 15, 2018 - get nonce
-* Mar 15, 2018 - get directory
+- v1.5
+  - perform full test challenge first (even before nonce)
+- v1.3
+  - Use node RSA keygen by default
+  - No non-optional external deps!
+- v1.2
+  - fix some API out-of-specness
+  - doc some magic numbers (status)
+  - updated deps
+- v1.1.0
+  - reduce dependencies (use lightweight @coolaj86/request instead of request)
+- v1.0.5 - cleanup logging
+- v1.0.4 - v6- compat use `promisify` from node's util or bluebird
+- v1.0.3 - documentation cleanup
+- v1.0.2
+  - use `options.contact` to provide raw contact array
+  - made `options.email` optional
+  - file cleanup
+- v1.0.1
+  - Compat API is ready for use
+  - Eliminate debug logging
+- Apr 10, 2018 - tested backwards-compatibility using greenlock.js
+- Apr 5, 2018 - export http and dns challenge tests
+- Apr 5, 2018 - test http and dns challenges (success and failure)
+- Apr 5, 2018 - test subdomains and its wildcard
+- Apr 5, 2018 - test two subdomains
+- Apr 5, 2018 - test wildcard
+- Apr 5, 2018 - completely match api for acme v1 (le-acme-core.js)
+- Mar 21, 2018 - _mostly_ matches le-acme-core.js API
+- Mar 21, 2018 - can now accept values (not hard coded)
+- Mar 20, 2018 - SUCCESS - got a test certificate (hard-coded)
+- Mar 20, 2018 - download certificate
+- Mar 20, 2018 - poll for status
+- Mar 20, 2018 - finalize order (submit csr)
+- Mar 20, 2018 - generate domain keypair
+- Mar 20, 2018 - respond to challenges
+- Mar 16, 2018 - get challenges
+- Mar 16, 2018 - new order
+- Mar 15, 2018 - create account
+- Mar 15, 2018 - generate account keypair
+- Mar 15, 2018 - get nonce
+- Mar 15, 2018 - get directory
 
 # Legal
 
