@@ -471,14 +471,17 @@ ACME._getZones = function(me, options, dnsHosts) {
 		};
 	}
 	return new Promise(function(resolve, reject) {
+		var challenge = { type: 'dns-01', dnsHosts: dnsHosts };
+		// back/forwards-compat
+		challenge.challenge = challenge;
 		try {
 			if (options.getZones.length <= 1) {
 				options
-					.getZones({ dnsHosts: dnsHosts })
+					.getZones(challenge)
 					.then(resolve)
 					.catch(reject);
 			} else if (2 === options.getZones.length) {
-				options.getZones({ dnsHosts: dnsHosts }, function(err, zonenames) {
+				options.getZones(challenge, function(err, zonenames) {
 					if (err) {
 						reject(err);
 					} else {
