@@ -2,28 +2,77 @@
 | [acme-v2-cli.js](https://git.coolaj86.com/coolaj86/acme-v2-cli.js)
 | [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
 | [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
-|
 
-| A [Root](https://therootcompany.com) Project
+# [acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js) | a [Root](https://therootcompany.com) project
 
-# [acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js)
+A **Zero (External) Dependency**\* library for building
+Let's Encrypt v2 (ACME draft 18) clients and getting Free SSL certificates.
 
-A lightweight, **Low Dependency**\* framework for building
-Let's Encrypt v2 (ACME draft 12) clients, successor to `le-acme-core.js`.
-Built [by request](https://git.coolaj86.com/coolaj86/greenlock.js/issues/5#issuecomment-8).
+The primary goal of this library is to make it easy to
+get Accounts and Certificates through Let's Encrypt.
 
-\* <small>although `node-forge` and `ursa` are included as `optionalDependencies`
-for backwards compatibility with older versions of node, there are no other
-dependencies except those that I wrote for this (and related) projects.</small>
+# Features
+
+- [x] Let's Encrypt&trade; v2 / ACME Draft 12
+  - [ ] (in-progress) Let's Encrypt&trade; v2.1 / ACME Draft 18
+  - [ ] (in-progress) StartTLS Everywhere&trade;
+- [x] Works with any [generic ACME challenge handler](https://git.rootprojects.org/root/acme-challenge-test.js)
+  - [x] **http-01** for single or multiple domains per certificate
+  - [x] **dns-01** for wildcards, localhost, private networks, etc
+- [x] VanillaJS
+  - [x] Zero External Dependencies
+  - [x] Safe, Efficient, Maintained
+  - [x] Works in Node v6+
+  - [ ] (v2) Works in Web Browsers (See [Demo](https://greenlock.domains))
+
+\* <small>The only required dependencies were built by us, specifically for this and related libraries.
+There are some, truly optional, backwards-compatibility dependencies for node v6.</small>
 
 ## Looking for Quick 'n' Easy&trade;?
 
-If you're looking to _build a webserver_, try [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js).
-If you're looking for an _ACME-enabled webserver_, try [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js).
+If you want something that's more "batteries included" give
+[greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
+a try.
 
 - [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
-- [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
 
+## v1.7+: Transitional v2 Support
+
+By the end of June 2019 we expect to have completed the migration to Let's Encrypt v2.1 (ACME draft 18).
+
+Although the draft 18 changes themselves don't requiring breaking the API,
+we've been keeping backwards compatibility for a long time and the API has become messy.
+
+We're taking this **mandatory ACME update** as an opportunity to **clean up** and **greatly simplify**
+the code with a fresh new release.
+
+As of **v1.7** we started adding **transitional support** for the **next major version**, v2.0 of acme-v2.js.
+We've been really good about backwards compatibility for
+
+## Recommended Example
+
+Due to the upcoming changes we've removed the old documentation.
+
+Instead we recommend that you take a look at the
+[Digital Ocean DNS-01 Example](https://git.rootprojects.org/root/acme-v2.js/src/branch/master/examples/dns-01-digitalocean.js)
+
+- [examples/dns-01-digitalocean.js](https://git.rootprojects.org/root/acme-v2.js/src/branch/master/examples/dns-01-digitalocean.js)
+
+That's not exactly the new API, but it's close.
+
+## Let's Encrypt v02 Directory URLs
+
+```
+# Production URL
+https://acme-v02.api.letsencrypt.org/directory
+```
+
+```
+# Staging URL
+https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
+<!--
 ## How to build ACME clients
 
 As this is intended to build ACME clients, there is not a simple 2-line example
@@ -63,136 +112,75 @@ examples/https-server.js
 examples/http-server.js
 ```
 
-## Let's Encrypt Directory URLs
+-->
 
-```
-# Production URL
-https://acme-v02.api.letsencrypt.org/directory
-```
+## API
 
-```
-# Staging URL
-https://acme-staging-v02.api.letsencrypt.org/directory
-```
-
-## Two API versions, Two Implementations
-
-This library (acme-v2.js) supports ACME [_draft 11_](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
-otherwise known as Let's Encrypt v2 (or v02).
-
-- ACME draft 11
-- Let's Encrypt v2
-- Let's Encrypt v02
-
-The predecessor (le-acme-core) supports Let's Encrypt v1 (or v01), which was a
-[hodge-podge of various drafts](https://github.com/letsencrypt/boulder/blob/master/docs/acme-divergences.md)
-of the ACME spec early on.
-
-- ACME early draft
-- Let's Encrypt v1
-- Let's Encrypt v01
-
-This library maintains compatibility with le-acme-core so that it can be used as a **drop-in replacement**
-and requires **no changes to existing code**,
-but also provides an updated API more congruent with draft 11.
-
-## le-acme-core-compatible API (recommended)
-
-Status: Stable, Locked, Bugfix-only
-
-See Full Documentation at <https://git.coolaj86.com/coolaj86/le-acme-core.js>
-
-```js
-var RSA = require('rsa-compat').RSA;
-var acme = require('acme-v2/compat.js').ACME.create({ RSA: RSA });
-
-//
-// Use exactly the same as le-acme-core
-//
-```
-
-## Promise API (dev)
-
-Status: Almost stable, but **not semver locked**
+Status: Small, but breaking changes coming in v2
 
 This API is a simple evolution of le-acme-core,
 but tries to provide a better mapping to the new draft 11 APIs.
 
 ```js
-// Create Instance (Dependency Injection)
 var ACME = require('acme-v2').ACME.create({
-  RSA: require('rsa-compat').RSA
+	// used for overriding the default user-agent
+	userAgent: 'My custom UA String',
+	getUserAgentString: function(deps) {
+		return 'My custom UA String';
+	},
 
-  // other overrides
-, request: require('request')
-, promisify: require('util').promisify
+	// don't try to validate challenges locally
+	skipChallengeTest: false,
+	skipDryRun: false,
 
-  // used for constructing user-agent
-, os: require('os')
-, process: require('process')
-
-  // used for overriding the default user-agent
-, userAgent: 'My custom UA String'
-, getUserAgentString: function (deps) { return 'My custom UA String'; }
-
-
-  // don't try to validate challenges locally
-, skipChallengeTest: false
-  // ask if the certificate can be issued up to 10 times before failing
-, retryPoll: 8
-  // ask if the certificate has been validated up to 6 times before cancelling
-, retryPending: 4
-  // Wait 1000ms between retries
-, retryInterval: 1000
-  // Wait 10,000ms after deauthorizing a challenge before retrying
-, deauthWait: 10 * 1000
+	// ask if the certificate can be issued up to 10 times before failing
+	retryPoll: 8,
+	// ask if the certificate has been validated up to 6 times before cancelling
+	retryPending: 4,
+	// Wait 1000ms between retries
+	retryInterval: 1000,
+	// Wait 10,000ms after deauthorizing a challenge before retrying
+	deauthWait: 10 * 1000
 });
 
-
 // Discover Directory URLs
-ACME.init(acmeDirectoryUrl)                   // returns Promise<acmeUrls={keyChange,meta,newAccount,newNonce,newOrder,revokeCert}>
-
+ACME.init(acmeDirectoryUrl); // returns Promise<acmeUrls={keyChange,meta,newAccount,newNonce,newOrder,revokeCert}>
 
 // Accounts
-ACME.accounts.create(options)                 // returns Promise<regr> registration data
+ACME.accounts.create(options); // returns Promise<regr> registration data
 
-    { email: '<email>'                        //    valid email (server checks MX records)
-    , accountKeypair: {                       //    privateKeyPem or privateKeyJwt
-        privateKeyPem: '<ASCII PEM>'
-      }
-    , agreeToTerms: fn (tosUrl) {}            //    returns Promise with tosUrl
-    }
-
+options = {
+	email: '<email>', // valid email (server checks MX records)
+	accountKeypair: {
+		//    privateKeyPem or privateKeyJwt
+		privateKeyPem: '<ASCII PEM>'
+	},
+	agreeToTerms: function(tosUrl) {} //    should Promise the same `tosUrl` back
+};
 
 // Registration
-ACME.certificates.create(options)             // returns Promise<pems={ privkey (key), cert, chain (ca) }>
+ACME.certificates.create(options); // returns Promise<pems={ privkey (key), cert, chain (ca) }>
 
-    { newAuthzUrl: '<url>'                    //    specify acmeUrls.newAuthz
-    , newCertUrl: '<url>'                     //    specify acmeUrls.newCert
+options = {
+	domainKeypair: {
+		privateKeyPem: '<ASCII PEM>'
+	},
+	accountKeypair: {
+		privateKeyPem: '<ASCII PEM>'
+	},
+	domains: ['example.com'],
 
-    , domainKeypair: {
-        privateKeyPem: '<ASCII PEM>'
-      }
-    , accountKeypair: {
-        privateKeyPem: '<ASCII PEM>'
-      }
-    , domains: [ 'example.com' ]
-
-    , setChallenge: fn (hostname, key, val)   // return Promise
-    , removeChallenge: fn (hostname, key)     // return Promise
-    }
-```
-
-Helpers & Stuff
-
-```javascript
-// Constants
-ACME.challengePrefixes['http-01']; // '/.well-known/acme-challenge'
-ACME.challengePrefixes['dns-01']; // '_acme-challenge'
+	getZones: function(opts) {}, // should Promise an array of domain zone names
+	setChallenge: function(opts) {}, // should Promise the record id, or name
+	removeChallenge: function(opts) {} // should Promise null
+};
 ```
 
 # Changelog
 
+- v1.8
+  - more transitional prepwork for new v2 API
+  - support newer (simpler) dns-01 and http-01 libraries
 - v1.5
   - perform full test challenge first (even before nonce)
 - v1.3

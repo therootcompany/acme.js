@@ -1,11 +1,11 @@
 {
 	"name": "acme-v2",
-	"version": "1.7.7",
-	"description": "Free SSL. A framework for building Let's Encrypt v2 clients, and other ACME v2 (draft 11) clients. Successor to le-acme-core.js",
+	"version": "1.8.0",
+	"description": "A lightweight library for getting Free SSL certifications through Let's Encrypt, using the ACME protocol.",
 	"homepage": "https://git.coolaj86.com/coolaj86/acme-v2.js",
 	"main": "node.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "node ./test.js"
 	},
 	"repository": {
 		"type": "git",
@@ -23,10 +23,13 @@
 		"automated https",
 		"letsencrypt"
 	],
-	"author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
+	"author": "AJ ONeal <coolaj86@gmail.com> (https://solderjs.com/)",
 	"license": "MPL-2.0",
 	"dependencies": {
-		"@coolaj86/urequest": "^1.3.6",
-		"rsa-compat": "^2.0.6"
+		"@root/request": "^1.3.11",
+		"rsa-compat": "^2.0.8"
+	},
+	"devDependencies": {
+		"dotenv": "^8.0.0"
 	}
 }
