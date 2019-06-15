@@ -464,24 +464,48 @@ ACME._chooseChallenge = function(options, results) {
 
 	return challenge;
 };
+ACME._depInit = function(me, options) {
+	if ('function' !== typeof options.init) {
+		options.init = function() {
+			return Promise.resolve(null);
+		};
+	}
+	// back/forwards-compat
+	return ACME._wrapCb(
+		me,
+		options,
+		'init',
+		{ type: '*', request: me._request },
+		'null'
+	);
+};
 ACME._getZones = function(me, options, dnsHosts) {
 	if ('function' !== typeof options.getZones) {
 		options.getZones = function() {
 			return Promise.resolve([]);
 		};
 	}
+	var challenge = { type: 'dns-01', dnsHosts: dnsHosts, request: me._request };
+	// back/forwards-compat
+	challenge.challenge = challenge;
+	return ACME._wrapCb(
+		me,
+		options,
+		'getZones',
+		challenge,
+		'an array of zone names'
+	);
+};
+
+ACME._wrapCb = function(me, options, _name, stuff, _desc) {
 	return new Promise(function(resolve, reject) {
-		var challenge = { type: 'dns-01', dnsHosts: dnsHosts };
-		// back/forwards-compat
-		challenge.challenge = challenge;
 		try {
-			if (options.getZones.length <= 1) {
-				options
-					.getZones(challenge)
+			if (options[_name].length <= 1) {
+				return Promise.resolve(options[_name](stuff))
 					.then(resolve)
 					.catch(reject);
-			} else if (2 === options.getZones.length) {
-				options.getZones(challenge, function(err, zonenames) {
+			} else if (2 === options[_name].length) {
+				options[_name](stuff, function(err, zonenames) {
 					if (err) {
 						reject(err);
 					} else {
@@ -490,7 +514,7 @@ ACME._getZones = function(me, options, dnsHosts) {
 				});
 			} else {
 				throw new Error(
-					'options.getZones should accept opts and Promise an array of zone names'
+					'options.' + _name + ' should accept opts and Promise ' + _desc
 				);
 			}
 		} catch (e) {
@@ -498,6 +522,7 @@ ACME._getZones = function(me, options, dnsHosts) {
 		}
 	});
 };
+
 function newZoneRegExp(zonename) {
 	// (^|\.)example\.com$
 	// which matches:
@@ -577,8 +602,9 @@ ACME._challengeToAuth = function(me, options, request, challenge, dryrun) {
 			.replace(/\.$/, '');
 	}
 
-	// for backwards compat
+	// for backwards/forwards compat
 	auth.challenge = auth;
+	auth.request = me._request;
 	return auth;
 };
 
@@ -1071,196 +1097,204 @@ ACME._getCertificate = function(me, options) {
 				.toString('hex') + d
 		);
 	});
-	return ACME._getZones(me, options, dnsHosts).then(function(zonenames) {
-		options.zonenames = zonenames;
-		// Do a little dry-run / self-test
-		return ACME._testChallenges(me, options).then(function() {
-			if (me.debug) {
-				console.debug('[acme-v2] certificates.create');
-			}
-			return ACME._getNonce(me).then(function() {
-				var body = {
-					// raw wildcard syntax MUST be used here
-					identifiers: options.domains
-						.sort(function(a, b) {
-							// the first in the list will be the subject of the certificate, I believe (and hope)
-							if (!options.subject) {
-								return 0;
-							}
-							if (options.subject === a) {
-								return -1;
-							}
-							if (options.subject === b) {
-								return 1;
-							}
-							return 0;
-						})
-						.map(function(hostname) {
-							return { type: 'dns', value: hostname };
-						})
-					//, "notBefore": "2016-01-01T00:00:00Z"
-					//, "notAfter": "2016-01-08T00:00:00Z"
-				};
-
-				var payload = JSON.stringify(body);
-				// determine the signing algorithm to use in protected header // TODO isn't that handled by the signer?
-				me._kty =
-					(options.accountKeypair.privateKeyJwk &&
-						options.accountKeypair.privateKeyJwk.kty) ||
-					'RSA';
-				me._alg = 'EC' === me._kty ? 'ES256' : 'RS256'; // TODO vary with bitwidth of key (if not handled)
-				var jws = me.RSA.signJws(
-					options.accountKeypair,
-					undefined,
-					{
-						nonce: me._nonce,
-						alg: me._alg,
-						url: me._directoryUrls.newOrder,
-						kid: me._kid
-					},
-					Buffer.from(payload, 'utf8')
-				);
-
+	return ACME._depInit(me, options, dnsHosts).then(function(zonenames) {
+		return ACME._getZones(me, options, dnsHosts).then(function(zonenames) {
+			options.zonenames = zonenames;
+			// Do a little dry-run / self-test
+			return ACME._testChallenges(me, options).then(function() {
 				if (me.debug) {
-					console.debug('\n[DEBUG] newOrder\n');
+					console.debug('[acme-v2] certificates.create');
 				}
-				me._nonce = null;
-				return me
-					._request({
-						method: 'POST',
-						url: me._directoryUrls.newOrder,
-						headers: { 'Content-Type': 'application/jose+json' },
-						json: jws
-					})
-					.then(function(resp) {
-						me._nonce = resp.toJSON().headers['replay-nonce'];
-						var location = resp.toJSON().headers.location;
-						var setAuths;
-						var auths = [];
-						if (me.debug) {
-							console.debug(location);
-						} // the account id url
-						if (me.debug) {
-							console.debug(resp.toJSON());
-						}
-						me._authorizations = resp.body.authorizations;
-						me._order = location;
-						me._finalize = resp.body.finalize;
-						//if (me.debug) console.debug('[DEBUG] finalize:', me._finalize); return;
-
-						if (!me._authorizations) {
-							return Promise.reject(
-								new Error(
-									"[acme-v2.js] authorizations were not fetched for '" +
-										options.domains.join() +
-										"':\n" +
-										JSON.stringify(resp.body)
-								)
-							);
-						}
-						if (me.debug) {
-							console.debug('[acme-v2] POST newOrder has authorizations');
-						}
-						setAuths = me._authorizations.slice(0);
-
-						function setNext() {
-							var authUrl = setAuths.shift();
-							if (!authUrl) {
-								return;
-							}
-
-							return ACME._getChallenges(me, options, authUrl).then(function(
-								results
-							) {
-								// var domain = options.domains[i]; // results.identifier.value
-
-								// If it's already valid, we're golden it regardless
-								if (
-									results.challenges.some(function(ch) {
-										return 'valid' === ch.status;
-									})
-								) {
-									return setNext();
+				return ACME._getNonce(me).then(function() {
+					var body = {
+						// raw wildcard syntax MUST be used here
+						identifiers: options.domains
+							.sort(function(a, b) {
+								// the first in the list will be the subject of the certificate, I believe (and hope)
+								if (!options.subject) {
+									return 0;
 								}
-
-								var challenge = ACME._chooseChallenge(options, results);
-								if (!challenge) {
-									// For example, wildcards require dns-01 and, if we don't have that, we have to bail
-									return Promise.reject(
-										new Error(
-											"Server didn't offer any challenge we can handle for '" +
-												options.domains.join() +
-												"'."
-										)
-									);
+								if (options.subject === a) {
+									return -1;
 								}
-
-								var auth = ACME._challengeToAuth(
-									me,
-									options,
-									results,
-									challenge
-								);
-								auths.push(auth);
-								return ACME._setChallenge(me, options, auth).then(setNext);
-							});
-						}
-
-						function challengeNext() {
-							var auth = auths.shift();
-							if (!auth) {
-								return;
-							}
-							return ACME._postChallenge(me, options, auth).then(challengeNext);
-						}
-
-						// First we set every challenge
-						// Then we ask for each challenge to be checked
-						// Doing otherwise would potentially cause us to poison our own DNS cache with misses
-						return setNext()
-							.then(challengeNext)
-							.then(function() {
-								if (me.debug) {
-									console.debug('[getCertificate] next.then');
+								if (options.subject === b) {
+									return 1;
 								}
-								var validatedDomains = body.identifiers.map(function(ident) {
-									return ident.value;
-								});
-
-								return ACME._finalizeOrder(me, options, validatedDomains);
+								return 0;
 							})
-							.then(function(order) {
-								if (me.debug) {
-									console.debug('acme-v2: order was finalized');
+							.map(function(hostname) {
+								return { type: 'dns', value: hostname };
+							})
+						//, "notBefore": "2016-01-01T00:00:00Z"
+						//, "notAfter": "2016-01-08T00:00:00Z"
+					};
+
+					var payload = JSON.stringify(body);
+					// determine the signing algorithm to use in protected header // TODO isn't that handled by the signer?
+					me._kty =
+						(options.accountKeypair.privateKeyJwk &&
+							options.accountKeypair.privateKeyJwk.kty) ||
+						'RSA';
+					me._alg = 'EC' === me._kty ? 'ES256' : 'RS256'; // TODO vary with bitwidth of key (if not handled)
+					var jws = me.RSA.signJws(
+						options.accountKeypair,
+						undefined,
+						{
+							nonce: me._nonce,
+							alg: me._alg,
+							url: me._directoryUrls.newOrder,
+							kid: me._kid
+						},
+						Buffer.from(payload, 'utf8')
+					);
+
+					if (me.debug) {
+						console.debug('\n[DEBUG] newOrder\n');
+					}
+					me._nonce = null;
+					return me
+						._request({
+							method: 'POST',
+							url: me._directoryUrls.newOrder,
+							headers: { 'Content-Type': 'application/jose+json' },
+							json: jws
+						})
+						.then(function(resp) {
+							me._nonce = resp.toJSON().headers['replay-nonce'];
+							var location = resp.toJSON().headers.location;
+							var setAuths;
+							var auths = [];
+							if (me.debug) {
+								console.debug(location);
+							} // the account id url
+							if (me.debug) {
+								console.debug(resp.toJSON());
+							}
+							me._authorizations = resp.body.authorizations;
+							me._order = location;
+							me._finalize = resp.body.finalize;
+							//if (me.debug) console.debug('[DEBUG] finalize:', me._finalize); return;
+
+							if (!me._authorizations) {
+								return Promise.reject(
+									new Error(
+										"[acme-v2.js] authorizations were not fetched for '" +
+											options.domains.join() +
+											"':\n" +
+											JSON.stringify(resp.body)
+									)
+								);
+							}
+							if (me.debug) {
+								console.debug('[acme-v2] POST newOrder has authorizations');
+							}
+							setAuths = me._authorizations.slice(0);
+
+							function setNext() {
+								var authUrl = setAuths.shift();
+								if (!authUrl) {
+									return;
 								}
-								return me
-									._request({ method: 'GET', url: me._certificate, json: true })
-									.then(function(resp) {
-										if (me.debug) {
-											console.debug(
-												'acme-v2: csr submitted and cert received:'
-											);
-										}
-										// https://github.com/certbot/certbot/issues/5721
-										var certsarr = ACME.splitPemChain(
-											ACME.formatPemChain(resp.body || '')
+
+								return ACME._getChallenges(me, options, authUrl).then(function(
+									results
+								) {
+									// var domain = options.domains[i]; // results.identifier.value
+
+									// If it's already valid, we're golden it regardless
+									if (
+										results.challenges.some(function(ch) {
+											return 'valid' === ch.status;
+										})
+									) {
+										return setNext();
+									}
+
+									var challenge = ACME._chooseChallenge(options, results);
+									if (!challenge) {
+										// For example, wildcards require dns-01 and, if we don't have that, we have to bail
+										return Promise.reject(
+											new Error(
+												"Server didn't offer any challenge we can handle for '" +
+													options.domains.join() +
+													"'."
+											)
 										);
-										//  cert, chain, fullchain, privkey, /*TODO, subject, altnames, issuedAt, expiresAt */
-										var certs = {
-											expires: order.expires,
-											identifiers: order.identifiers,
-											//, authorizations: order.authorizations
-											cert: certsarr.shift(),
-											//, privkey: privkeyPem
-											chain: certsarr.join('\n')
-										};
-										if (me.debug) {
-											console.debug(certs);
-										}
-										return certs;
+									}
+
+									var auth = ACME._challengeToAuth(
+										me,
+										options,
+										results,
+										challenge
+									);
+									auths.push(auth);
+									return ACME._setChallenge(me, options, auth).then(setNext);
+								});
+							}
+
+							function challengeNext() {
+								var auth = auths.shift();
+								if (!auth) {
+									return;
+								}
+								return ACME._postChallenge(me, options, auth).then(
+									challengeNext
+								);
+							}
+
+							// First we set every challenge
+							// Then we ask for each challenge to be checked
+							// Doing otherwise would potentially cause us to poison our own DNS cache with misses
+							return setNext()
+								.then(challengeNext)
+								.then(function() {
+									if (me.debug) {
+										console.debug('[getCertificate] next.then');
+									}
+									var validatedDomains = body.identifiers.map(function(ident) {
+										return ident.value;
 									});
-							});
-					});
+
+									return ACME._finalizeOrder(me, options, validatedDomains);
+								})
+								.then(function(order) {
+									if (me.debug) {
+										console.debug('acme-v2: order was finalized');
+									}
+									return me
+										._request({
+											method: 'GET',
+											url: me._certificate,
+											json: true
+										})
+										.then(function(resp) {
+											if (me.debug) {
+												console.debug(
+													'acme-v2: csr submitted and cert received:'
+												);
+											}
+											// https://github.com/certbot/certbot/issues/5721
+											var certsarr = ACME.splitPemChain(
+												ACME.formatPemChain(resp.body || '')
+											);
+											//  cert, chain, fullchain, privkey, /*TODO, subject, altnames, issuedAt, expiresAt */
+											var certs = {
+												expires: order.expires,
+												identifiers: order.identifiers,
+												//, authorizations: order.authorizations
+												cert: certsarr.shift(),
+												//, privkey: privkeyPem
+												chain: certsarr.join('\n')
+											};
+											if (me.debug) {
+												console.debug(certs);
+											}
+											return certs;
+										});
+								});
+						});
+				});
 			});
 		});
 	});
