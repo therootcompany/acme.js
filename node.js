@@ -184,14 +184,14 @@ ACME._registerAccount = function(me, options) {
 				} else if (options.email) {
 					contact = ['mailto:' + options.email];
 				}
-				var body = {
+				var req = {
 					termsOfServiceAgreed: tosUrl === me._tos,
 					onlyReturnExisting: false,
 					contact: contact
 				};
 				if (options.externalAccount) {
 					// TODO is this really done by HMAC or is it arbitrary?
-					body.externalAccountBinding = me.RSA.signJws(
+					req.externalAccountBinding = me.RSA.signJws(
 						options.externalAccount.secret,
 						undefined,
 						{
@@ -202,7 +202,7 @@ ACME._registerAccount = function(me, options) {
 						Buffer.from(JSON.stringify(jwk))
 					);
 				}
-				var payload = JSON.stringify(body);
+				var payload = JSON.stringify(req);
 				var jws = me.RSA.signJws(
 					options.accountKeypair,
 					undefined,
@@ -234,7 +234,17 @@ ACME._registerAccount = function(me, options) {
 						var account = resp.body;
 
 						if (2 !== Math.floor(resp.statusCode / 100)) {
-							throw new Error('account error: ' + JSON.stringify(body));
+							if ('string' !== typeof account) {
+								account = JSON.stringify(account);
+							}
+							throw new Error(
+								'account error: ' +
+									resp.statusCode +
+									' ' +
+									account +
+									'\n' +
+									JSON.stringify(req)
+							);
 						}
 
 						me._nonce = resp.toJSON().headers['replay-nonce'];
@@ -1097,7 +1107,10 @@ ACME._getCertificate = function(me, options) {
 				.toString('hex') + d
 		);
 	});
-	return ACME._depInit(me, options, dnsHosts).then(function(zonenames) {
+	return ACME._depInit(me, options, dnsHosts).then(function(nada) {
+		if (nada) {
+			// fake use of nada to make both _wrapCb and jshint happy
+		}
 		return ACME._getZones(me, options, dnsHosts).then(function(zonenames) {
 			options.zonenames = zonenames;
 			// Do a little dry-run / self-test

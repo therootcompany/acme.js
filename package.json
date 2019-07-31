@@ -1,6 +1,6 @@
 {
 	"name": "acme-v2",
-	"version": "1.8.2",
+	"version": "1.8.3",
 	"description": "A lightweight library for getting Free SSL certifications through Let's Encrypt, using the ACME protocol.",
 	"homepage": "https://git.coolaj86.com/coolaj86/acme-v2.js",
 	"main": "node.js",
@@ -9,7 +9,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "ssh://gitea@git.coolaj86.com:22042/coolaj86/acme-v2.js.git"
+		"url": "https://git.coolaj86.com/coolaj86/acme-v2.js.git"
 	},
 	"keywords": [
 		"Let's Encrypt",
