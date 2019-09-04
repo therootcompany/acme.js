@@ -14,16 +14,16 @@ This is intented for building ACME API clients in node.js. It is **not** a high-
 
 You may be more interested in one of these:
 
-* <https://greenlock.domains> Instant SSL Certificates in your Browser
-* [Greenlock for Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html) (Browser JavaScript)
-* [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js) (Command line, like certbot)
-* [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js) (Automated HTTPS for Express.js apps)
-* [Greenlock for node.js](https://git.coolaj86.com/coolaj86/greenlock.js) (Automated HTTPS for Proxies, Load-Balances, Servers, CLIs)
-* [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js) (A Full-Blown WebServer)
+-   <https://greenlock.domains> Instant SSL Certificates in your Browser
+-   [Greenlock for Web Browsers](https://git.coolaj86.com/coolaj86/greenlock.html) (Browser JavaScript)
+-   [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js) (Command line, like certbot)
+-   [Greenlock for Express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js) (Automated HTTPS for Express.js apps)
+-   [Greenlock for node.js](https://git.coolaj86.com/coolaj86/greenlock.js) (Automated HTTPS for Proxies, Load-Balances, Servers, CLIs)
+-   [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js) (A Full-Blown WebServer)
 
 # Demonstration
 
-As this is intended to *build* ACME clients, there is not a simple 2-line example.
+As this is intended to _build_ ACME clients, there is not a simple 2-line example.
 
 I'd recommend first trying out one of the [greenlock-express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js)
 or [Greenlock for Web Servers](https://git.coolaj86.com/coolaj86/greenlock-cli.js) examples,
@@ -66,12 +66,12 @@ examples/http-server.js
 
 # Let's Encrypt v2 / ACME draft 11 Support
 
-This library (acme.js) supports ACME [*draft 11*](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
+This library (acme.js) supports ACME [_draft 11_](https://tools.ietf.org/html/draft-ietf-acme-acme-11),
 otherwise known as Let's Encrypt v2 (or v02).
 
-  * ACME draft 11
-  * Let's Encrypt v2
-  * Let's Encrypt v02
+-   ACME draft 11
+-   Let's Encrypt v2
+-   Let's Encrypt v02
 
 ```
 # Production URL
@@ -184,47 +184,47 @@ Helpers & Stuff
 
 ```javascript
 // Constants
-ACME.challengePrefixes['http-01']             // '/.well-known/acme-challenge'
-ACME.challengePrefixes['dns-01']              // '_acme-challenge'
+ACME.challengePrefixes['http-01']; // '/.well-known/acme-challenge'
+ACME.challengePrefixes['dns-01']; // '_acme-challenge'
 ```
 
 # Changelog
 
-* v1.0.9 - update docs
-* v1.0.8 - rename to acme.js, remove backwards compat
-* v1.0.7 - improved error handling again, after user testing
-* v1.0.6 - improved error handling
-* v1.0.5 - cleanup logging
-* v1.0.4 - v6- compat use `promisify` from node's util or bluebird
-* v1.0.3 - documentation cleanup
-* v1.0.2
-  * use `options.contact` to provide raw contact array
-  * made `options.email` optional
-  * file cleanup
-* v1.0.1
-  * Compat API is ready for use
-  * Eliminate debug logging
-* Apr 10, 2018 - tested backwards-compatibility using greenlock.js
-* Apr  5, 2018 - export http and dns challenge tests
-* Apr  5, 2018 - test http and dns challenges (success and failure)
-* Apr  5, 2018 - test subdomains and its wildcard
-* Apr  5, 2018 - test two subdomains
-* Apr  5, 2018 - test wildcard
-* Apr  5, 2018 - completely match api for acme v1 (le-acme-core.js)
-* Mar 21, 2018 - *mostly* matches le-acme-core.js API
-* Mar 21, 2018 - can now accept values (not hard coded)
-* Mar 20, 2018 - SUCCESS - got a test certificate (hard-coded)
-* Mar 20, 2018 - download certificate
-* Mar 20, 2018 - poll for status
-* Mar 20, 2018 - finalize order (submit csr)
-* Mar 20, 2018 - generate domain keypair
-* Mar 20, 2018 - respond to challenges
-* Mar 16, 2018 - get challenges
-* Mar 16, 2018 - new order
-* Mar 15, 2018 - create account
-* Mar 15, 2018 - generate account keypair
-* Mar 15, 2018 - get nonce
-* Mar 15, 2018 - get directory
+-   v1.0.9 - update docs
+-   v1.0.8 - rename to acme.js, remove backwards compat
+-   v1.0.7 - improved error handling again, after user testing
+-   v1.0.6 - improved error handling
+-   v1.0.5 - cleanup logging
+-   v1.0.4 - v6- compat use `promisify` from node's util or bluebird
+-   v1.0.3 - documentation cleanup
+-   v1.0.2
+    -   use `options.contact` to provide raw contact array
+    -   made `options.email` optional
+    -   file cleanup
+-   v1.0.1
+    -   Compat API is ready for use
+    -   Eliminate debug logging
+-   Apr 10, 2018 - tested backwards-compatibility using greenlock.js
+-   Apr 5, 2018 - export http and dns challenge tests
+-   Apr 5, 2018 - test http and dns challenges (success and failure)
+-   Apr 5, 2018 - test subdomains and its wildcard
+-   Apr 5, 2018 - test two subdomains
+-   Apr 5, 2018 - test wildcard
+-   Apr 5, 2018 - completely match api for acme v1 (le-acme-core.js)
+-   Mar 21, 2018 - _mostly_ matches le-acme-core.js API
+-   Mar 21, 2018 - can now accept values (not hard coded)
+-   Mar 20, 2018 - SUCCESS - got a test certificate (hard-coded)
+-   Mar 20, 2018 - download certificate
+-   Mar 20, 2018 - poll for status
+-   Mar 20, 2018 - finalize order (submit csr)
+-   Mar 20, 2018 - generate domain keypair
+-   Mar 20, 2018 - respond to challenges
+-   Mar 16, 2018 - get challenges
+-   Mar 16, 2018 - new order
+-   Mar 15, 2018 - create account
+-   Mar 15, 2018 - generate account keypair
+-   Mar 15, 2018 - get nonce
+-   Mar 15, 2018 - get directory
 
 # Legal
 
