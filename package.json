@@ -1,12 +1,11 @@
 {
 	"name": "acme-v2",
-	"version": "1.8.4",
+	"version": "1.8.5",
 	"description": "A lightweight library for getting Free SSL certifications through Let's Encrypt, using the ACME protocol.",
 	"homepage": "https://git.coolaj86.com/coolaj86/acme-v2.js",
-	"main": "node.js",
+	"main": "index.js",
 	"files": [
 		"compat.js",
-		"node.js",
 		"lib",
 		"scripts"
 	],
