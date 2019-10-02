@@ -1,42 +1,44 @@
 {
-  "name": "@bluecrypt/acme",
-  "version": "1.0.1",
-  "description": "Free SSL certificates through Let's Encrypt, right in your browser",
-  "main": "bluecrypt-acme.js",
-  "homepage": "https://rootprojects.org/acme/",
-  "directories": {
-    "lib": "lib"
-  },
-  "files": [
-    "lib",
-    "bluecrypt-acme.js",
-    "bluecrypt-acme.min.js"
-  ],
-  "scripts": {
-    "test": "node server.js",
-    "start": "node server.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://git.coolaj86.com/coolaj86/bluecrypt-acme.js.git"
-  },
-  "keywords": [
-    "ACME",
-    "Let's Encrypt",
-    "browser",
-    "EC",
-    "RSA",
-    "CSR",
-    "greenlock",
-    "VanillaJS",
-    "ZeroSSL"
-  ],
-  "author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
-  "license": "MPL-2.0",
-  "devDependencies": {
-    "@root/request": "^1.3.10",
-    "dig.js": "^1.3.9",
-    "dns-suite": "^1.2.12",
-    "express": "^4.16.4"
-  }
+	"name": "acme",
+	"version": "2.0.0-wip.0",
+	"description": "Free SSL certificates through Let's Encrypt, right in your browser",
+	"main": "bluecrypt-acme.js",
+	"homepage": "https://rootprojects.org/acme/",
+	"directories": {
+		"lib": "lib"
+	},
+	"files": [
+		"lib",
+		"dist"
+	],
+	"scripts": {
+		"build": "node bin/bundle.js",
+		"lint": "jshint lib bin",
+		"test": "node server.js",
+		"start": "node server.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://git.coolaj86.com/coolaj86/bluecrypt-acme.js.git"
+	},
+	"keywords": [
+		"ACME",
+		"Let's Encrypt",
+		"browser",
+		"EC",
+		"RSA",
+		"CSR",
+		"greenlock",
+		"VanillaJS",
+		"ZeroSSL"
+	],
+	"author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
+	"license": "MPL-2.0",
+	"devDependencies": {
+		"@root/request": "^1.3.10",
+		"dig.js": "^1.3.9",
+		"dns-suite": "^1.2.12",
+		"express": "^4.16.4",
+		"uglify-js": "^3.6.0"
+	}
 }
