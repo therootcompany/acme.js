@@ -1,18 +1,39 @@
 'use strict';
 
+require('dotenv').config();
+
 var ACME = require('../');
 var Keypairs = require('../lib/keypairs.js');
-var acme = ACME.create({});
+var acme = ACME.create({ debug: true });
+
+// TODO exec npm install --save-dev CHALLENGE_MODULE
 
 var config = {
 	env: process.env.ENV,
 	email: process.env.SUBSCRIBER_EMAIL,
-	domain: process.env.BASE_DOMAIN
+	domain: process.env.BASE_DOMAIN,
+	challengeType: process.env.CHALLENGE_TYPE,
+	challengeModule: process.env.CHALLENGE_MODULE,
+	challengeOptions: JSON.parse(process.env.CHALLENGE_OPTIONS)
 };
 config.debug = !/^PROD/i.test(config.env);
+config.challenger = require('acme-' +
+	config.challengeType +
+	'-' +
+	config.challengeModule).create(config.challengeOptions);
+if (!config.challengeType || !config.domain) {
+	console.error(
+		new Error('Missing config variables. Check you .env and the docs')
+			.message
+	);
+	console.error(config);
+	process.exit(1);
+}
+
+var challenges = {};
+challenges[config.challengeType] = config.challenger;
 
 async function happyPath() {
-	var domains = randomDomains();
 	var agreed = false;
 	var metadata = await acme.init(
 		'https://acme-staging-v02.api.letsencrypt.org/directory'
@@ -66,8 +87,31 @@ async function happyPath() {
 	if (config.debug) {
 		console.info('Server Key Created');
 		console.info(JSON.stringify(serverKeypair, null, 2));
-		console.info('');
 		console.info();
+		console.info();
+	}
+
+	var domains = randomDomains();
+	if (config.debug) {
+		console.info('Get certificates for random domains:');
+		console.info(domains);
+	}
+	var results = await acme.certificates.create({
+		account: account,
+		accountKeypair: { privateKeyJwk: accountKeypair.private },
+		serverKeypair: { privateKeyJwk: serverKeypair.private },
+		domains: domains,
+		challenges: challenges, // must be implemented
+		skipDryRun: true
+	});
+
+	if (config.debug) {
+		console.info('Got SSL Certificate:');
+		console.info(results.expires);
+		console.info(results.cert);
+		console.info(results.chain);
+		console.info('');
+		console.info('');
 	}
 }
 
