@@ -4,7 +4,9 @@ require('dotenv').config();
 
 var ACME = require('../');
 var Keypairs = require('../lib/keypairs.js');
-var acme = ACME.create({ debug: true });
+var acme = ACME.create({
+	// debug: true
+});
 
 // TODO exec npm install --save-dev CHALLENGE_MODULE
 
@@ -13,14 +15,42 @@ var config = {
 	email: process.env.SUBSCRIBER_EMAIL,
 	domain: process.env.BASE_DOMAIN,
 	challengeType: process.env.CHALLENGE_TYPE,
-	challengeModule: process.env.CHALLENGE_MODULE,
+	challengeModule: process.env.CHALLENGE_PLUGIN,
 	challengeOptions: JSON.parse(process.env.CHALLENGE_OPTIONS)
 };
 config.debug = !/^PROD/i.test(config.env);
-config.challenger = require('acme-' +
-	config.challengeType +
-	'-' +
-	config.challengeModule).create(config.challengeOptions);
+var pluginPrefix = 'acme-' + config.challengeType + '-';
+var pluginName = config.challengeModule;
+var plugin;
+
+function badPlugin(err) {
+	if ('MODULE_NOT_FOUND' !== err.code) {
+		console.error(err);
+		return;
+	}
+	console.error("Couldn't find '" + pluginName + "'. Is it installed?");
+	console.error("\tnpm install --save-dev '" + pluginName + "'");
+}
+try {
+	plugin = require(pluginName);
+} catch (err) {
+	if (
+		'MODULE_NOT_FOUND' !== err.code ||
+		0 === pluginName.indexOf(pluginPrefix)
+	) {
+		badPlugin(err);
+		process.exit(1);
+	}
+	try {
+		pluginName = pluginPrefix + pluginName;
+		plugin = require(pluginName);
+	} catch (e) {
+		badPlugin(e);
+		process.exit(1);
+	}
+}
+
+config.challenger = plugin.create(config.challengeOptions);
 if (!config.challengeType || !config.domain) {
 	console.error(
 		new Error('Missing config variables. Check you .env and the docs')
@@ -33,7 +63,7 @@ if (!config.challengeType || !config.domain) {
 var challenges = {};
 challenges[config.challengeType] = config.challenger;
 
-async function happyPath() {
+async function happyPath(accKty, srvKty, rnd) {
 	var agreed = false;
 	var metadata = await acme.init(
 		'https://acme-staging-v02.api.letsencrypt.org/directory'
@@ -47,8 +77,7 @@ async function happyPath() {
 		console.info();
 	}
 
-	// EC for account (but RSA for cert, for testing both)
-	var accountKeypair = await Keypairs.generate({ kty: 'EC' });
+	var accountKeypair = await Keypairs.generate({ kty: accKty });
 	if (config.debug) {
 		console.info('Account Key Created');
 		console.info(JSON.stringify(accountKeypair, null, 2));
@@ -83,7 +112,7 @@ async function happyPath() {
 		throw new Error('Failed to ask the user to agree to terms');
 	}
 
-	var serverKeypair = await Keypairs.generate({ kty: 'RSA' });
+	var serverKeypair = await Keypairs.generate({ kty: srvKty });
 	if (config.debug) {
 		console.info('Server Key Created');
 		console.info(JSON.stringify(serverKeypair, null, 2));
@@ -91,7 +120,7 @@ async function happyPath() {
 		console.info();
 	}
 
-	var domains = randomDomains();
+	var domains = randomDomains(rnd);
 	if (config.debug) {
 		console.info('Get certificates for random domains:');
 		console.info(domains);
@@ -107,6 +136,7 @@ async function happyPath() {
 
 	if (config.debug) {
 		console.info('Got SSL Certificate:');
+		console.info(Object.keys(results));
 		console.info(results.expires);
 		console.info(results.cert);
 		console.info(results.chain);
@@ -115,17 +145,22 @@ async function happyPath() {
 	}
 }
 
-happyPath()
+// Try EC + RSA
+var rnd = random();
+happyPath('EC', 'RSA', rnd)
 	.then(function() {
-		console.info('success');
+		// Now try RSA + EC
+		rnd = random();
+		return happyPath('RSA', 'EC', rnd).then(function() {
+			console.info('success');
+		});
 	})
 	.catch(function(err) {
 		console.error('Error:');
 		console.error(err.stack);
 	});
 
-function randomDomains() {
-	var rnd = random();
+function randomDomains(rnd) {
 	return ['foo-acmejs', 'bar-acmejs', '*.baz-acmejs', 'baz-acmejs'].map(
 		function(pre) {
 			return pre + '-' + rnd + '.' + config.domain;
