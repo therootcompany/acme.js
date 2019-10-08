@@ -1,153 +1,238 @@
 <html>
-  <head>
-    <title>Bluecrypt ACME - A Root Project</title>
-    <style>
-      textarea {
-        width: 42em;
-        height: 10em;
-      }
-      /* need to word wrap the binary no space der */
-      .js-der-public, .js-der-private{
-        white-space: pre-wrap;      /* CSS3 */
-        white-space: -moz-pre-wrap; /* Firefox */
-        white-space: -pre-wrap;     /* Opera <7 */
-        white-space: -o-pre-wrap;   /* Opera 7 */
-        word-wrap: break-word;      /* IE */
-      }
-    </style>
-  </head>
-  <body>
-    <h1>@bluecrypt/acme: Let's&nbsp;Encrypt&nbsp;for&nbsp;the&nbsp;Browser</h1>
+	<head>
+		<title>Bluecrypt ACME - A Root Project</title>
+		<meta charset="UTF-8" />
+		<style>
+			textarea {
+				width: 42em;
+				height: 10em;
+			}
+			/* need to word wrap the binary no space der */
+			.js-der-public,
+			.js-der-private {
+				white-space: pre-wrap; /* CSS3 */
+				white-space: -moz-pre-wrap; /* Firefox */
+				white-space: -pre-wrap; /* Opera <7 */
+				white-space: -o-pre-wrap; /* Opera 7 */
+				word-wrap: break-word; /* IE */
+			}
+		</style>
+	</head>
+	<body>
+		<h1>
+			@bluecrypt/acme: Let's&nbsp;Encrypt&nbsp;for&nbsp;the&nbsp;Browser
+		</h1>
 
-    <p>This is intended to be explored with your JavaScript console open.</p>
-    <pre><code>&lt;script src="<a href="https://rootprojects.org/acme/bluecrypt-acme.js">https://rootprojects.org/acme/bluecrypt-acme.js</a>"&gt;&lt;/script&gt;</code></pre>
-    <pre><code>&lt;script src="<a href="https://rootprojects.org/acme/bluecrypt-acme.min.js">https://rootprojects.org/acme/bluecrypt-acme.min.js</a>"&gt;&lt;/script&gt;</code></pre>
-    <a href="https://git.rootprojects.org/root/bluecrypt-acme.js">Documentation</a>
+		<p>
+			This is intended to be explored with your JavaScript console open.
+		</p>
+		<pre><code>&lt;script src="<a href="https://rootprojects.org/acme/bluecrypt-acme.js">https://rootprojects.org/acme/bluecrypt-acme.js</a>"&gt;&lt;/script&gt;</code></pre>
+		<pre><code>&lt;script src="<a href="https://rootprojects.org/acme/bluecrypt-acme.min.js">https://rootprojects.org/acme/bluecrypt-acme.min.js</a>"&gt;&lt;/script&gt;</code></pre>
+		<a href="https://git.rootprojects.org/root/bluecrypt-acme.js"
+			>Documentation</a
+		>
 
-    <h2>1. Keypair Generation</h2>
-    <form class="js-keygen">
-      <p>Key Type:</p>
-      <div>
-        <input type="radio" id="-ktyEC"
-         name="kty" value="EC" checked>
-        <label for="-ktyEC">ECDSA</label>
-        <input type="radio" id="-ktyRSA"
-         name="kty" value="RSA">
-        <label for="-ktyRSA">RSA</label>
-      </div>
-      <div class="js-ec-opts">
-        <p>EC Options:</p>
-        <label for="-crv2"><input type="radio" id="-crv2"
-         name="ec-crv" value="P-256" checked>P-256</label>
-        <label for="-crv3"><input type="radio" id="-crv3"
-         name="ec-crv" value="P-384">P-384</label>
-        <!-- label for="-crv5"><input type="radio" id="-crv5"
+		<h2>1. Keypair Generation</h2>
+		<form class="js-keygen">
+			<p>Key Type:</p>
+			<div>
+				<input type="radio" id="-ktyEC" name="kty" value="EC" checked />
+				<label for="-ktyEC">ECDSA</label>
+				<input type="radio" id="-ktyRSA" name="kty" value="RSA" />
+				<label for="-ktyRSA">RSA</label>
+			</div>
+			<div class="js-ec-opts">
+				<p>EC Options:</p>
+				<label for="-crv2"
+					><input
+						type="radio"
+						id="-crv2"
+						name="ec-crv"
+						value="P-256"
+						checked
+					/>P-256</label
+				>
+				<label for="-crv3"
+					><input
+						type="radio"
+						id="-crv3"
+						name="ec-crv"
+						value="P-384"
+					/>P-384</label
+				>
+				<!-- label for="-crv5"><input type="radio" id="-crv5"
          name="ec-crv" value="P-521">P-521</label -->
-      </div>
-      <div class="js-rsa-opts" hidden>
-        <p>RSA Options:</p>
-        <label for="-modlen2"><input type="radio" id="-modlen2"
-         name="rsa-len" value="2048" checked>2048</label>
-        <label for="-modlen3"><input type="radio" id="-modlen3"
-         name="rsa-len" value="3072">3072</label>
-        <label for="-modlen5"><input type="radio" id="-modlen5"
-         name="rsa-len" value="4096">4096</label>
-      </div>
-      <button class="js-generate" hidden>Generate</button>
-    </form>
+			</div>
+			<div class="js-rsa-opts" hidden>
+				<p>RSA Options:</p>
+				<label for="-modlen2"
+					><input
+						type="radio"
+						id="-modlen2"
+						name="rsa-len"
+						value="2048"
+						checked
+					/>2048</label
+				>
+				<label for="-modlen3"
+					><input
+						type="radio"
+						id="-modlen3"
+						name="rsa-len"
+						value="3072"
+					/>3072</label
+				>
+				<label for="-modlen5"
+					><input
+						type="radio"
+						id="-modlen5"
+						name="rsa-len"
+						value="4096"
+					/>4096</label
+				>
+			</div>
+			<button class="js-generate" hidden>Generate</button>
+		</form>
 
-    <h2>2. ACME Account</h2>
-    <form class="js-acme-account">
-      <label for="-acmeEmail">Email:</label>
-      <input class="js-email" type="email" id="-acmeEmail" value="john.doe@gmail.com">
-      <br>
-      <label for="-acmeTos"><input class="js-tos" name="tos" type="checkbox" id="-acmeTos" checked>
-        Agree to Let's Encrypt Terms of Service</label>
-      <br>
-      <button class="js-create-account" hidden>Create Account</button>
-    </form>
+		<h2>2. ACME Account</h2>
+		<form class="js-acme-account">
+			<label for="-acmeEmail">Email:</label>
+			<input
+				class="js-email"
+				type="email"
+				id="-acmeEmail"
+				value="john.doe@gmail.com"
+			/>
+			<br />
+			<label for="-acmeTos"
+				><input
+					class="js-tos"
+					name="tos"
+					type="checkbox"
+					id="-acmeTos"
+					checked
+				/>
+				Agree to Let's Encrypt Terms of Service</label
+			>
+			<br />
+			<button class="js-create-account" hidden>Create Account</button>
+		</form>
 
-    <h2>3. (optional) Certificate Signing Request</h2>
-    <form class="js-csr">
-      <label for="-acmeDomains">Domains:</label>
-      <input class="js-domains" type="text" id="-acmeDomains" value="example.com www.example.com">
-      <br>
-      <button class="js-create-csr" hidden>Create CSR</button>
-    </form>
+		<h2>3. (optional) Certificate Signing Request</h2>
+		<form class="js-csr">
+			<label for="-acmeDomains">Domains:</label>
+			<input
+				class="js-domains"
+				type="text"
+				id="-acmeDomains"
+				value="example.com www.example.com"
+			/>
+			<br />
+			<button class="js-create-csr" hidden>Create CSR</button>
+		</form>
 
-    <h2>4. ACME Certificate Order</h2>
-    <form class="js-acme-order">
-      Challenge type:
-      <label for="-http01"><input type="radio" id="-http01"
-       name="acme-challenge-type" value="http-01" checked>http-01</label>
-      <label for="-dns01"><input type="radio" id="-dns01"
-       name="acme-challenge-type" value="dns-01">dns-01</label>
-      <br>
-      <label for="-skipDryrun"><input class="js-skip-dryrun" name="skip-dryrun"
-        type="checkbox" id="-skipDryrun" checked> Skip dry-run challenge</label>
-      <br>
-      <button class="js-create-order" hidden>Create Order</button>
-    </form>
+		<h2>4. ACME Certificate Order</h2>
+		<form class="js-acme-order">
+			Challenge type:
+			<label for="-http01"
+				><input
+					type="radio"
+					id="-http01"
+					name="acme-challenge-type"
+					value="http-01"
+					checked
+				/>http-01</label
+			>
+			<label for="-dns01"
+				><input
+					type="radio"
+					id="-dns01"
+					name="acme-challenge-type"
+					value="dns-01"
+				/>dns-01</label
+			>
+			<br />
+			<label for="-skipDryrun"
+				><input
+					class="js-skip-dryrun"
+					name="skip-dryrun"
+					type="checkbox"
+					id="-skipDryrun"
+					checked
+				/>
+				Skip dry-run challenge</label
+			>
+			<br />
+			<button class="js-create-order" hidden>Create Order</button>
+		</form>
 
-    <div class="js-loading" hidden>Loading</div>
+		<div class="js-loading" hidden>Loading</div>
 
-    <details class="js-toc-jwk" hidden>
-      <summary>JWK Keypair</summary>
-      <pre><code class="js-jwk">&nbsp;</code></pre>
-    </details>
-    <details class="js-toc-der-private" hidden>
-      <summary>DER Private Binary</summary>
-      <pre><code class="js-der-private">&nbsp;</code></pre>
-    </details>
-    <details class="js-toc-der-public" hidden>
-      <summary>DER Public Binary</summary>
-      <pre><code class="js-der-public">&nbsp;</code></pre>
-    </details>
-    <details class="js-toc-pem js-toc-pem-pkcs1-private" hidden>
-      <summary>PEM Private (base64-encoded PKCS1 DER)</summary>
-      <pre><code  class="js-input-pem-pkcs1-private" ></code></pre>
-    </details>
-    <details class="js-toc-pem js-toc-pem-sec1-private" hidden>
-      <summary>PEM Private (base64-encoded SEC1 DER)</summary>
-      <pre><code  class="js-input-pem-sec1-private" ></code></pre>
-    </details>
-    <details class="js-toc-pem js-toc-pem-pkcs8-private" hidden>
-      <summary>PEM Private (base64-encoded PKCS8 DER)</summary>
-      <pre><code  class="js-input-pem-pkcs8-private" ></code></pre>
-    </details>
-    <details class="js-toc-pem js-toc-pem-pkcs1-public" hidden>
-      <summary>PEM Public (base64-encoded PKCS1 DER)</summary>
-      <pre><code  class="js-input-pem-pkcs1-public" ></code></pre>
-    </details>
-    <details class="js-toc-pem js-toc-pem-spki-public" hidden>
-      <summary>PEM Public (base64-encoded SPKI/PKIX DER)</summary>
-      <pre><code  class="js-input-pem-spki-public" ></code></pre>
-    </details>
-    <details class="js-toc-acme-account-response" hidden>
-      <summary>ACME Account Request</summary>
-      <pre><code class="js-acme-account-response">&nbsp;</code></pre>
-    </details>
-    <details class="js-toc-acme-order-response" hidden>
-      <summary>ACME Order Response</summary>
-      <pre><code class="js-acme-order-response">&nbsp;</code></pre>
-    </details>
+		<details class="js-toc-jwk" hidden>
+			<summary>JWK Keypair</summary>
+			<pre><code class="js-jwk">&nbsp;</code></pre>
+		</details>
+		<details class="js-toc-der-private" hidden>
+			<summary>DER Private Binary</summary>
+			<pre><code class="js-der-private">&nbsp;</code></pre>
+		</details>
+		<details class="js-toc-der-public" hidden>
+			<summary>DER Public Binary</summary>
+			<pre><code class="js-der-public">&nbsp;</code></pre>
+		</details>
+		<details class="js-toc-pem js-toc-pem-pkcs1-private" hidden>
+			<summary>PEM Private (base64-encoded PKCS1 DER)</summary>
+			<pre><code  class="js-input-pem-pkcs1-private" ></code></pre>
+		</details>
+		<details class="js-toc-pem js-toc-pem-sec1-private" hidden>
+			<summary>PEM Private (base64-encoded SEC1 DER)</summary>
+			<pre><code  class="js-input-pem-sec1-private" ></code></pre>
+		</details>
+		<details class="js-toc-pem js-toc-pem-pkcs8-private" hidden>
+			<summary>PEM Private (base64-encoded PKCS8 DER)</summary>
+			<pre><code  class="js-input-pem-pkcs8-private" ></code></pre>
+		</details>
+		<details class="js-toc-pem js-toc-pem-pkcs1-public" hidden>
+			<summary>PEM Public (base64-encoded PKCS1 DER)</summary>
+			<pre><code  class="js-input-pem-pkcs1-public" ></code></pre>
+		</details>
+		<details class="js-toc-pem js-toc-pem-spki-public" hidden>
+			<summary>PEM Public (base64-encoded SPKI/PKIX DER)</summary>
+			<pre><code  class="js-input-pem-spki-public" ></code></pre>
+		</details>
+		<details class="js-toc-acme-account-response" hidden>
+			<summary>ACME Account Request</summary>
+			<pre><code class="js-acme-account-response">&nbsp;</code></pre>
+		</details>
+		<details class="js-toc-acme-order-response" hidden>
+			<summary>ACME Order Response</summary>
+			<pre><code class="js-acme-order-response">&nbsp;</code></pre>
+		</details>
 
-    <br>
-    <p>Bluecrypt&trade; is a collection of lightweight, zero-dependency, libraries written in VanillaJS.
-    They are fast, tiny, and secure, using the native features of modern browsers where possible.
-    This means it's easy-to-use crypto in kilobytes, not megabytes.</p>
-    <br>
-    <footer>View (git) source <a href="https://git.rootprojects.org/root/bluecrypt-acme.js">@bluecrypt/acme</a></footer>
+		<br />
+		<p>
+			Bluecrypt&trade; is a collection of lightweight, zero-dependency,
+			libraries written in VanillaJS. They are fast, tiny, and secure,
+			using the native features of modern browsers where possible. This
+			means it's easy-to-use crypto in kilobytes, not megabytes.
+		</p>
+		<br />
+		<footer>
+			View (git) source
+			<a href="https://git.rootprojects.org/root/bluecrypt-acme.js"
+				>@bluecrypt/acme</a
+			>
+		</footer>
 
-    <script src="./lib/encoding.js"></script>
-    <script src="./lib/asn1-packer.js"></script>
-    <script src="./lib/x509.js"></script>
-    <script src="./lib/ecdsa.js"></script>
-    <script src="./lib/rsa.js"></script>
-    <script src="./lib/keypairs.js"></script>
-    <script src="./lib/asn1-parser.js"></script>
-    <script src="./lib/csr.js"></script>
-    <script src="./lib/acme.js"></script>
-    <script src="./app.js"></script>
-  </body>
+		<script src="./lib/encoding.js"></script>
+		<script src="./lib/asn1-packer.js"></script>
+		<script src="./lib/x509.js"></script>
+		<script src="./lib/ecdsa.js"></script>
+		<script src="./lib/rsa.js"></script>
+		<script src="./lib/keypairs.js"></script>
+		<script src="./lib/asn1-parser.js"></script>
+		<script src="./lib/csr.js"></script>
+		<script src="./lib/acme.js"></script>
+		<script src="./app.js"></script>
+	</body>
 </html>
