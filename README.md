@@ -51,26 +51,40 @@ var ACME = require('@root/acme');
 
 ## WebPack
 
+```html
+<meta charset="UTF-8" />
+```
+
+(necessary in case the webserver headers don't specify `plain/text; charset="UTF-8"`)
+
 ```js
 var ACME = require('@root/acme');
 ```
 
 ## Vanilla JS
 
-```js
-var ACME = window.ACME;
+```html
+<meta charset="UTF-8" />
 ```
+
+(necessary in case the webserver headers don't specify `plain/text; charset="UTF-8"`)
 
 `acme.js`
 
 ```html
-<script src="https://unpkg.com/@root/acme/dist/acme.js"></script>
+<script src="https://unpkg.com/@root/acme@3.0.0/dist/acme.js"></script>
 ```
 
 `acme.min.js`
 
 ```html
-<script src="https://unpkg.com/@root/acme/dist/acme.min.js"></script>
+<script src="https://unpkg.com/@root/acme@3.0.0/dist/acme.min.js"></script>
+```
+
+Use
+
+```js
+var ACME = window['@root/acme'];
 ```
 
 ## Examples
@@ -230,15 +244,42 @@ acme.certificates.create({
 The punycode library itself is lightweight and dependency-free.
 It is available both in node and for browsers.
 
-# Full Documentation
+# Testing
 
-See [acme.js](https://git.coolaj86.com/coolaj86/acme-v2.js).
+You will need to use one of the [`acme-dns-01-*` plugins](https://www.npmjs.com/search?q=acme-dns-01-)
+to run the test locally.
 
-Aside from the loading instructions (`npm` and `require` instead of `script` tags),
-the usage is identical to the node version.
+You'll also need a `.env` that looks something like the one in `examples/example.env`:
 
-That said, the two may leap-frog a little from time to time
-(for example, the browser version is just a touch ahead at the moment).
+```bash
+ENV=DEV
+SUBSCRIBER_EMAIL=letsencrypt+staging@example.com
+BASE_DOMAIN=test.example.com
+CHALLENGE_TYPE=dns-01
+CHALLENGE_PLUGIN=acme-dns-01-digitalocean
+CHALLENGE_OPTIONS='{"token":"xxxxxxxxxxxx"}'
+```
+
+For example:
+
+```bash
+# Get the repo and change directories into it
+git clone https://git.rootprojects.org/root/bluecrypt-acme.js
+pushd bluecrypt-acme.js/
+
+# Install the challenge plugin you'll use for the tests
+npm install --save-dev acme-dns-01-digitalocean
+
+# Copy the sample .env file
+rsync -av examples/example.env .env
+
+# Edit the config file to use a domain in your account, and your API token
+#vim .env
+code .env
+
+# Run the tests
+node tests/index.js
+```
 
 # Developing
 

@@ -7,12 +7,12 @@ module.exports = {
 	output: {
 		path: path.resolve(__dirname, 'dist'),
 		filename: 'acme.js',
-		library: 'acme',
+		library: '@root/acme',
 		libraryTarget: 'umd',
 		globalObject: "typeof self !== 'undefined' ? self : this"
 	},
 	resolve: {
 		aliasFields: ['webpack', 'browser'],
-    mainFields: ['browser']
+		mainFields: ['browser']
 	}
 };
