@@ -3,7 +3,7 @@
 	"version": "3.0.0-wip.0",
 	"description": "Free SSL certificates through Let's Encrypt, right in your browser",
 	"homepage": "https://rootprojects.org/acme/",
-	"main": "lib/acme.js",
+	"main": "acme.js",
 	"browser": {
 		"./lib/node/sha2.js": "./lib/browser/sha2.js",
 		"./lib/node/http.js": "./lib/browser/http.js",
@@ -11,10 +11,8 @@
 		"./lib/node/rsa.js": "./lib/browser/rsa.js",
 		"./lib/node/keypairs.js": "./lib/browser/keypairs.js"
 	},
-	"directories": {
-		"lib": "lib"
-	},
 	"files": [
+		"*.js",
 		"lib",
 		"dist"
 	],

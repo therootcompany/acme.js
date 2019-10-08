@@ -10,8 +10,8 @@ var Enc = require('@root/encoding/base64');
 var ACME = module.exports;
 //var Keypairs = exports.Keypairs || {};
 //var CSR = exports.CSR;
-var sha2 = require('./node/sha2.js');
-var http = require('./node/http.js');
+var sha2 = require('./lib/node/sha2.js');
+var http = require('./lib/node/http.js');
 
 ACME.formatPemChain = function formatPemChain(str) {
 	return (

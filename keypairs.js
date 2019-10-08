@@ -7,7 +7,7 @@ var Enc = require('@root/encoding/base64');
 var Keypairs = module.exports;
 var Rasha = require('./rsa.js');
 var Eckles = require('./ecdsa.js');
-var native = require('./node/keypairs.js');
+var native = require('./lib/node/keypairs.js');
 
 Keypairs._stance =
 	"We take the stance that if you're knowledgeable enough to" +

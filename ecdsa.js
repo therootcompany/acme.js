@@ -4,7 +4,7 @@
 var Enc = require('@root/encoding');
 
 var EC = module.exports;
-var native = require('./node/ecdsa.js');
+var native = require('./lib/node/ecdsa.js');
 
 // TODO SSH
 var SSH;
@@ -12,7 +12,7 @@ var SSH;
 var x509 = require('./x509.js');
 var PEM = require('./pem.js');
 //var SSH = require('./ssh-keys.js');
-var sha2 = require('./node/sha2.js');
+var sha2 = require('./lib/node/sha2.js');
 
 // 1.2.840.10045.3.1.7
 // prime256v1 (ANSI X9.62 named elliptic curve)

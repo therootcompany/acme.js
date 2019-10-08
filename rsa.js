@@ -2,11 +2,11 @@
 'use strict';
 
 var RSA = module.exports;
-var native = require('./node/rsa.js');
+var native = require('./lib/node/rsa.js');
 var x509 = require('./x509.js');
 var PEM = require('./pem.js');
 //var SSH = require('./ssh-keys.js');
-var sha2 = require('./node/sha2.js');
+var sha2 = require('./lib/node/sha2.js');
 var Enc = require('@root/encoding/base64');
 
 RSA._universal =

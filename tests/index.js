@@ -3,8 +3,8 @@
 require('dotenv').config();
 
 var punycode = require('punycode');
-var ACME = require('../');
-var Keypairs = require('../lib/keypairs.js');
+var ACME = require('../acme.js');
+var Keypairs = require('../keypairs.js');
 var acme = ACME.create({
 	// debug: true
 });
