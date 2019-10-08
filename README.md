@@ -14,8 +14,11 @@ Lightweight. Fast. Modern Crypto. Zero dependecies.
     -   [x] Simple and lightweight PEM, DER, ASN1, X509, and CSR implementations
 -   [x] Supports International Domain Names (i.e. `.中国`)
 -   [x] VanillaJS, Zero External Dependencies
-    -   [x] Node.js
+    -   [x] Node.js\* (v6+)
     -   [x] WebPack
+
+\* Although we use `async/await` in the examples, the code is written in CommonJS,
+with Promises, so you can use it in Node.js and Browsers without transpiling.
 
 # Want Quick and Easy?
 
@@ -161,6 +164,38 @@ Keypairs.generate({ kty: 'EC' }).then(function(pair) {
 });
 ```
 
+### Generate a Certificate Private Key
+
+```js
+var certKeypair = await Keypairs.generate({ kty: 'RSA' });
+var pem = await Keypairs.export({
+	jwk: certKeypair.private,
+	encoding: 'pem'
+});
+
+// This should be saved as `privkey.pem`
+console.log(pem);
+```
+
+### Generate a CSR
+
+The easiest way to generate a Certificate Signing Request will be either with `openssl` or with `@root/CSR`.
+
+```js
+var CSR = require('@root/csr');
+var Enc = require('@root/encoding');
+
+// 'subject' should be first in list
+var sortedDomains = ['example.com', 'www.example.com'];
+var csr = await CSR.csr({
+	jwk: certKeypair.private,
+	domains: sortedDomains,
+	encoding: 'der'
+}).then(function(der) {
+	return Enc.bufToUrlBase64(der);
+});
+```
+
 ### Get Free 90-day SSL Certificate
 
 Creating an ACME "order" for a 90-day SSL certificate requires use of the account private key,
@@ -170,31 +205,25 @@ A domain ownership verification "challenge" (uploading a file to an unsecured HT
 is a required part of the process, which requires `set` and `remove` callbacks/promises.
 
 ```js
-var serverPrivateKey;
-
-Keypairs.generate({ kty: 'EC' }).then(function(pair) {
-	serverPrivateKey = pair.private;
-
-	return acme.certificates
-		.create({
-			agreeToTerms: function(tos) {
-				return tos;
-			},
-			account: account,
-			accountKeypair: { privateKeyJwk: accountPrivateKey },
-			serverKeypair: { privateKeyJwk: serverPrivateKey },
-			domains: ['example.com', 'www.example.com'],
-			challenges: challenges, // must be implemented
-			customerEmail: null,
-			skipDryRun: true
-		})
-		.then(function(results) {
-			console.log('Got SSL Certificate:');
-			console.log(results.expires);
-			console.log(results.cert);
-			console.log(results.chain);
-		});
+var certinfo = await acme.certificates.create({
+	agreeToTerms: function(tos) {
+		return tos;
+	},
+	account: account,
+	accountKeypair: { privateKeyJwk: accountPrivateKey },
+	csr: csr,
+	domains: sortedDomains,
+	challenges: challenges, // must be implemented
+	customerEmail: null,
+	skipChallengeTests: false,
+	skipDryRun: false
 });
+
+console.log('Got SSL Certificate:');
+console.log(results.expires);
+
+// This should be saved as `fullchain.pem`
+console.log([results.cert, results.chain].join('\n'));
 ```
 
 ### Example "Challenge" Implementation
