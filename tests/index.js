@@ -90,7 +90,7 @@ async function happyPath(accKty, srvKty, rnd) {
 		agreeToTerms: agree,
 		// TODO detect jwk/pem/der?
 		accountKeypair: { privateKeyJwk: accountKeypair.private },
-		email: config.email
+		subscriberEmail: config.email
 	});
 	// TODO top-level agree
 	function agree(tos) {
@@ -143,6 +143,7 @@ async function happyPath(accKty, srvKty, rnd) {
 		serverKeypair: { privateKeyJwk: serverKeypair.private },
 		domains: domains,
 		challenges: challenges, // must be implemented
+		customerEmail: null,
 		skipDryRun: true
 	});
 

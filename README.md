@@ -77,6 +77,24 @@ var ACME = window.ACME;
 
 You can see `tests/index.js`, `examples/index.html`, `examples/app.js` in the repo for full example usage.
 
+### Emails: Maintainer vs Subscriber vs Customer
+
+-   `maintainerEmail` should be the email address of the **author of the code**.
+    This person will receive critical security and API change notifications.
+-   `subscriberEmail` should be the email of the **admin of the hosting service**.
+    This person agrees to the Let's Encrypt Terms of Service and will be notified
+    when a certificate fails to renew.
+-   `customerEmail` should be the email of individual who owns the domain.
+    This is optional (not currently implemented).
+
+Generally speaking **YOU** are the _maintainer_ and you **or your employer** is the _subscriber_.
+
+If you (or your employer) is running any type of service
+you **SHOULD NOT** pass the _customer_ email as the subscriber email.
+
+If you are not running a service (you may be building a CLI, for example),
+then you should prompt the user for their email address, and they are the subscriber.
+
 ### Instantiate ACME.js
 
 Although built for Let's Encrypt, ACME.js will work with any server
@@ -85,7 +103,9 @@ that supports draft-15 of the ACME spec (includes POST-as-GET support).
 The `init()` method takes a _directory url_ and initializes internal state according to its response.
 
 ```js
-var acme = ACME.create({});
+var acme = ACME.create({
+	maintainerEmail: 'jon@example.com'
+});
 acme.init('https://acme-staging-v02.api.letsencrypt.org/directory').then(
 	function() {
 		// Ready to use, show page
@@ -119,7 +139,7 @@ Keypairs.generate({ kty: 'EC' }).then(function(pair) {
 				}
 			},
 			accountKeypair: { privateKeyJwk: pair.private },
-			email: $('.js-email-input').value
+			subscriberEmail: $('.js-email-input').value
 		})
 		.then(function(_account) {
 			account = _account;
@@ -151,6 +171,7 @@ Keypairs.generate({ kty: 'EC' }).then(function(pair) {
 			serverKeypair: { privateKeyJwk: serverPrivateKey },
 			domains: ['example.com', 'www.example.com'],
 			challenges: challenges, // must be implemented
+			customerEmail: null,
 			skipDryRun: true
 		})
 		.then(function(results) {
