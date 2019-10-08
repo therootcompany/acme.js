@@ -2,6 +2,9 @@
 
 require('dotenv').config();
 
+var CSR = require('@root/csr');
+var Enc = require('@root/encoding/base64');
+var PEM = require('../pem.js');
 var punycode = require('punycode');
 var ACME = require('../acme.js');
 var Keypairs = require('../keypairs.js');
@@ -113,14 +116,23 @@ async function happyPath(accKty, srvKty, rnd) {
 		throw new Error('Failed to ask the user to agree to terms');
 	}
 
-	var serverKeypair = await Keypairs.generate({ kty: srvKty });
+	var certKeypair = await Keypairs.generate({ kty: srvKty });
+	var pem = await Keypairs.export({
+		jwk: certKeypair.private,
+		encoding: 'pem'
+	});
 	if (config.debug) {
 		console.info('Server Key Created');
-		console.info(JSON.stringify(serverKeypair, null, 2));
+		console.info('privkey.jwk.json');
+		console.info(JSON.stringify(certKeypair, null, 2));
+		// This should be saved as `privkey.pem`
 		console.info();
+		console.info('privkey.' + srvKty.toLowerCase() + '.pem:');
+		console.info(pem);
 		console.info();
 	}
 
+	// 'subject' should be first in list
 	var domains = randomDomains(rnd);
 	if (config.debug) {
 		console.info('Get certificates for random domains:');
@@ -137,14 +149,31 @@ async function happyPath(accKty, srvKty, rnd) {
 		);
 		console.info();
 	}
+
+	// Create CSR
+	var csrDer = await CSR.csr({
+		jwk: certKeypair.private,
+		domains: domains,
+		encoding: 'der'
+	});
+	var csr = Enc.bufToUrlBase64(csrDer);
+	var csrPem = PEM.packBlock({
+		type: 'CERTIFICATE REQUEST',
+		bytes: csrDer /* { jwk: jwk, domains: opts.domains } */
+	});
+	if (config.debug) {
+		console.info('Certificate Signing Request');
+		console.info(csrPem);
+		console.info();
+	}
+
 	var results = await acme.certificates.create({
 		account: account,
 		accountKeypair: { privateKeyJwk: accountKeypair.private },
-		serverKeypair: { privateKeyJwk: serverKeypair.private },
+		csr: csr,
 		domains: domains,
 		challenges: challenges, // must be implemented
-		customerEmail: null,
-		skipDryRun: true
+		customerEmail: null
 	});
 
 	if (config.debug) {
