@@ -2,6 +2,7 @@
 
 require('dotenv').config();
 
+var punycode = require('punycode');
 var ACME = require('../');
 var Keypairs = require('../lib/keypairs.js');
 var acme = ACME.create({
@@ -73,7 +74,7 @@ async function happyPath(accKty, srvKty, rnd) {
 	if (config.debug) {
 		console.info('ACME.js initialized');
 		console.info(metadata);
-		console.info('');
+		console.info();
 		console.info();
 	}
 
@@ -81,7 +82,7 @@ async function happyPath(accKty, srvKty, rnd) {
 	if (config.debug) {
 		console.info('Account Key Created');
 		console.info(JSON.stringify(accountKeypair, null, 2));
-		console.info('');
+		console.info();
 		console.info();
 	}
 
@@ -96,7 +97,7 @@ async function happyPath(accKty, srvKty, rnd) {
 		if (config.debug) {
 			console.info('Agreeing to Terms of Service:');
 			console.info(tos);
-			console.info('');
+			console.info();
 			console.info();
 		}
 		agreed = true;
@@ -123,7 +124,18 @@ async function happyPath(accKty, srvKty, rnd) {
 	var domains = randomDomains(rnd);
 	if (config.debug) {
 		console.info('Get certificates for random domains:');
-		console.info(domains);
+		console.info(
+			domains
+				.map(function(puny) {
+					var uni = punycode.toUnicode(puny);
+					if (puny !== uni) {
+						return puny + ' (' + uni + ')';
+					}
+					return puny;
+				})
+				.join('\n')
+		);
+		console.info();
 	}
 	var results = await acme.certificates.create({
 		account: account,
@@ -140,8 +152,8 @@ async function happyPath(accKty, srvKty, rnd) {
 		console.info(results.expires);
 		console.info(results.cert);
 		console.info(results.chain);
-		console.info('');
-		console.info('');
+		console.info();
+		console.info();
 	}
 }
 
@@ -163,18 +175,20 @@ happyPath('EC', 'RSA', rnd)
 function randomDomains(rnd) {
 	return ['foo-acmejs', 'bar-acmejs', '*.baz-acmejs', 'baz-acmejs'].map(
 		function(pre) {
-			return pre + '-' + rnd + '.' + config.domain;
+			return punycode.toASCII(pre + '-' + rnd + '.' + config.domain);
 		}
 	);
 }
 
 function random() {
-	return parseInt(
-		Math.random()
-			.toString()
-			.slice(2, 99),
-		10
-	)
-		.toString(16)
-		.slice(0, 4);
+	return (
+		parseInt(
+			Math.random()
+				.toString()
+				.slice(2, 99),
+			10
+		)
+			.toString(16)
+			.slice(0, 4) + '例'
+	);
 }
