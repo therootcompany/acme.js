@@ -1317,7 +1317,7 @@ ACME.create = function create(me) {
 	}
 	// me.debug = true;
 	me.challengePrefixes = ACME.challengePrefixes;
-	me.Keypairs = me.Keypairs || require('./keypairs.js');
+	me.Keypairs = me.Keypairs || require('@root/keypairs');
 	me.CSR = me.CSR || require('./csr.js');
 	me._nonces = [];
 	me._canUse = {};

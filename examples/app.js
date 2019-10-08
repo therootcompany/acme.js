@@ -2,12 +2,12 @@
 (function() {
 	'use strict';
 
-	var Keypairs = window.Keypairs;
-	var Rasha = window.Rasha;
-	var Eckles = window.Eckles;
-	var x509 = window.x509;
-	var CSR = window.CSR;
-	var ACME = window.ACME;
+	var Keypairs = require('@root/keypairs');
+	var Rasha = require('@root/acme/rsa');
+	var Eckles = require('@root/acme/ecdsa');
+	var x509 = require('@root/acme/x509');
+	var CSR = require('@root/csr');
+	var ACME = require('@root/acme');
 	var accountStuff = {};
 
 	function $(sel) {

@@ -1,5 +1,4 @@
 .env
-dist/
 *.gz
 .*.sw*
 .ignore

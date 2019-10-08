@@ -14,7 +14,7 @@ var UInt = ASN1.UInt;
 var Asn1Parser = require('./asn1/parser.js');
 var PEM = require('./pem.js');
 var X509 = require('./x509.js');
-var Keypairs = require('./keypairs');
+var Keypairs = require('@root/keypairs');
 
 // TODO find a way that the prior node-ish way of `module.exports = function () {}` isn't broken
 var CSR = module.exports;
