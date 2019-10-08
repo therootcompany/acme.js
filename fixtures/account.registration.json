@@ -1,13 +1,13 @@
 {
-  "key": {
-    "kty": "EC",
-    "crv": "P-256",
-    "x": "uLh0RLpAmKyyHCf2zOaF18IIuBiJEiZ8Mu3xPZ7ZxN8",
-    "y": "vVl_cCXK0_GlCaCT5Yg750LUd8eRU6tySEdQFLM62NQ",
-    "kid": "https://acme-staging-v02.api.letsencrypt.org/acme/acct/11265299"
-  },
-  "contact": [],
-  "initialIp": "66.219.236.169",
-  "createdAt": "2019-10-04T22:54:28.569489074Z",
-  "status": "valid"
+	"key": {
+		"kty": "EC",
+		"crv": "P-256",
+		"x": "uLh0RLpAmKyyHCf2zOaF18IIuBiJEiZ8Mu3xPZ7ZxN8",
+		"y": "vVl_cCXK0_GlCaCT5Yg750LUd8eRU6tySEdQFLM62NQ",
+		"kid": "https://acme-staging-v02.api.letsencrypt.org/acme/acct/11265299"
+	},
+	"contact": [],
+	"initialIp": "66.219.236.169",
+	"createdAt": "2019-10-04T22:54:28.569489074Z",
+	"status": "valid"
 }
