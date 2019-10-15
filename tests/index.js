@@ -4,10 +4,10 @@ require('dotenv').config();
 
 var CSR = require('@root/csr');
 var Enc = require('@root/encoding/base64');
-var PEM = require('../pem.js');
+var PEM = require('@root/pem');
 var punycode = require('punycode');
 var ACME = require('../acme.js');
-var Keypairs = require('../keypairs.js');
+var Keypairs = require('@root/keypairs');
 var acme = ACME.create({
 	// debug: true
 });

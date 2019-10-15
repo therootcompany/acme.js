@@ -10,7 +10,7 @@ var Enc = require('@root/encoding/base64');
 var ACME = module.exports;
 //var Keypairs = exports.Keypairs || {};
 //var CSR = exports.CSR;
-var sha2 = require('./lib/node/sha2.js');
+var sha2 = require('@root/keypairs/lib/node/sha2.js');
 var http = require('./lib/node/http.js');
 
 ACME.formatPemChain = function formatPemChain(str) {
@@ -1318,7 +1318,7 @@ ACME.create = function create(me) {
 	// me.debug = true;
 	me.challengePrefixes = ACME.challengePrefixes;
 	me.Keypairs = me.Keypairs || require('@root/keypairs');
-	me.CSR = me.CSR || require('./csr.js');
+	me.CSR = me.CSR || require('@root/csr');
 	me._nonces = [];
 	me._canUse = {};
 	if (!me._baseUrl) {
