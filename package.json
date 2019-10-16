@@ -1,6 +1,6 @@
 {
 	"name": "@root/acme",
-	"version": "3.0.0-wip.2",
+	"version": "3.0.0-wip.3",
 	"description": "Free SSL certificates through Let's Encrypt, right in your browser",
 	"homepage": "https://rootprojects.org/acme/",
 	"main": "acme.js",
@@ -37,7 +37,7 @@
 	"author": "AJ ONeal <coolaj86@gmail.com> (https://coolaj86.com/)",
 	"license": "MPL-2.0",
 	"dependencies": {
-		"@root/csr": "^0.8.0",
+		"@root/csr": "^0.8.1",
 		"@root/encoding": "^1.0.1",
 		"@root/keypairs": "^0.9.0",
 		"@root/pem": "^1.0.4",
