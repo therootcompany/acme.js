@@ -1,12 +1,9 @@
-# Do you rely on ACME.js?
+# ACME.js v3 on its way (Nov 1st, 2019)
 
-Hey! Let's Encrypt will **STOP WORKING** with Greenlock and ACME.js at the end of Oct 2019.
-**WITHOUT YOUR HELP** we won't get the next release out in time.
+ACME.js v3 is in private beta and will be available by Nov 1st.
 
-If Greenlock (or ACME.js) has saved you time and money, and taken stress out of your life,
-or you just love it, please reach out to return the favor today:
-
-[**SAVE GREENLOCK / ACME.js**](https://indiegogo.com/at/greenlock): <https://indiegogo.com/at/greenlock>
+Follow the updates on the [campaign page](https://indiegogo.com/at/greenlock),
+and contribute to support the project and get beta access now.
 
 | **acme-v2.js** ([npm](https://www.npmjs.com/package/acme-v2))
 | [acme-v2-cli.js](https://git.coolaj86.com/coolaj86/acme-v2-cli.js)
