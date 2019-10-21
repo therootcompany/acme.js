@@ -8,10 +8,12 @@
 require('@root/encoding/bytes');
 var Enc = require('@root/encoding/base64');
 var ACME = module.exports;
-//var Keypairs = exports.Keypairs || {};
-//var CSR = exports.CSR;
+var Keypairs = require('@root/keypairs');
+var CSR = require('@root/csr');
 var sha2 = require('@root/keypairs/lib/node/sha2.js');
 var http = require('./lib/node/http.js');
+
+var native = require('./native.js');
 
 ACME.formatPemChain = function formatPemChain(str) {
 	return (
@@ -95,6 +97,7 @@ ACME.challengeTests = {
 
 ACME._directory = function(me) {
 	// GET-as-GET ok
+	// TODO cache the directory URL
 	return me.request({ method: 'GET', url: me.directoryUrl, json: true });
 };
 ACME._getNonce = function(me) {
@@ -344,12 +347,6 @@ ACME._testChallengeOptions = function() {
 			url: 'https://acme-staging-v02.example.com/1',
 			token: 'test-' + chToken + '-1',
 			_wildcard: true
-		},
-		{
-			type: 'tls-sni-01',
-			status: 'pending',
-			url: 'https://acme-staging-v02.example.com/2',
-			token: 'test-' + chToken + '-2'
 		},
 		{
 			type: 'tls-alpn-01',
@@ -1317,8 +1314,8 @@ ACME.create = function create(me) {
 	}
 	// me.debug = true;
 	me.challengePrefixes = ACME.challengePrefixes;
-	me.Keypairs = me.Keypairs || require('@root/keypairs');
-	me.CSR = me.CSR || require('@root/csr');
+	me.Keypairs = me.Keypairs || Keypairs;
+	me.CSR = me.CSR || CSR;
 	me._nonces = [];
 	me._canUse = {};
 	if (!me._baseUrl) {
@@ -1328,7 +1325,7 @@ ACME.create = function create(me) {
 	//me.request = me.request || require('@root/request');
 	if (!me.dns01) {
 		me.dns01 = function(ch) {
-			return ACME._dns01(me, ch);
+			return native._dns01(me, ch);
 		};
 	}
 	// backwards compat
@@ -1337,7 +1334,7 @@ ACME.create = function create(me) {
 	}
 	if (!me.http01) {
 		me.http01 = function(ch) {
-			return ACME._http01(me, ch);
+			return native._http01(me, ch);
 		};
 	}
 
@@ -1362,19 +1359,10 @@ ACME.create = function create(me) {
 				'you must supply either the ACME directory url as a string or an object of the ACME urls'
 			);
 		}
+
 		var p = Promise.resolve();
 		if (!me.skipChallengeTest) {
-			p = me
-				.request({ url: me._baseUrl + '/api/_acme_api_/' })
-				.then(function(resp) {
-					if (resp.body.success) {
-						me._canCheck['http-01'] = true;
-						me._canCheck['dns-01'] = true;
-					}
-				})
-				.catch(function() {
-					// ignore
-				});
+			p = native._canCheck(me);
 		}
 		return p.then(function() {
 			return ACME._directory(me).then(function(resp) {
@@ -1529,36 +1517,6 @@ ACME._prnd = function(n) {
 };
 ACME._toHex = function(pair) {
 	return parseInt(pair, 10).toString(16);
-};
-ACME._dns01 = function(me, ch) {
-	return new me.request({
-		url: me._baseUrl + '/api/dns/' + ch.dnsHost + '?type=TXT'
-	}).then(function(resp) {
-		var err;
-		if (!resp.body || !Array.isArray(resp.body.answer)) {
-			err = new Error('failed to get DNS response');
-			console.error(err);
-			throw err;
-		}
-		if (!resp.body.answer.length) {
-			err = new Error('failed to get DNS answer record in response');
-			console.error(err);
-			throw err;
-		}
-		return {
-			answer: resp.body.answer.map(function(ans) {
-				return { data: ans.data, ttl: ans.ttl };
-			})
-		};
-	});
-};
-ACME._http01 = function(me, ch) {
-	var url = encodeURIComponent(ch.challengeUrl);
-	return new me.request({
-		url: me._baseUrl + '/api/http?url=' + url
-	}).then(function(resp) {
-		return resp.body;
-	});
 };
 ACME._removeChallenge = function(me, options, auth) {
 	var challengers = options.challenges || {};

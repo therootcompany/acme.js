@@ -95,6 +95,7 @@ async function happyPath(accKty, srvKty, rnd) {
 		accountKeypair: { privateKeyJwk: accountKeypair.private },
 		subscriberEmail: config.email
 	});
+
 	// TODO top-level agree
 	function agree(tos) {
 		if (config.debug) {
