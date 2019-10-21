@@ -52,13 +52,17 @@ If they don't, please open an issue to let us know why.
 We'd much rather improve the app than have a hundred different versions running in the wild.
 However, in keeping to our values we've made the source visible for others to inspect, improve, and modify.
 
-# QuickStart
+# Install
 
 To make it easy to generate, encode, and decode keys and certificates,
 ACME.js uses [Keypairs.js](https://git.rootprojects.org/root/keypairs.js)
 and [CSR.js](https://git.rootprojects.org/root/csr.js)
 
 ## Node.js
+
+```js
+npm install --save @root/acme
+```
 
 ```js
 var ACME = require('@root/acme');
@@ -84,16 +88,14 @@ var ACME = require('@root/acme');
 
 (necessary in case the webserver headers don't specify `plain/text; charset="UTF-8"`)
 
-`acme.js`
-
 ```html
-<script src="https://unpkg.com/@root/acme@3.0.0/dist/acme.js"></script>
+<script src="https://unpkg.com/@root/acme@3.0.0/dist/acme.all.js"></script>
 ```
 
 `acme.min.js`
 
 ```html
-<script src="https://unpkg.com/@root/acme@3.0.0/dist/acme.min.js"></script>
+<script src="https://unpkg.com/@root/acme@3.0.0/dist/acme.all.min.js"></script>
 ```
 
 Use
@@ -102,7 +104,7 @@ Use
 var ACME = window['@root/acme'];
 ```
 
-## Examples
+## Usage Examples
 
 You can see `tests/index.js`, `examples/index.html`, `examples/app.js` in the repo for full example usage.
 
@@ -305,8 +307,8 @@ For example:
 
 ```bash
 # Get the repo and change directories into it
-git clone https://git.rootprojects.org/root/bluecrypt-acme.js
-pushd bluecrypt-acme.js/
+git clone https://git.rootprojects.org/root/acme.js
+pushd acme.js/
 
 # Install the challenge plugin you'll use for the tests
 npm install --save-dev acme-dns-01-digitalocean
@@ -344,7 +346,7 @@ Greenlock&trade; is a [trademark](https://rootprojects.org/legal/#trademark) of 
 
 The rule of thumb is "attribute, but don't confuse". For example:
 
-> Built with [ACME.js](https://git.rootprojects.org/root/bluecrypt-acme.js) (a [Root](https://rootprojects.org) project).
+> Built with [ACME.js](https://git.rootprojects.org/root/acme.js) (a [Root](https://rootprojects.org) project).
 
 Please [contact us](mailto:aj@therootcompany.com) if have any questions in regards to our trademark,
 attribution, and/or visible source policies. We want to build great software and a great community.
