@@ -13,6 +13,12 @@ var acme = ACME.create({
 });
 
 // TODO exec npm install --save-dev CHALLENGE_MODULE
+if (!process.env.CHALLENGE_OPTIONS) {
+	console.error(
+		'Please create a .env in the format of examples/example.env to run the tests'
+	);
+	process.exit(1);
+}
 
 var config = {
 	env: process.env.ENV,

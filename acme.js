@@ -63,7 +63,7 @@ ACME.challengeTests = {
 					'See https://git.coolaj86.com/coolaj86/acme-v2.js/issues/4'
 			);
 			err.code = 'E_FAIL_DRY_CHALLENGE';
-			return Promise.reject(err);
+			throw err;
 		});
 	},
 	'dns-01': function(me, auth) {
@@ -90,7 +90,7 @@ ACME.challengeTests = {
 					'See https://git.coolaj86.com/coolaj86/acme-v2.js/issues/4'
 			);
 			err.code = 'E_FAIL_DRY_CHALLENGE';
-			return Promise.reject(err);
+			throw err;
 		});
 	}
 };
@@ -389,7 +389,8 @@ ACME._testChallenges = function(me, options) {
 			});
 			if (!challenge) {
 				// For example, wildcards require dns-01 and, if we don't have that, we have to bail
-				var enabled = options.challengeTypes.join(', ') || 'none';
+				var enabled =
+					Object.keys(options.challenges).join(', ') || 'none';
 				var suitable =
 					challenges
 						.map(function(r) {
@@ -481,7 +482,7 @@ ACME._testChallenges = function(me, options) {
 ACME._chooseChallenge = function(options, results) {
 	// For each of the challenge types that we support
 	var challenge;
-	options.challengeTypes.some(function(chType) {
+	options._challengeTypes.some(function(chType) {
 		// And for each of the challenge types that are allowed
 		return results.challenges.some(function(ch) {
 			// Check to see if there are any matches
@@ -907,63 +908,54 @@ ACME._getCertificate = function(me, options) {
 		console.debug('[acme-v2] DEBUG get cert 1');
 	}
 
-	// Lot's of error checking to inform the user of mistakes
-	if (!(options.challengeTypes || []).length) {
-		options.challengeTypes = Object.keys(options.challenges || {});
-	}
-	if (!options.challengeTypes.length) {
-		options.challengeTypes = [options.challengeType].filter(Boolean);
-	}
-	if (options.challengeType) {
-		options.challengeTypes.sort(function(a, b) {
-			if (a === options.challengeType) {
-				return -1;
-			}
-			if (b === options.challengeType) {
-				return 1;
-			}
-			return 0;
-		});
-		if (options.challengeType !== options.challengeTypes[0]) {
-			return Promise.reject(
-				new Error(
-					"options.challengeType is '" +
-						options.challengeType +
-						"'," +
-						" which does not exist in the supplied types '" +
-						options.challengeTypes.join(',') +
-						"'"
-				)
-			);
+	// Prefer this order for efficiency:
+	// * http-01 is the fasest
+	// * tls-alpn-01 is for networks that don't allow plain traffic
+	// * dns-01 is the slowest (due to DNS propagation), but is required for private networks and wildcards
+	var challengeTypes = Object.keys(options.challenges);
+	options._challengeTypes = ['http-01', 'tls-alpn-01', 'dns-01'].filter(
+		function(typ) {
+			return -1 !== challengeTypes.indexOf(typ);
 		}
-	}
+	);
+
 	// TODO check that all challengeTypes are represented in challenges
-	if (!options.challengeTypes.length) {
+	if (!options._challengeTypes.length) {
 		return Promise.reject(
-			new Error(
-				'options.challengeTypes (string array) must be specified' +
-					' (and in order of preferential priority).'
-			)
+			new Error('options.challenges must be specified')
 		);
 	}
-	if (options.csr) {
-		// TODO validate csr signature
-		options._csr = me.CSR._info(options.csr);
-		options.domains = options._csr.altnames;
-		if (options._csr.subject !== options.domains[0]) {
-			return Promise.reject(
-				new Error(
-					'certificate subject (commonName) does not match first altname (SAN)'
-				)
-			);
-		}
+
+	if (!options.csr) {
+		throw new Error(
+			'no `csr` option given (should be in DER or PEM format)'
+		);
+	}
+	// TODO validate csr signature?
+	options._csr = CSR._info(options.csr);
+	options.domains = options.domains || options._csr.altnames;
+	options._csr.altnames = options._csr.altnames || [];
+	if (
+		options.domains
+			.slice(0)
+			.sort()
+			.join(' ') !==
+		options._csr.altnames
+			.slice(0)
+			.sort()
+			.join(' ')
+	) {
+		throw new Error('certificate altnames do not match requested domains');
+	}
+	if (options._csr.subject !== options.domains[0]) {
+		throw new Error(
+			'certificate subject (commonName) does not match first altname (SAN)'
+		);
 	}
 	if (!(options.domains && options.domains.length)) {
-		return Promise.reject(
-			new Error(
-				'options.domains must be a list of string domain names,' +
-					' with the first being the subject of the certificate (or options.subject must specified).'
-			)
+		throw new Error(
+			'options.domains must be a list of string domain names,' +
+				' with the first being the subject of the certificate'
 		);
 	}
 
@@ -1296,16 +1288,6 @@ ACME._generateCsrWeb64 = function(me, options, validatedDomains) {
 		csr = Enc.base64ToUrlBase64(csr.trim().replace(/\s+/g, ''));
 		return Promise.resolve(csr);
 	}
-
-	return ACME._importKeypair(me, options.serverKeypair).then(function(pair) {
-		return me.CSR.csr({
-			jwk: pair.private,
-			domains: validatedDomains,
-			encoding: 'der'
-		}).then(function(der) {
-			return Enc.bufToUrlBase64(der);
-		});
-	});
 };
 
 ACME.create = function create(me) {
@@ -1315,7 +1297,6 @@ ACME.create = function create(me) {
 	// me.debug = true;
 	me.challengePrefixes = ACME.challengePrefixes;
 	me.Keypairs = me.Keypairs || Keypairs;
-	me.CSR = me.CSR || CSR;
 	me._nonces = [];
 	me._canUse = {};
 	if (!me._baseUrl) {
@@ -1372,12 +1353,20 @@ ACME.create = function create(me) {
 	};
 	me.accounts = {
 		create: function(options) {
-			return ACME._registerAccount(me, options);
+			try {
+				return ACME._registerAccount(me, options);
+			} catch (e) {
+				return Promise.reject(e);
+			}
 		}
 	};
 	me.certificates = {
 		create: function(options) {
-			return ACME._getCertificate(me, options);
+			try {
+				return ACME._getCertificate(me, options);
+			} catch (e) {
+				return Promise.reject(e);
+			}
 		}
 	};
 	return me;
