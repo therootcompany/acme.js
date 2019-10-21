@@ -3,6 +3,7 @@
 var native = module.exports;
 
 native._canCheck = function(me) {
+	me._canCheck = {};
 	return me
 		.request({ url: me._baseUrl + '/api/_acme_api_/' })
 		.then(function(resp) {

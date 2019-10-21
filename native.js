@@ -5,6 +5,7 @@ var promisify = require('util').promisify;
 var resolveTxt = promisify(require('dns').resolveTxt);
 
 native._canCheck = function(me) {
+	me._canCheck = {};
 	me._canCheck['http-01'] = true;
 	me._canCheck['dns-01'] = true;
 	return Promise.resolve();
