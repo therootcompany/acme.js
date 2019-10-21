@@ -11,7 +11,10 @@ if (!fs.existsSync(__dirname + '/../tests/account.privkey.pem')) {
 		var privkeyPem = RSA.exportPrivatePem(keypair);
 		console.log(privkeyPem);
 
-		fs.writeFileSync(__dirname + '/../tests/account.privkey.pem', privkeyPem);
+		fs.writeFileSync(
+			__dirname + '/../tests/account.privkey.pem',
+			privkeyPem
+		);
 	});
 }
 

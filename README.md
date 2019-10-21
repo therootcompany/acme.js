@@ -1,239 +1,355 @@
-# ACME.js v3 on its way (Nov 1st, 2019)
+# [ACME.js](https://git.rootprojects.org/root/acme.js) v3
 
-ACME.js v3 is in private beta and will be available by Nov 1st.
+| Built by [Root](https://therootcompany.com) for [Greenlock](https://greenlock.domains)
 
-Follow the updates on the [campaign page](https://indiegogo.com/at/greenlock),
-and contribute to support the project and get beta access now.
+Free SSL Certificates from Let's Encrypt, for Node.js and Web Browsers
 
-| **acme-v2.js** ([npm](https://www.npmjs.com/package/acme-v2))
-| [acme-v2-cli.js](https://git.coolaj86.com/coolaj86/acme-v2-cli.js)
-| [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
-| [goldilocks.js](https://git.coolaj86.com/coolaj86/goldilocks.js)
+Lightweight. Fast. Modern Crypto. Zero external dependecies.
 
-# [acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js) | a [Root](https://therootcompany.com) project
+# Features
 
-A **Zero (External) Dependency**\* library for building
-Let's Encrypt v2 (ACME draft 18) clients and getting Free SSL certificates.
+| 15k gzipped | 55k minified | 88k (2,500 loc) source with comments |
 
 The primary goal of this library is to make it easy to
 get Accounts and Certificates through Let's Encrypt.
 
-# Features
+-   [x] Let's Encrypt v2 / ACME RFC 8555 (November 2019)
+    -   [x] POST-as-GET support
+    -   [x] Secure support for EC and RSA for account and server keys
+    -   [x] Simple and lightweight PEM, DER, ASN1, X509, and CSR implementations
+    -   [ ] (in-progress) StartTLS Everywhere&trade;
+-   [x] Supports International Domain Names (i.e. `.中国`)
+-   [x] Works with any [generic ACME challenge handler](https://git.rootprojects.org/root/acme-challenge-test.js)
+    -   [x] **http-01** for single or multiple domains per certificate
+    -   [x] **dns-01** for wildcards, localhost, private networks, etc
+-   [x] VanillaJS, Zero External Dependencies
+    -   [x] Safe, Efficient, Maintained
+    -   [x] Node.js\* (v6+)
+    -   [x] WebPack
+-   [x] Online Demo
+    -   See https://greenlock.domains
 
-- [x] Let's Encrypt&trade; v2 / ACME Draft 12
-  - [ ] (in-progress) Let's Encrypt&trade; v2.1 / ACME Draft 18
-  - [ ] (in-progress) StartTLS Everywhere&trade;
-- [x] Works with any [generic ACME challenge handler](https://git.rootprojects.org/root/acme-challenge-test.js)
-  - [x] **http-01** for single or multiple domains per certificate
-  - [x] **dns-01** for wildcards, localhost, private networks, etc
-- [x] VanillaJS
-  - [x] Zero External Dependencies
-  - [x] Safe, Efficient, Maintained
-  - [x] Works in Node v6+
-  - [ ] (v2) Works in Web Browsers (See [Demo](https://greenlock.domains))
+\* Although we use `async/await` in the examples, the code is written in CommonJS,
+with Promises, so you can use it in Node.js and Browsers without transpiling.
 
-\* <small>The only required dependencies were built by us, specifically for this and related libraries.
-There are some, truly optional, backwards-compatibility dependencies for node v6.</small>
+# Want Quick and Easy?
 
-## Looking for Quick 'n' Easy&trade;?
+ACME.js is a low-level tool for building Let's Encrypt clients in Node and Browsers.
 
-If you want something that's more "batteries included" give
-[greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
-a try.
+If you're looking for maximum convenience, try
+[Greenlock.js](https://git.rootprojects.org/root/greenlock-express.js).
 
-- [greenlock.js](https://git.coolaj86.com/coolaj86/greenlock.js)
+-   <https://git.rootprojects.org/root/greenlock-express.js>
 
-## v1.7+: Transitional v2 Support
+# Online Demos
 
-By the end of June 2019 we expect to have completed the migration to Let's Encrypt v2.1 (ACME draft 18).
+-   Greenlock for the Web <https://greenlock.domains>
+-   ACME.js Demo <https://rootprojects.org/acme/>
 
-Although the draft 18 changes themselves don't requiring breaking the API,
-we've been keeping backwards compatibility for a long time and the API has become messy.
+We expect that our hosted versions will meet all of yours needs.
+If they don't, please open an issue to let us know why.
 
-We're taking this **mandatory ACME update** as an opportunity to **clean up** and **greatly simplify**
-the code with a fresh new release.
+We'd much rather improve the app than have a hundred different versions running in the wild.
+However, in keeping to our values we've made the source visible for others to inspect, improve, and modify.
 
-As of **v1.7** we started adding **transitional support** for the **next major version**, v2.0 of acme-v2.js.
-We've been really good about backwards compatibility for
+# QuickStart
 
-## Recommended Example
+To make it easy to generate, encode, and decode keys and certificates,
+ACME.js uses [Keypairs.js](https://git.rootprojects.org/root/keypairs.js)
+and [CSR.js](https://git.rootprojects.org/root/csr.js)
 
-Due to the upcoming changes we've removed the old documentation.
-
-Instead we recommend that you take a look at the
-[Digital Ocean DNS-01 Example](https://git.rootprojects.org/root/acme-v2.js/src/branch/master/examples/dns-01-digitalocean.js)
-
-- [examples/dns-01-digitalocean.js](https://git.rootprojects.org/root/acme-v2.js/src/branch/master/examples/dns-01-digitalocean.js)
-
-That's not exactly the new API, but it's close.
-
-## Let's Encrypt v02 Directory URLs
-
-```
-# Production URL
-https://acme-v02.api.letsencrypt.org/directory
-```
-
-```
-# Staging URL
-https://acme-staging-v02.api.letsencrypt.org/directory
-```
-
-<!--
-## How to build ACME clients
-
-As this is intended to build ACME clients, there is not a simple 2-line example
-(and if you want that, see [greenlock-express.js](https://git.coolaj86.com/coolaj86/greenlock-express.js)).
-
-I'd recommend first running the example CLI client with a test domain and then investigating the files used for that example:
-
-```bash
-node examples/cli.js
-```
-
-The example cli has the following prompts:
-
-```
-What web address(es) would you like to get certificates for? (ex: example.com,*.example.com)
-What challenge will you be testing today? http-01 or dns-01? [http-01]
-What email should we use? (optional)
-What API style would you like to test? v1-compat or promise? [v1-compat]
-
-Put the string 'mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM.VNAzCR4THe4czVzo9piNn73B1ZXRLaB2CESwJfKkvRM' into a file at 'example.com/.well-known/acme-challenge/mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM'
-
-echo 'mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM.VNAzCR4THe4czVzo9piNn73B1ZXRLaB2CESwJfKkvRM' > 'example.com/.well-known/acme-challenge/mBfh0SqaAV3MOK3B6cAhCbIReAyDuwuxlO1Sl70x6bM'
-
-Then hit the 'any' key to continue...
-```
-
-When you've completed the challenge you can hit a key to continue the process.
-
-If you place the certificate you receive back in `tests/fullchain.pem`
-you can then test it with `examples/https-server.js`.
-
-```
-examples/cli.js
-examples/genkeypair.js
-tests/compat.js
-examples/https-server.js
-examples/http-server.js
-```
-
--->
-
-## API
-
-Status: Small, but breaking changes coming in v2
-
-This API is a simple evolution of le-acme-core,
-but tries to provide a better mapping to the new draft 11 APIs.
+## Node.js
 
 ```js
-var ACME = require('acme-v2').ACME.create({
-	// used for overriding the default user-agent
-	userAgent: 'My custom UA String',
-	getUserAgentString: function(deps) {
-		return 'My custom UA String';
-	},
+var ACME = require('@root/acme');
+```
 
-	// don't try to validate challenges locally
-	skipChallengeTest: false,
-	skipDryRun: false,
+## WebPack
 
-	// ask if the certificate can be issued up to 10 times before failing
-	retryPoll: 8,
-	// ask if the certificate has been validated up to 6 times before cancelling
-	retryPending: 4,
-	// Wait 1000ms between retries
-	retryInterval: 1000,
-	// Wait 10,000ms after deauthorizing a challenge before retrying
-	deauthWait: 10 * 1000
+```html
+<meta charset="UTF-8" />
+```
+
+(necessary in case the webserver headers don't specify `plain/text; charset="UTF-8"`)
+
+```js
+var ACME = require('@root/acme');
+```
+
+## Vanilla JS
+
+```html
+<meta charset="UTF-8" />
+```
+
+(necessary in case the webserver headers don't specify `plain/text; charset="UTF-8"`)
+
+`acme.js`
+
+```html
+<script src="https://unpkg.com/@root/acme@3.0.0/dist/acme.js"></script>
+```
+
+`acme.min.js`
+
+```html
+<script src="https://unpkg.com/@root/acme@3.0.0/dist/acme.min.js"></script>
+```
+
+Use
+
+```js
+var ACME = window['@root/acme'];
+```
+
+## Examples
+
+You can see `tests/index.js`, `examples/index.html`, `examples/app.js` in the repo for full example usage.
+
+### Emails: Maintainer vs Subscriber vs Customer
+
+-   `maintainerEmail` should be the email address of the **author of the code**.
+    This person will receive critical security and API change notifications.
+-   `subscriberEmail` should be the email of the **admin of the hosting service**.
+    This person agrees to the Let's Encrypt Terms of Service and will be notified
+    when a certificate fails to renew.
+-   `customerEmail` should be the email of individual who owns the domain.
+    This is optional (not currently implemented).
+
+Generally speaking **YOU** are the _maintainer_ and you **or your employer** is the _subscriber_.
+
+If you (or your employer) is running any type of service
+you **SHOULD NOT** pass the _customer_ email as the subscriber email.
+
+If you are not running a service (you may be building a CLI, for example),
+then you should prompt the user for their email address, and they are the subscriber.
+
+### Instantiate ACME.js
+
+Although built for Let's Encrypt, ACME.js will work with any server
+that supports draft-15 of the ACME spec (includes POST-as-GET support).
+
+The `init()` method takes a _directory url_ and initializes internal state according to its response.
+
+```js
+var acme = ACME.create({
+	maintainerEmail: 'jon@example.com'
+});
+acme.init('https://acme-staging-v02.api.letsencrypt.org/directory').then(
+	function() {
+		// Ready to use, show page
+		$('body').hidden = false;
+	}
+);
+```
+
+### Create ACME Account with Let's Encrypt
+
+ACME Accounts are key and device based, with an email address as a backup identifier.
+
+A public account key must be registered before an SSL certificate can be requested.
+
+```js
+var accountPrivateKey;
+var account;
+
+Keypairs.generate({ kty: 'EC' }).then(function(pair) {
+	accountPrivateKey = pair.private;
+
+	return acme.accounts
+		.create({
+			agreeToTerms: function(tos) {
+				if (
+					window.confirm(
+						"Do you agree to the ACME.js and Let's Encrypt Terms of Service?"
+					)
+				) {
+					return Promise.resolve(tos);
+				}
+			},
+			accountKeypair: { privateKeyJwk: pair.private },
+			subscriberEmail: $('.js-email-input').value
+		})
+		.then(function(_account) {
+			account = _account;
+		});
+});
+```
+
+### Generate a Certificate Private Key
+
+```js
+var certKeypair = await Keypairs.generate({ kty: 'RSA' });
+var pem = await Keypairs.export({
+	jwk: certKeypair.private,
+	encoding: 'pem'
 });
 
-// Discover Directory URLs
-ACME.init(acmeDirectoryUrl); // returns Promise<acmeUrls={keyChange,meta,newAccount,newNonce,newOrder,revokeCert}>
+// This should be saved as `privkey.pem`
+console.log(pem);
+```
 
-// Accounts
-ACME.accounts.create(options); // returns Promise<regr> registration data
+### Generate a CSR
 
-options = {
-	email: '<email>', // valid email (server checks MX records)
-	accountKeypair: {
-		//    privateKeyPem or privateKeyJwt
-		privateKeyPem: '<ASCII PEM>'
+The easiest way to generate a Certificate Signing Request will be either with `openssl` or with `@root/CSR`.
+
+```js
+var CSR = require('@root/csr');
+var Enc = require('@root/encoding');
+
+// 'subject' should be first in list
+var sortedDomains = ['example.com', 'www.example.com'];
+var csr = await CSR.csr({
+	jwk: certKeypair.private,
+	domains: sortedDomains,
+	encoding: 'der'
+}).then(function(der) {
+	return Enc.bufToUrlBase64(der);
+});
+```
+
+### Get Free 90-day SSL Certificate
+
+Creating an ACME "order" for a 90-day SSL certificate requires use of the account private key,
+the names of domains to be secured, and a distinctly separate server private key.
+
+A domain ownership verification "challenge" (uploading a file to an unsecured HTTP url or setting a DNS record)
+is a required part of the process, which requires `set` and `remove` callbacks/promises.
+
+```js
+var certinfo = await acme.certificates.create({
+	agreeToTerms: function(tos) {
+		return tos;
 	},
-	agreeToTerms: function(tosUrl) {} //    should Promise the same `tosUrl` back
-};
+	account: account,
+	accountKeypair: { privateKeyJwk: accountPrivateKey },
+	csr: csr,
+	domains: sortedDomains,
+	challenges: challenges, // must be implemented
+	customerEmail: null,
+	skipChallengeTests: false,
+	skipDryRun: false
+});
 
-// Registration
-ACME.certificates.create(options); // returns Promise<pems={ privkey (key), cert, chain (ca) }>
+console.log('Got SSL Certificate:');
+console.log(results.expires);
 
-options = {
-	domainKeypair: {
-		privateKeyPem: '<ASCII PEM>'
-	},
-	accountKeypair: {
-		privateKeyPem: '<ASCII PEM>'
-	},
-	domains: ['example.com'],
+// This should be saved as `fullchain.pem`
+console.log([results.cert, results.chain].join('\n'));
+```
 
-	getZones: function(opts) {}, // should Promise an array of domain zone names
-	setChallenge: function(opts) {}, // should Promise the record id, or name
-	removeChallenge: function(opts) {} // should Promise null
+### Example "Challenge" Implementation
+
+Typically here you're just presenting some sort of dialog to the user to ask them to
+upload a file or set a DNS record.
+
+It may be possible to do something fancy like using OAuth2 to login to Google Domanis
+to set a DNS address, etc, but it seems like that sort of fanciness is probably best
+reserved for server-side plugins.
+
+```js
+var challenges = {
+	'http-01': {
+		set: function(opts) {
+			console.info('http-01 set challenge:');
+			console.info(opts.challengeUrl);
+			console.info(opts.keyAuthorization);
+			while (
+				!window.confirm('Upload the challenge file before continuing.')
+			) {}
+			return Promise.resolve();
+		},
+		remove: function(opts) {
+			console.log('http-01 remove challenge:', opts.challengeUrl);
+			return Promise.resolve();
+		}
+	}
 };
 ```
 
-# Changelog
+# IDN - International Domain Names
 
-- v1.8
-  - more transitional prepwork for new v2 API
-  - support newer (simpler) dns-01 and http-01 libraries
-- v1.5
-  - perform full test challenge first (even before nonce)
-- v1.3
-  - Use node RSA keygen by default
-  - No non-optional external deps!
-- v1.2
-  - fix some API out-of-specness
-  - doc some magic numbers (status)
-  - updated deps
-- v1.1.0
-  - reduce dependencies (use lightweight @coolaj86/request instead of request)
-- v1.0.5 - cleanup logging
-- v1.0.4 - v6- compat use `promisify` from node's util or bluebird
-- v1.0.3 - documentation cleanup
-- v1.0.2
-  - use `options.contact` to provide raw contact array
-  - made `options.email` optional
-  - file cleanup
-- v1.0.1
-  - Compat API is ready for use
-  - Eliminate debug logging
-- Apr 10, 2018 - tested backwards-compatibility using greenlock.js
-- Apr 5, 2018 - export http and dns challenge tests
-- Apr 5, 2018 - test http and dns challenges (success and failure)
-- Apr 5, 2018 - test subdomains and its wildcard
-- Apr 5, 2018 - test two subdomains
-- Apr 5, 2018 - test wildcard
-- Apr 5, 2018 - completely match api for acme v1 (le-acme-core.js)
-- Mar 21, 2018 - _mostly_ matches le-acme-core.js API
-- Mar 21, 2018 - can now accept values (not hard coded)
-- Mar 20, 2018 - SUCCESS - got a test certificate (hard-coded)
-- Mar 20, 2018 - download certificate
-- Mar 20, 2018 - poll for status
-- Mar 20, 2018 - finalize order (submit csr)
-- Mar 20, 2018 - generate domain keypair
-- Mar 20, 2018 - respond to challenges
-- Mar 16, 2018 - get challenges
-- Mar 16, 2018 - new order
-- Mar 15, 2018 - create account
-- Mar 15, 2018 - generate account keypair
-- Mar 15, 2018 - get nonce
-- Mar 15, 2018 - get directory
+Convert domain names to `punycode` before creating the certificate:
 
-# Legal
+```js
+var punycode = require('punycode');
 
-[acme-v2.js](https://git.coolaj86.com/coolaj86/acme-v2.js) |
+acme.certificates.create({
+	// ...
+	domains: ['example.com', 'www.example.com'].map(function(name) {
+		return punycode.toASCII(name);
+	})
+});
+```
+
+The punycode library itself is lightweight and dependency-free.
+It is available both in node and for browsers.
+
+# Testing
+
+You will need to use one of the [`acme-dns-01-*` plugins](https://www.npmjs.com/search?q=acme-dns-01-)
+to run the test locally.
+
+You'll also need a `.env` that looks something like the one in `examples/example.env`:
+
+```bash
+ENV=DEV
+SUBSCRIBER_EMAIL=letsencrypt+staging@example.com
+BASE_DOMAIN=test.example.com
+CHALLENGE_TYPE=dns-01
+CHALLENGE_PLUGIN=acme-dns-01-digitalocean
+CHALLENGE_OPTIONS='{"token":"xxxxxxxxxxxx"}'
+```
+
+For example:
+
+```bash
+# Get the repo and change directories into it
+git clone https://git.rootprojects.org/root/bluecrypt-acme.js
+pushd bluecrypt-acme.js/
+
+# Install the challenge plugin you'll use for the tests
+npm install --save-dev acme-dns-01-digitalocean
+
+# Copy the sample .env file
+rsync -av examples/example.env .env
+
+# Edit the config file to use a domain in your account, and your API token
+#vim .env
+code .env
+
+# Run the tests
+node tests/index.js
+```
+
+# Developing
+
+You can see `<script>` tags in the `index.html` in the repo, which references the original
+source files.
+
+Join `@rootprojects` `#general` on [Keybase](https://keybase.io) if you'd like to chat with us.
+
+# Commercial Support
+
+We have both commercial support and commercial licensing available.
+
+You're welcome to [contact us](mailto:aj@therootcompany.com) in regards to IoT, On-Prem,
+Enterprise, and Internal installations, integrations, and deployments.
+
+We also offer consulting for all-things-ACME and Let's Encrypt.
+
+# Legal &amp; Rules of the Road
+
+Greenlock&trade; is a [trademark](https://rootprojects.org/legal/#trademark) of AJ ONeal
+
+The rule of thumb is "attribute, but don't confuse". For example:
+
+> Built with [ACME.js](https://git.rootprojects.org/root/bluecrypt-acme.js) (a [Root](https://rootprojects.org) project).
+
+Please [contact us](mailto:aj@therootcompany.com) if have any questions in regards to our trademark,
+attribution, and/or visible source policies. We want to build great software and a great community.
+
+[ACME.js](https://git.rootprojects.org/root/acme.js) |
 MPL-2.0 |
 [Terms of Use](https://therootcompany.com/legal/#terms) |
 [Privacy Policy](https://therootcompany.com/legal/#privacy)
