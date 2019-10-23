@@ -126,6 +126,19 @@ you **SHOULD NOT** pass the _customer_ email as the subscriber email.
 If you are not running a service (you may be building a CLI, for example),
 then you should prompt the user for their email address, and they are the subscriber.
 
+### Overview
+
+1. Create an instance of ACME.js
+2. Create and SAVE a Subscriber Account private key
+3. Retrieve the Let's Encrypt Subscriber account (with the key)
+    - the account will be created if it doesn't exist
+4. Create a Server Key
+    - this should be per-server, or perhaps per-end-user
+5. Create a Certificate Signing Request
+    - International Domain Names must be converted with `punycode`
+6. Create an ACME Order
+    - use a challenge plugin for HTTP-01 or DNS-01 challenges
+
 ### Instantiate ACME.js
 
 Although built for Let's Encrypt, ACME.js will work with any server
@@ -200,6 +213,7 @@ var CSR = require('@root/csr');
 var Enc = require('@root/encoding');
 
 // 'subject' should be first in list
+// the domains may be in any order, but it should be consistent
 var sortedDomains = ['example.com', 'www.example.com'];
 var csr = await CSR.csr({
 	jwk: certKeypair.private,
@@ -258,7 +272,9 @@ var challenges = {
 			console.info(opts.keyAuthorization);
 			while (
 				!window.confirm('Upload the challenge file before continuing.')
-			) {}
+			) {
+				// spin and wait for the user to upload the challenge file
+			}
 			return Promise.resolve();
 		},
 		remove: function(opts) {
@@ -268,6 +284,29 @@ var challenges = {
 	}
 };
 ```
+
+Many challenge plugins are already available for popular platforms.
+
+Search `acme-http-01-` or `acme-dns-01-` on npm to find more.
+
+-   [x] DNS-01 Challenges
+    -   CloudFlare
+    -   [Digital Ocean](https://git.rootprojects.org/root/acme-dns-01-digitalocean.js)
+    -   [DNSimple](https://git.rootprojects.org/root/acme-dns-01-dnsimple.js)
+    -   [DuckDNS](https://git.rootprojects.org/root/acme-dns-01-duckdns.js)
+    -   [GoDaddy](https://git.rootprojects.org/root/acme-dns-01-godaddy.js)
+    -   [Gandi](https://git.rootprojects.org/root/acme-dns-01-gandi.js)
+    -   [NameCheap](https://git.rootprojects.org/root/acme-dns-01-namecheap.js)
+    -   [Name&#46;com](https://git.rootprojects.org/root/acme-dns-01-namedotcom.js)
+    -   Route53 (AWS)
+    -   [Vultr](https://git.rootprojects.org/root/acme-dns-01-vultr.js)
+    -   Build your own
+-   [x] HTTP-01 Challenges
+    -   [In-Memory](https://git.rootprojects.org/root/acme-http-01-standalone.js) (Standalone)
+    -   [FileSystem](https://git.rootprojects.org/root/acme-http-01-webroot.js) (WebRoot)
+    -   S3 (AWS, Digital Ocean, etc)
+-   [x] TLS-ALPN-01 Challenges
+    -   Contact us to learn about Greenlock Pro
 
 # IDN - International Domain Names
 
