@@ -152,11 +152,11 @@ ACME Accounts are key and device based, with an email address as a backup identi
 A public account key must be registered before an SSL certificate can be requested.
 
 ```js
-var accountPrivateKey;
+var accountPrivateJwk;
 var account;
 
 Keypairs.generate({ kty: 'EC' }).then(function(pair) {
-	accountPrivateKey = pair.private;
+	accountPrivateJwk = pair.private;
 
 	return acme.accounts
 		.create({
@@ -169,7 +169,7 @@ Keypairs.generate({ kty: 'EC' }).then(function(pair) {
 					return Promise.resolve(tos);
 				}
 			},
-			accountKeypair: { privateKeyJwk: pair.private },
+			accountKey: pair.private,
 			subscriberEmail: $('.js-email-input').value
 		})
 		.then(function(_account) {
@@ -224,7 +224,7 @@ var certinfo = await acme.certificates.create({
 		return tos;
 	},
 	account: account,
-	accountKeypair: { privateKeyJwk: accountPrivateKey },
+	accountKey: accountPrivateJwk,
 	csr: csr,
 	domains: sortedDomains,
 	challenges: challenges, // must be implemented

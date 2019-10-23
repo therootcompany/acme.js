@@ -88,9 +88,10 @@ async function happyPath(accKty, srvKty, rnd) {
 	}
 
 	var accountKeypair = await Keypairs.generate({ kty: accKty });
+  var accountKey = accountKeypair.private;
 	if (config.debug) {
 		console.info('Account Key Created');
-		console.info(JSON.stringify(accountKeypair, null, 2));
+		console.info(JSON.stringify(accountKey, null, 2));
 		console.info();
 		console.info();
 	}
@@ -98,7 +99,7 @@ async function happyPath(accKty, srvKty, rnd) {
 	var account = await acme.accounts.create({
 		agreeToTerms: agree,
 		// TODO detect jwk/pem/der?
-		accountKeypair: { privateKeyJwk: accountKeypair.private },
+		accountKey: accountKey,
 		subscriberEmail: config.email
 	});
 
@@ -176,7 +177,7 @@ async function happyPath(accKty, srvKty, rnd) {
 
 	var results = await acme.certificates.create({
 		account: account,
-		accountKeypair: { privateKeyJwk: accountKeypair.private },
+		accountKey: accountKey,
 		csr: csr,
 		domains: domains,
 		challenges: challenges, // must be implemented

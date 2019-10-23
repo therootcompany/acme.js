@@ -5,7 +5,7 @@
 	"homepage": "https://rootprojects.org/acme/",
 	"main": "acme.js",
 	"browser": {
-		"./native.js": "./browser.js",
+		"./lib/native.js": "./lib/browser.js",
 		"./lib/node/sha2.js": "./lib/browser/sha2.js",
 		"./lib/node/http.js": "./lib/browser/http.js"
 	},
