@@ -12,6 +12,9 @@ var Keypairs = require('@root/keypairs');
 var CSR = require('@root/csr');
 var sha2 = require('@root/keypairs/lib/node/sha2.js');
 var http = require('./lib/node/http.js');
+var A = require('./account.js');
+var U = require('./utils.js');
+var E = {};
 
 var native = require('./lib/native.js');
 
@@ -101,165 +104,7 @@ ACME._directory = function(me) {
 	// GET-as-GET ok
 	return me.request({ method: 'GET', url: me.directoryUrl, json: true });
 };
-ACME._getNonce = function(me) {
-	var nonce;
-	while (true) {
-		nonce = me._nonces.shift();
-		if (!nonce) {
-			break;
-		}
-		if (Date.now() - nonce.createdAt > 15 * 60 * 1000) {
-			nonce = null;
-		} else {
-			break;
-		}
-	}
-	if (nonce) {
-		return Promise.resolve(nonce.nonce);
-	}
 
-	// HEAD-as-HEAD ok
-	return ACME._request(me, {
-		method: 'HEAD',
-		url: me._directoryUrls.newNonce
-	}).then(function(resp) {
-		return resp.headers['replay-nonce'];
-	});
-};
-ACME._setNonce = function(me, nonce) {
-	me._nonces.unshift({ nonce: nonce, createdAt: Date.now() });
-};
-// ACME RFC Section 7.3 Account Creation
-/*
- {
-   "protected": base64url({
-     "alg": "ES256",
-     "jwk": {...},
-     "nonce": "6S8IqOGY7eL2lsGoTZYifg",
-     "url": "https://example.com/acme/new-account"
-   }),
-   "payload": base64url({
-     "termsOfServiceAgreed": true,
-     "onlyReturnExisting": false,
-     "contact": [
-       "mailto:cert-admin@example.com",
-       "mailto:admin@example.com"
-     ]
-   }),
-   "signature": "RZPOnYoPs1PhjszF...-nh6X1qtOFPB519I"
- }
-*/
-ACME._registerAccount = function(me, options) {
-	//#console.debug('[ACME.js] accounts.create');
-
-	function agree(tosUrl) {
-		var err;
-		if (me._tos !== tosUrl) {
-			err = new Error("You must agree to the ToS at '" + me._tos + "'");
-			err.code = 'E_AGREE_TOS';
-			throw err;
-		}
-
-		return ACME._importKeypair(
-			me,
-			options.accountKey || options.accountKeypair
-		).then(function(pair) {
-			var contact;
-			if (options.contact) {
-				contact = options.contact.slice(0);
-			} else if (options.subscriberEmail || options.email) {
-				contact = [
-					'mailto:' + (options.subscriberEmail || options.email)
-				];
-			}
-			var accountRequest = {
-				termsOfServiceAgreed: tosUrl === me._tos,
-				onlyReturnExisting: false,
-				contact: contact
-			};
-			var pExt;
-			if (options.externalAccount) {
-				pExt = me.Keypairs.signJws({
-					// TODO is HMAC the standard, or is this arbitrary?
-					secret: options.externalAccount.secret,
-					protected: {
-						alg: options.externalAccount.alg || 'HS256',
-						kid: options.externalAccount.id,
-						url: me._directoryUrls.newAccount
-					},
-					payload: Enc.strToBuf(JSON.stringify(pair.public))
-				}).then(function(jws) {
-					accountRequest.externalAccountBinding = jws;
-					return accountRequest;
-				});
-			} else {
-				pExt = Promise.resolve(accountRequest);
-			}
-			return pExt.then(function(accountRequest) {
-				var payload = JSON.stringify(accountRequest);
-				return ACME._jwsRequest(me, {
-					options: options,
-					url: me._directoryUrls.newAccount,
-					protected: { kid: false, jwk: pair.public },
-					payload: Enc.strToBuf(payload)
-				}).then(function(resp) {
-					var account = resp.body;
-
-					if (resp.statusCode < 200 || resp.statusCode >= 300) {
-						if ('string' !== typeof account) {
-							account = JSON.stringify(account);
-						}
-						throw new Error(
-							'account error: ' +
-								resp.statusCode +
-								' ' +
-								account +
-								'\n' +
-								payload
-						);
-					}
-
-					var location = resp.headers.location;
-					// the account id url
-					options._kid = location;
-					//#console.debug('[DEBUG] new account location:');
-					//#console.debug(location);
-					//#console.debug(resp);
-
-					/*
-            {
-              contact: ["mailto:jon@example.com"],
-              orders: "https://some-url",
-              status: 'valid'
-            }
-            */
-					if (!account) {
-						account = { _emptyResponse: true };
-					}
-					// https://git.rootprojects.org/root/acme.js/issues/8
-					if (!account.key) {
-						account.key = {};
-					}
-					account.key.kid = options._kid;
-					return account;
-				});
-			});
-		});
-	}
-
-	return Promise.resolve()
-		.then(function() {
-			//#console.debug('[ACME.js] agreeToTerms');
-			var agreeToTerms = options.agreeToTerms;
-			if (true === agreeToTerms) {
-				agreeToTerms = function(tos) {
-					return tos;
-				};
-			}
-			return agreeToTerms(me._tos);
-		})
-		.then(agree);
-};
 /*
  POST /acme/new-order HTTP/1.1
  Host: example.com
@@ -283,13 +128,21 @@ ACME._registerAccount = function(me, options) {
 ACME._getChallenges = function(me, options, authUrl) {
 	//#console.debug('\n[DEBUG] getChallenges\n');
 
-	return ACME._jwsRequest(me, {
+	return U._jwsRequest(me, {
 		options: options,
 		protected: { kid: options._kid },
 		payload: '',
 		url: authUrl
 	}).then(function(resp) {
-		return resp.body;
+		// Pre-emptive rather than lazy for interfaces that need to show the
+		// challenges to the user first
+		return ACME._computeAuths(me, options, null, resp.body, false).then(
+			function(auths) {
+				resp.body._rawChallenges = resp.body.challenges;
+				resp.body.challenges = auths;
+				return resp.body;
+			}
+		);
 	});
 };
 ACME._wait = function wait(ms) {
@@ -299,6 +152,7 @@ ACME._wait = function wait(ms) {
 };
 
 ACME._testChallengeOptions = function() {
+	// we want this to be the same for the whole group
 	var chToken = ACME._prnd(16);
 	return [
 		{
@@ -322,134 +176,116 @@ ACME._testChallengeOptions = function() {
 		}
 	];
 };
-ACME._testChallenges = function(me, options) {
-	var CHECK_DELAY = 0;
 
-	// memoized so that it doesn't run until it's first called
-	var getThumbnail = function() {
-		var thumbPromise = ACME._importKeypair(
+ACME._thumber = function(me, options, thumb) {
+	var thumbPromise;
+	return function() {
+		if (thumb) {
+			return Promise.resolve(thumb);
+		}
+		if (thumbPromise) {
+			return thumbPromise;
+		}
+		thumbPromise = U._importKeypair(
 			me,
 			options.accountKey || options.accountKeypair
 		).then(function(pair) {
-			return me.Keypairs.thumbprint({
+			return Keypairs.thumbprint({
 				jwk: pair.public
 			});
 		});
-		getThumbnail = function() {
-			return thumbPromise;
-		};
 		return thumbPromise;
 	};
+};
+
+ACME._dryRun = function(me, realOptions) {
+	var noopts = {};
+	Object.keys(realOptions).forEach(function(key) {
+		noopts[key] = realOptions[key];
+	});
+	noopts.order = {};
+
+	// memoized so that it doesn't run until it's first called
+	var getThumbprint = ACME._thumber(me, noopts, '');
 
 	return Promise.all(
-		options.domains.map(function(identifierValue) {
+		noopts.domains.map(function(identifierValue) {
 			// TODO we really only need one to pass, not all to pass
 			var challenges = ACME._testChallengeOptions();
-			if (identifierValue.includes('*')) {
+			var wild = '*.' === identifierValue.slice(0, 2);
+			if (wild) {
 				challenges = challenges.filter(function(ch) {
 					return ch._wildcard;
 				});
 			}
-
-			var challenge = ACME._chooseChallenge(options, {
-				challenges: challenges
+			challenges = challenges.filter(function(auth) {
+				return me._canCheck[auth.type];
 			});
-			if (!challenge) {
-				// For example, wildcards require dns-01 and, if we don't have that, we have to bail
-				var enabled =
-					Object.keys(options.challenges).join(', ') || 'none';
-				var suitable =
-					challenges
-						.map(function(r) {
-							return r.type;
-						})
-						.join(', ') || 'none';
-				return Promise.reject(
-					new Error(
-						"None of the challenge types that you've enabled ( " +
-							enabled +
-							' )' +
-							" are suitable for validating the domain you've selected (" +
-							identifierValue +
-							').' +
-							' You must enable one of ( ' +
-							suitable +
-							' ).'
-					)
-				);
-			}
 
-			// TODO remove skipChallengeTest
-			if (me.skipDryRun || me.skipChallengeTest) {
-				return null;
-			}
-
-			if ('dns-01' === challenge.type) {
-				// Give the nameservers a moment to propagate
-				// TODO get this value from the plugin
-				CHECK_DELAY = 7 * 1000;
-			}
-
-			return getThumbnail().then(function(accountKeyThumb) {
-				var results = {
-					identifier: {
-						type: 'dns',
-						value: identifierValue.replace(/^\*\./, '')
-					},
-					challenges: [challenge],
-					expires: new Date(Date.now() + 60 * 1000).toISOString(),
-					wildcard: identifierValue.includes('*.') || undefined
+			return getThumbprint().then(function(accountKeyThumb) {
+				var resp = {
+					body: {
+						identifier: {
+							type: 'dns',
+							value: identifierValue.replace(/^\*\./, '')
+						},
+						challenges: challenges,
+						expires: new Date(Date.now() + 60 * 1000).toISOString(),
+						wildcard: identifierValue.includes('*.') || undefined
+					}
 				};
 
 				// The dry-run comes first in the spirit of "fail fast"
 				// (and protecting against challenge failure rate limits)
 				var dryrun = true;
-				return ACME._challengeToAuth(
+				return ACME._computeAuths(
 					me,
-					options,
+					noopts,
 					accountKeyThumb,
-					results,
-					challenge,
+					resp.body,
 					dryrun
-				).then(function(auth) {
-					if (!me._canUse[auth.type]) {
-						return;
-					}
-					return ACME._setChallenge(me, options, auth).then(
-						function() {
-							return auth;
-						}
-					);
+				).then(function(auths) {
+					resp.body.challenges = auths;
+					return resp.body;
 				});
 			});
 		})
-	).then(function(auths) {
-		auths = auths.filter(Boolean);
-		if (!auths.length) {
-			/*skip actual test*/ return;
+	).then(function(claims) {
+		var selected = [];
+		noopts.order._claims = claims.slice(0);
+		noopts.notify = function(ev, params) {
+			if ('challenge_select' === ev) {
+				selected.push(params.challenge);
+			}
+		};
+
+		function clear() {
+			selected.forEach(function(ch) {
+				ACME._notify(me, noopts, 'challenge_remove', {
+					altname: ch.altname,
+					type: ch.type
+					//challenge: ch
+				});
+				noopts.challenges[ch.type].remove({ challenge: ch });
+			});
 		}
-		return ACME._wait(CHECK_DELAY).then(function() {
-			return Promise.all(
-				auths.map(function(auth) {
-					return ACME.challengeTests[auth.type](me, auth)
-						.then(function(result) {
-							// not a blocker
-							ACME._removeChallenge(me, options, auth);
-							return result;
-						})
-						.catch(function(err) {
-							ACME._removeChallenge(me, options, auth);
-							throw err;
-						});
-				})
-			);
-		});
+
+		return ACME._setChallenges(me, noopts, noopts.order)
+			.catch(function(err) {
+				clear();
+				throw err;
+			})
+			.then(clear);
 	});
 };
+
+// Get the list of challenge types we can validate,
+// which is already ordered by preference.
+// Select the first matching offered challenge type
 ACME._chooseChallenge = function(options, results) {
 	// For each of the challenge types that we support
 	var challenge;
-	options._challengeTypes.some(function(chType) {
+	options._presenterTypes.some(function(chType) {
 		// And for each of the challenge types that are allowed
 		return results.challenges.some(function(ch) {
 			// Check to see if there are any matches
@@ -462,14 +298,9 @@ ACME._chooseChallenge = function(options, results) {
 
 	return challenge;
 };
-ACME._challengeToAuth = function(
-	me,
-	options,
-	accountKeyThumb,
-	request,
-	challenge,
-	dryrun
-) {
+
+ACME._challengesMap = { 'http-01': 0, 'dns-01': 0, 'tls-alpn-01': 0 };
+ACME._computeAuths = function(me, options, thumb, request, dryrun) {
 	// we don't poison the dns cache with our dummy request
 	var dnsPrefix = ACME.challengePrefixes['dns-01'];
 	if (dryrun) {
@@ -479,79 +310,96 @@ ACME._challengeToAuth = function(
 		);
 	}
 
-	var auth = {};
+	var getThumbprint = ACME._thumber(me, options, thumb);
 
-	// straight copy from the new order response
-	// { identifier, status, expires, challenges, wildcard }
-	Object.keys(request).forEach(function(key) {
-		auth[key] = request[key];
-	});
-
-	// copy from the challenge we've chosen
-	// { type, status, url, token }
-	// (note the duplicate status overwrites the one above, but they should be the same)
-	Object.keys(challenge).forEach(function(key) {
-		// don't confused devs with the id url
-		auth[key] = challenge[key];
-	});
-
-	var zone = pluckZone(options.zonenames || [], auth.identifier.value);
-	// batteries-included helpers
-	auth.hostname = auth.identifier.value;
-	// because I'm not 100% clear if the wildcard identifier does or doesn't have the leading *. in all cases
-	auth.altname = ACME._untame(auth.identifier.value, auth.wildcard);
-	// we must accept JWKs that we didn't generate and we can't guarantee
-	// that they properly set kid to thumbnail (especially since ACME doesn't do this)
-	// so we have to regenerate it every time we need it, which is quite often
-	auth.thumbprint = accountKeyThumb;
-	//   keyAuthorization = token || '.' || base64url(JWK_Thumbprint(accountKey))
-	auth.keyAuthorization = challenge.token + '.' + auth.thumbprint;
-	// conflicts with ACME challenge id url is already in use, so we call this challengeUrl instead
-	// TODO auth.http01Url ?
-	auth.challengeUrl =
-		'http://' +
-		auth.identifier.value +
-		ACME.challengePrefixes['http-01'] +
-		'/' +
-		auth.token;
-	auth.dnsHost = dnsPrefix + '.' + auth.hostname.replace('*.', '');
-
-	// Always calculate dnsAuthorization because we
-	// may need to present to the user for confirmation / instruction
-	// _as part of_ the decision making process
-	return sha2
-		.sum(256, auth.keyAuthorization)
-		.then(function(hash) {
-			return Enc.bufToUrlBase64(new Uint8Array(hash));
-		})
-		.then(function(hash64) {
-			auth.dnsAuthorization = hash64;
-			if (zone) {
-				auth.dnsZone = zone;
-				auth.dnsPrefix = auth.dnsHost
-					.replace(newZoneRegExp(zone), '')
-					.replace(/\.$/, '');
-			}
-
-			// For backwards compat with the v2.7 plugins
-			auth.challenge = auth;
-			// TODO can we use just { challenge: auth }?
-			// auth.request = ;
-
-			// TODO get rid of no-challenge backwards compat challenge
-			return {
-				challenge: auth,
-				request: function() {
-					// TODO see https://git.rootprojects.org/root/acme.js/issues/###
-					console.warn(
-						"[warn] deprecated use of request on '" +
-							auth.type +
-							"' challenge object. Receive from challenger.init() instead."
-					);
-					me.request.apply(null, arguments);
+	return getThumbprint().then(function(thumb) {
+		return Promise.all(
+			request.challenges.map(function(challenge) {
+				// Don't do extra work for challenges that we can't satisfy
+				if (!options._presenterTypes.includes(challenge.type)) {
+					return null;
 				}
-			};
+
+				var auth = {};
+
+				// straight copy from the new order response
+				// { identifier, status, expires, challenges, wildcard }
+				Object.keys(request).forEach(function(key) {
+					auth[key] = request[key];
+				});
+
+				// copy from the challenge we've chosen
+				// { type, status, url, token }
+				// (note the duplicate status overwrites the one above, but they should be the same)
+				Object.keys(challenge).forEach(function(key) {
+					// don't confused devs with the id url
+					auth[key] = challenge[key];
+				});
+
+				// batteries-included helpers
+				auth.hostname = auth.identifier.value;
+				// because I'm not 100% clear if the wildcard identifier does or doesn't
+				// have the leading *. in all cases
+				auth.altname = ACME._untame(
+					auth.identifier.value,
+					auth.wildcard
+				);
+
+				auth.thumbprint = thumb;
+				//   keyAuthorization = token + '.' + base64url(JWK_Thumbprint(accountKey))
+				auth.keyAuthorization = challenge.token + '.' + auth.thumbprint;
+
+				if ('http-01' === auth.type) {
+					// conflicts with ACME challenge id url is already in use,
+					// so we call this challengeUrl instead
+					// TODO auth.http01Url ?
+					auth.challengeUrl =
+						'http://' +
+						auth.identifier.value +
+						ACME.challengePrefixes['http-01'] +
+						'/' +
+						auth.token;
+					return auth;
+				}
+
+				if ('dns-01' !== auth.type) {
+					return auth;
+				}
+
+				var zone = pluckZone(
+					options.zonenames || [],
+					auth.identifier.value
+				);
+
+				// Always calculate dnsAuthorization because we
+				// may need to present to the user for confirmation / instruction
+				// _as part of_ the decision making process
+				return sha2
+					.sum(256, auth.keyAuthorization)
+					.then(function(hash) {
+						return Enc.bufToUrlBase64(new Uint8Array(hash));
+					})
+					.then(function(hash64) {
+						auth.dnsHost =
+							dnsPrefix + '.' + auth.hostname.replace('*.', '');
+
+						auth.dnsAuthorization = hash64;
+						auth.keyAuthorizationDigest = hash64;
+
+						if (zone) {
+							auth.dnsZone = zone;
+							auth.dnsPrefix = auth.dnsHost
+								.replace(newZoneRegExp(zone), '')
+								.replace(/\.$/, '');
+						}
+
+						return auth;
+					});
+			})
+		).then(function(auths) {
+			return auths.filter(Boolean);
 		});
+	});
 };
 
 ACME._untame = function(name, wild) {
@@ -568,9 +416,8 @@ ACME._postChallenge = function(me, options, auth) {
 	var MAX_POLL = me.retryPoll || 8;
 	var MAX_PEND = me.retryPending || 4;
 	var count = 0;
-	var ch = auth.challenge;
 
-	var altname = ACME._untame(ch.identifier.value, ch.wildcard);
+	var altname = ACME._untame(auth.identifier.value, auth.wildcard);
 
 	/*
    POST /acme/authz/1234 HTTP/1.1
@@ -592,296 +439,553 @@ ACME._postChallenge = function(me, options, auth) {
    */
 	function deactivate() {
 		//#console.debug('[ACME.js] deactivate:');
-		return ACME._jwsRequest(me, {
+		return U._jwsRequest(me, {
 			options: options,
-			url: ch.url,
+			url: auth.url,
 			protected: { kid: options._kid },
 			payload: Enc.strToBuf(JSON.stringify({ status: 'deactivated' }))
-		}).then(function(resp) {
-			if (me.debug) {
-				console.debug('deactivate challenge: resp.body:');
-			}
-			if (me.debug) {
-				console.debug(resp.body);
-			}
+		}).then(function(/*#resp*/) {
+			//#console.debug('deactivate challenge: resp.body:');
+			//#console.debug(resp.body);
 			return ACME._wait(DEAUTH_INTERVAL);
 		});
 	}
 
 	function pollStatus() {
 		if (count >= MAX_POLL) {
-			return Promise.reject(
-				new Error(
-					"[ACME.js] stuck in bad pending/processing state for '" +
-						altname +
-						"'"
-				)
+			var err = new Error(
+				"[ACME.js] stuck in bad pending/processing state for '" +
+					altname +
+					"'"
 			);
+			err.context = 'present_challenge';
+			return Promise.reject(err);
 		}
 
 		count += 1;
 
 		//#console.debug('\n[DEBUG] statusChallenge\n');
 		// POST-as-GET
-		return ACME._jwsRequest(me, {
+		return U._jwsRequest(me, {
 			options: options,
-			url: ch.url,
+			url: auth.url,
 			protected: { kid: options._kid },
 			payload: Enc.binToBuf('')
-		}).then(function(resp) {
-			if ('processing' === resp.body.status) {
-				if (me.debug) {
-					console.debug('poll: again', ch.url);
-				}
-				return ACME._wait(RETRY_INTERVAL).then(pollStatus);
-			}
+		})
+			.then(checkResult)
+			.catch(transformError);
+	}
 
-			// This state should never occur
-			if ('pending' === resp.body.status) {
-				if (count >= MAX_PEND) {
-					return ACME._wait(RETRY_INTERVAL)
-						.then(deactivate)
-						.then(respondToChallenge);
-				}
-				if (me.debug) {
-					console.debug('poll: again', ch.url);
-				}
-				return ACME._wait(RETRY_INTERVAL).then(respondToChallenge);
-			}
-
-			// REMOVE DNS records as soon as the state is non-processing
-			try {
-				ACME._removeChallenge(me, options, auth);
-			} catch (e) {}
-
-			if ('valid' === resp.body.status) {
-				if (me.debug) {
-					console.debug('poll: valid');
-				}
-
-				return resp.body;
-			}
-
-			var errmsg;
-			if (!resp.body.status) {
-				errmsg =
-					"[ACME.js] (E_STATE_EMPTY) empty challenge state for '" +
-					altname +
-					"':" +
-					JSON.stringify(resp.body);
-			} else if ('invalid' === resp.body.status) {
-				errmsg =
-					"[ACME.js] (E_STATE_INVALID) challenge state for '" +
-					altname +
-					"': '" +
-					//resp.body.status +
-					JSON.stringify(resp.body) +
-					"'";
-			} else {
-				errmsg =
-					"[ACME.js] (E_STATE_UKN) challenge state for '" +
-					altname +
-					"': '" +
-					resp.body.status +
-					"'";
-			}
-
-			return Promise.reject(new Error(errmsg));
+	function checkResult(resp) {
+		ACME._notify(me, options, 'challenge_status', {
+			// API-locked
+			status: resp.body.status,
+			type: auth.type,
+			altname: altname
 		});
+
+		if ('processing' === resp.body.status) {
+			//#console.debug('poll: again', auth.url);
+			return ACME._wait(RETRY_INTERVAL).then(pollStatus);
+		}
+
+		// This state should never occur
+		if ('pending' === resp.body.status) {
+			if (count >= MAX_PEND) {
+				return ACME._wait(RETRY_INTERVAL)
+					.then(deactivate)
+					.then(respondToChallenge);
+			}
+			//#console.debug('poll: again', auth.url);
+			return ACME._wait(RETRY_INTERVAL).then(respondToChallenge);
+		}
+
+		// REMOVE DNS records as soon as the state is non-processing
+		// (valid or invalid or other)
+		try {
+			options.challenges[auth.type].remove({ challenge: auth });
+		} catch (e) {}
+
+		if ('valid' === resp.body.status) {
+			if (me.debug) {
+				console.debug('poll: valid');
+			}
+
+			return resp.body;
+		}
+
+		var errmsg;
+		if (!resp.body.status) {
+			errmsg =
+				"[ACME.js] (E_STATE_EMPTY) empty challenge state for '" +
+				altname +
+				"':" +
+				JSON.stringify(resp.body);
+		} else if ('invalid' === resp.body.status) {
+			errmsg =
+				"[ACME.js] (E_STATE_INVALID) challenge state for '" +
+				altname +
+				"': '" +
+				//resp.body.status +
+				JSON.stringify(resp.body) +
+				"'";
+		} else {
+			errmsg =
+				"[ACME.js] (E_STATE_UKN) challenge state for '" +
+				altname +
+				"': '" +
+				resp.body.status +
+				"'";
+		}
+
+		return Promise.reject(new Error(errmsg));
+	}
+
+	function transformError(e) {
+		var err = e;
+		if (err.urn) {
+			err = new Error(
+				'[acme-v2] ' +
+					auth.altname +
+					' status:' +
+					e.status +
+					' ' +
+					e.detail
+			);
+			err.auth = auth;
+			err.altname = auth.altname;
+			err.type = auth.type;
+			err.code =
+				'invalid' === e.status ? 'E_ACME_CHALLENGE' : 'E_ACME_UNKNOWN';
+		}
+
+		throw err;
 	}
 
 	function respondToChallenge() {
 		//#console.debug('[ACME.js] responding to accept challenge:');
-		return ACME._jwsRequest(me, {
+		// POST-as-POST (empty JSON object)
+		return U._jwsRequest(me, {
 			options: options,
-			url: ch.url,
+			url: auth.url,
 			protected: { kid: options._kid },
 			payload: Enc.strToBuf(JSON.stringify({}))
-		}).then(function(resp) {
-			if (me.debug) {
-				console.debug('respond to challenge: resp.body:');
-			}
-			if (me.debug) {
-				console.debug(resp.body);
-			}
-			return ACME._wait(RETRY_INTERVAL).then(pollStatus);
-		});
+		})
+			.then(checkResult)
+			.catch(transformError);
 	}
 
 	return respondToChallenge();
 };
-ACME._setChallenge = function(me, options, auth) {
-	var ch = auth.challenge;
-	return Promise.resolve().then(function() {
-		var challengers = options.challenges || {};
-		var challenger = challengers[ch.type] && challengers[ch.type].set;
-		if (!challenger) {
-			throw new Error(
-				"options.challenges did not have a valid entry for '" +
-					ch.type +
-					"'"
-			);
+
+// options = { domains, claims, challenges }
+ACME._setChallenges = function(me, options, order) {
+	var claims = order._claims.slice(0);
+	var valids = [];
+	var auths = [];
+	var USE_DNS = false;
+	var DNS_DELAY = 0;
+
+	// Set any challenges, excpting ones that have already been validated
+	function setNext() {
+		var claim = claims.shift();
+		// check false for testing
+		if (!claim || false === options.challenges) {
+			return Promise.resolve();
 		}
-		if (1 === challenger.length) {
-			return Promise.resolve(challenger(auth));
-		} else if (2 === challenger.length) {
-			return new Promise(function(resolve, reject) {
-				challenger(auth, function(err) {
-					if (err) {
-						reject(err);
-					} else {
-						resolve();
-					}
+
+		return Promise.resolve()
+			.then(function() {
+				// For any challenges that are already valid,
+				// add to the list and skip any checks.
+				if (
+					claim.challenges.some(function(ch) {
+						if ('valid' === ch.status) {
+							valids.push(ch);
+							return true;
+						}
+					})
+				) {
+					return;
+				}
+
+				var selected = ACME._chooseChallenge(options, claim);
+				if (!selected) {
+					throw E.NO_SUITABLE_CHALLENGE(
+						claim.altname,
+						claim.challenges,
+						options._presenterTypes
+					);
+				}
+				auths.push(selected);
+				ACME._notify(me, options, 'challenge_select', {
+					// API-locked
+					altname: ACME._untame(
+						claim.identifier.value,
+						claim.wildcard
+					),
+					type: selected.type,
+					challenge: selected
 				});
-			});
-		} else {
-			throw new Error(
-				"Bad function signature for '" + ch.type + "' challenge.set()"
+
+				// Set a delay for nameservers a moment to propagate
+				if ('dns-01' === selected.type) {
+					if (options.challenges['dns-01'] && !USE_DNS) {
+						USE_DNS = true;
+						DNS_DELAY = parseInt(
+							options.challenges['dns-01'].propagationDelay,
+							10
+						);
+					}
+				}
+
+				var ch = options.challenges[selected.type] || {};
+				if (!ch.set) {
+					throw new Error('no handler for setting challenge');
+				}
+				return ch.set({ challenge: selected });
+			})
+			.then(setNext);
+	}
+
+	function waitAll() {
+		//#console.debug('\n[DEBUG] waitChallengeDelay %s\n', DELAY);
+		if (!DNS_DELAY || DNS_DELAY <= 0) {
+			console.warn(
+				'the given dns-01 challenge did not specify `propagationDelay`'
+			);
+			console.warn('the default of 5000ms will be used');
+			DNS_DELAY = 5000;
+		}
+		return ACME._wait(DNS_DELAY);
+	}
+
+	function checkNext() {
+		var auth = auths.shift();
+		if (!auth) {
+			return Promise.resolve(valids);
+		}
+
+		// These are not as much "valids" as they are "not invalids"
+		if (!me._canCheck[auth.type] || me.skipChallengeTest) {
+			valids.push(auth);
+			return checkNext();
+		}
+
+		return ACME.challengeTests[auth.type](me, { challenge: auth })
+			.then(function() {
+				valids.push(auth);
+			})
+			.then(checkNext);
+	}
+
+	// The reason we set every challenge in a batch first before checking any
+	// is so that we don't poison our own DNS cache with misses.
+	return setNext()
+		.then(waitAll)
+		.then(checkNext);
+};
+
+ACME._normalizePresenters = function(me, options, presenters) {
+	// Prefer this order for efficiency:
+	// * http-01 is the fasest
+	// * tls-alpn-01 is for networks that don't allow plain traffic
+	// * dns-01 is the slowest (due to DNS propagation),
+	//   but is required for private networks and wildcards
+	var presenterTypes = Object.keys(options.challenges || {});
+	options._presenterTypes = ['http-01', 'tls-alpn-01', 'dns-01'].filter(
+		function(typ) {
+			return -1 !== presenterTypes.indexOf(typ);
+		}
+	);
+	Object.keys(presenters || {}).forEach(function(k) {
+		var ch = presenters[k];
+		var warned = false;
+
+		if (!ch.set || !ch.remove) {
+			throw new Error('challenge plugin must have set() and remove()');
+		}
+		if (!ch.get) {
+			if ('dns-01' === k) {
+				console.warn('dns-01 challenge plugin should have get()');
+			} else {
+				throw new Error(
+					'http-01 and tls-alpn-01 challenge plugins must have get()'
+				);
+			}
+		}
+
+		if ('dns-01' === k) {
+			if (!ch.zones) {
+				console.warn('dns-01 challenge plugin should have zones()');
+			}
+		}
+
+		function warn() {
+			if (warned) {
+				return;
+			}
+			warned = true;
+			console.warn(
+				"'" +
+					k +
+					"' may have incorrect function signatures, or contains deprecated use of callbacks"
 			);
 		}
+
+		function promisify(fn) {
+			return function(opts) {
+				new Promise(function(resolve, reject) {
+					fn(opts, function(err, result) {
+						if (err) {
+							reject(err);
+							return;
+						}
+						resolve(result);
+					});
+				});
+			};
+		}
+
+		// init, zones, set, get, remove
+		if (ch.init && 2 === ch.init.length) {
+			warn();
+			ch._thunk_init = ch.init;
+			ch.init = promisify(ch._thunk_init);
+		}
+		if (ch.zones && 2 === ch.zones.length) {
+			warn();
+			ch._thunk_zones = ch.zones;
+			ch.zones = promisify(ch._thunk_zones);
+		}
+		if (2 === ch.set.length) {
+			warn();
+			ch._thunk_set = ch.set;
+			ch.set = promisify(ch._thunk_set);
+		}
+		if (2 === ch.remove.length) {
+			warn();
+			ch._thunk_remove = ch.remove;
+			ch.remove = promisify(ch._thunk_remove);
+		}
+		if (ch.get && 2 === ch.get.length) {
+			warn();
+			ch._thunk_get = ch.get;
+			ch.get = promisify(ch._thunk_get);
+		}
+
+		return ch;
 	});
 };
-ACME._finalizeOrder = function(me, options, validatedDomains) {
-	if (me.debug) {
-		console.debug('finalizeOrder:');
+
+ACME._presentChallenges = function(me, options, readyToPresent) {
+	// Actually sets the challenge via ACME
+	function challengeNext() {
+		// First set, First presented
+		var auth = readyToPresent.shift();
+		if (!auth) {
+			return Promise.resolve();
+		}
+		return ACME._postChallenge(me, options, auth).then(challengeNext);
 	}
-	return ACME._generateCsrWeb64(me, options, validatedDomains).then(function(
-		csr
-	) {
-		var body = { csr: csr };
-		var payload = JSON.stringify(body);
 
-		function pollCert() {
-			//#console.debug('[ACME.js] pollCert:');
-			return ACME._jwsRequest(me, {
-				options: options,
-				url: options._finalize,
-				protected: { kid: options._kid },
-				payload: Enc.strToBuf(payload)
-			}).then(function(resp) {
-				if (me.debug) {
-					console.debug('order finalized: resp.body:');
-				}
-				if (me.debug) {
-					console.debug(resp.body);
-				}
+	// BTW, these are done serially rather than parallel on purpose
+	// (rate limits, propagation delays, etc)
+	return challengeNext().then(function() {
+		return readyToPresent;
+	});
+};
 
-				// https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
-				// Possible values are: "pending" => ("invalid" || "ready") => "processing" => "valid"
-				if ('valid' === resp.body.status) {
-					options._expires = resp.body.expires;
-					options._certificate = resp.body.certificate;
+ACME._pollOrderStatus = function(me, options, order, verifieds) {
+	var csr64 = ACME._getCsrWeb64(me, options);
+	var body = { csr: csr64 };
+	var payload = JSON.stringify(body);
 
-					return resp.body; // return order
-				}
+	function pollCert() {
+		//#console.debug('[ACME.js] pollCert:', order._finalizeUrl);
+		return U._jwsRequest(me, {
+			options: options,
+			url: order._finalizeUrl,
+			protected: { kid: options._kid },
+			payload: Enc.strToBuf(payload)
+		}).then(function(resp) {
+			ACME._notify(me, options, 'certificate_status', {
+				subject: options.domains[0],
+				status: resp.body.status
+			});
 
-				if ('processing' === resp.body.status) {
-					return ACME._wait().then(pollCert);
-				}
+			// https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
+			// Possible values are: "pending" => ("invalid" || "ready") => "processing" => "valid"
+			if ('valid' === resp.body.status) {
+				var voucher = resp.body;
+				voucher._certificateUrl = resp.body.certificate;
 
-				if (me.debug) {
-					console.debug(
-						'Error: bad status:\n' +
-							JSON.stringify(resp.body, null, 2)
-					);
-				}
+				return voucher;
+			}
 
-				if ('pending' === resp.body.status) {
-					return Promise.reject(
-						new Error(
-							"Did not finalize order: status 'pending'." +
-								' Best guess: You have not accepted at least one challenge for each domain:\n' +
-								"Requested: '" +
-								options.domains.join(', ') +
-								"'\n" +
-								"Validated: '" +
-								validatedDomains.join(', ') +
-								"'\n" +
-								JSON.stringify(resp.body, null, 2)
-						)
-					);
-				}
+			if ('processing' === resp.body.status) {
+				return ACME._wait().then(pollCert);
+			}
 
-				if ('invalid' === resp.body.status) {
-					return Promise.reject(
-						new Error(
-							"Did not finalize order: status 'invalid'." +
-								' Best guess: One or more of the domain challenges could not be verified' +
-								' (or the order was canceled).\n' +
-								"Requested: '" +
-								options.domains.join(', ') +
-								"'\n" +
-								"Validated: '" +
-								validatedDomains.join(', ') +
-								"'\n" +
-								JSON.stringify(resp.body, null, 2)
-						)
-					);
-				}
+			if (me.debug) {
+				console.debug(
+					'Error: bad status:\n' + JSON.stringify(resp.body, null, 2)
+				);
+			}
 
-				if ('ready' === resp.body.status) {
-					return Promise.reject(
-						new Error(
-							"Did not finalize order: status 'ready'." +
-								" Hmmm... this state shouldn't be possible here. That was the last state." +
-								" This one should at least be 'processing'.\n" +
-								"Requested: '" +
-								options.domains.join(', ') +
-								"'\n" +
-								"Validated: '" +
-								validatedDomains.join(', ') +
-								"'\n" +
-								JSON.stringify(resp.body, null, 2) +
-								'\n\n' +
-								'Please open an issue at https://git.rootprojects.org/root/acme.js'
-						)
-					);
-				}
-
+			if ('pending' === resp.body.status) {
 				return Promise.reject(
 					new Error(
-						"Didn't finalize order: Unhandled status '" +
-							resp.body.status +
-							"'." +
-							' This is not one of the known statuses...\n' +
+						"Did not finalize order: status 'pending'." +
+							' Best guess: You have not accepted at least one challenge for each domain:\n' +
 							"Requested: '" +
 							options.domains.join(', ') +
 							"'\n" +
 							"Validated: '" +
-							validatedDomains.join(', ') +
+							verifieds.join(', ') +
 							"'\n" +
-							JSON.stringify(resp.body, null, 2) +
-							'\n\n' +
-							'Please open an issue at https://git.rootprojects.org/root/acme.js'
+							JSON.stringify(resp.body, null, 2)
 					)
 				);
-			});
-		}
+			}
 
-		return pollCert();
+			if ('invalid' === resp.body.status) {
+				return Promise.reject(
+					E.ORDER_INVALID(options, verifieds, resp)
+				);
+			}
+
+			if ('ready' === resp.body.status) {
+				return Promise.reject(
+					E.DOUBLE_READY_ORDER(options, verifieds, resp)
+				);
+			}
+
+			return Promise.reject(
+				E.UNHANDLED_ORDER_STATUS(options, verifieds, resp)
+			);
+		});
+	}
+
+	return pollCert();
+};
+
+ACME._reedemCert = function(me, options, voucher) {
+	//#console.debug('ACME.js: order was finalized');
+
+	// POST-as-GET
+	return U._jwsRequest(me, {
+		options: options,
+		url: voucher._certificateUrl,
+		protected: { kid: options._kid },
+		payload: Enc.binToBuf(''),
+		json: true
+	}).then(function(resp) {
+		//#console.debug('ACME.js: csr submitted and cert received:');
+
+		// https://github.com/certbot/certbot/issues/5721
+		var certsarr = ACME.splitPemChain(ACME.formatPemChain(resp.body || ''));
+		//  cert, chain, fullchain, privkey, /*TODO, subject, altnames, issuedAt, expiresAt */
+		var certs = {
+			expires: voucher.expires,
+			identifiers: voucher.identifiers,
+			//, authorizations: order.authorizations
+			cert: certsarr.shift(),
+			//, privkey: privkeyPem
+			chain: certsarr.join('\n')
+		};
+		//#console.debug(certs);
+		return certs;
 	});
 };
-// _kid
-// registerAccount
-// postChallenge
-// finalizeOrder
-// getCertificate
-ACME._getCertificate = function(me, options) {
-	//#console.debug('[ACME.js] DEBUG get cert 1');
 
-	// Prefer this order for efficiency:
-	// * http-01 is the fasest
-	// * tls-alpn-01 is for networks that don't allow plain traffic
-	// * dns-01 is the slowest (due to DNS propagation), but is required for private networks and wildcards
-	var challengeTypes = Object.keys(options.challenges);
-	options._challengeTypes = ['http-01', 'tls-alpn-01', 'dns-01'].filter(
-		function(typ) {
-			return -1 !== challengeTypes.indexOf(typ);
-		}
-	);
+ACME._finalizeOrder = function(me, options, order) {
+	//#console.debug('[ACME.js] finalizeOrder:');
+	var readyToPresent;
+	return A._getAccountKid(me, options)
+		.then(function() {
+			return ACME._setChallenges(me, options, order);
+		})
+		.then(function(_readyToPresent) {
+			readyToPresent = _readyToPresent;
+			return ACME._presentChallenges(me, options, readyToPresent);
+		})
+		.then(function() {
+			return ACME._pollOrderStatus(
+				me,
+				options,
+				order,
+				readyToPresent.map(function(ch) {
+					return ACME._untame(ch.identifier.value, ch.wildcard);
+				})
+			);
+		})
+		.then(function(voucher) {
+			return ACME._reedemCert(me, options, voucher);
+		});
+};
 
-	// TODO check that all challengeTypes are represented in challenges
-	if (!options._challengeTypes.length) {
+// Order a certificate request with all domains
+ACME._orderCertificate = function(me, options) {
+	var certificateRequest = {
+		// raw wildcard syntax MUST be used here
+		identifiers: options.domains.map(function(hostname) {
+			return { type: 'dns', value: hostname };
+		})
+		//, "notBefore": "2016-01-01T00:00:00Z"
+		//, "notAfter": "2016-01-08T00:00:00Z"
+	};
+
+	return ACME._prepRequest(me, options)
+		.then(function() {
+			// adds options._kid
+			return A._getAccountKid(me, options);
+		})
+		.then(function() {
+			ACME._notify(me, options, 'certificate_order', {
+				// API-locked
+				account: { key: { kid: options._kid } },
+				subject: options.domains[0],
+				altnames: options.domains,
+				challengeTypes: options._presenterTypes
+			});
+
+			var payload = JSON.stringify(certificateRequest);
+			//#console.debug('\n[DEBUG] newOrder\n');
+			return U._jwsRequest(me, {
+				options: options,
+				url: me._directoryUrls.newOrder,
+				protected: { kid: options._kid },
+				payload: Enc.binToBuf(payload)
+			});
+		})
+		.then(function(resp) {
+			var order = resp.body;
+			order._orderUrl = resp.headers.location;
+			order._finalizeUrl = resp.body.finalize;
+			order._identifiers = certificateRequest.identifiers;
+			//#console.debug('[ordered]', location); // the account id url
+			//#console.debug(resp);
+
+			if (!order.authorizations) {
+				return Promise.reject(E.NO_AUTHORIZATIONS(options, resp));
+			}
+
+			return order;
+		})
+		.then(function(order) {
+			return ACME._getAllChallenges(me, options, order).then(function(
+				claims
+			) {
+				order._claims = claims;
+				return order;
+			});
+		});
+};
+
+ACME._prepRequest = function(me, options) {
+	// TODO check that all presenterTypes are represented in challenges
+	if (!options._presenterTypes.length) {
 		return Promise.reject(
 			new Error('options.challenges must be specified')
 		);
@@ -893,22 +997,22 @@ ACME._getCertificate = function(me, options) {
 		);
 	}
 	// TODO validate csr signature?
-	options._csr = CSR._info(options.csr);
-	options.domains = options.domains || options._csr.altnames;
-	options._csr.altnames = options._csr.altnames || [];
+	var _csr = CSR._info(options.csr);
+	options.domains = options.domains || _csr.altnames;
+	_csr.altnames = _csr.altnames || [];
 	if (
 		options.domains
 			.slice(0)
 			.sort()
 			.join(' ') !==
-		options._csr.altnames
+		_csr.altnames
 			.slice(0)
 			.sort()
 			.join(' ')
 	) {
 		throw new Error('certificate altnames do not match requested domains');
 	}
-	if (options._csr.subject !== options.domains[0]) {
+	if (_csr.subject !== options.domains[0]) {
 		throw new Error(
 			'certificate subject (commonName) does not match first altname (SAN)'
 		);
@@ -931,25 +1035,8 @@ ACME._getCertificate = function(me, options) {
 		);
 	}
 
-	// It's just fine if there's no account, we'll go get the key id we need via the existing key
-	options._kid =
-		options._kid ||
-		options.accountKid ||
-		(options.account &&
-			(options.account.kid ||
-				(options.account.key && options.account.key.kid)));
-	if (!options._kid) {
-		//return Promise.reject(new Error("must include KeyID"));
-		// This is an idempotent request. It'll return the same account for the same public key.
-		return ACME._registerAccount(me, options).then(function(account) {
-			options._kid = account.key.kid;
-			// start back from the top
-			return ACME._getCertificate(me, options);
-		});
-	}
-
 	// TODO Promise.all()?
-	Object.keys(options.challenges).forEach(function(key) {
+	options._presenterTypes.forEach(function(key) {
 		var presenter = options.challenges[key];
 		if ('function' === typeof presenter.init && !presenter._initialized) {
 			presenter._initialized = true;
@@ -981,268 +1068,66 @@ ACME._getCertificate = function(me, options) {
 		promiseZones = Promise.resolve([]);
 	}
 
-	return promiseZones
-		.then(function(zonenames) {
-			options.zonenames = zonenames;
-			// Do a little dry-run / self-test
-			return ACME._testChallenges(me, options);
-		})
-		.then(function() {
-			//#console.debug('[ACME.js] certificates.create');
-
-			var certOrder = {
-				// raw wildcard syntax MUST be used here
-				identifiers: options.domains
-					.sort(function(a, b) {
-						// the first in the list will be the subject of the certificate, I believe (and hope)
-						if (!options.subject) {
-							return 0;
-						}
-						if (options.subject === a) {
-							return -1;
-						}
-						if (options.subject === b) {
-							return 1;
-						}
-						return 0;
-					})
-					.map(function(hostname) {
-						return {
-							type: 'dns',
-							value: hostname
-						};
-					})
-				//, "notBefore": "2016-01-01T00:00:00Z"
-				//, "notAfter": "2016-01-08T00:00:00Z"
-			};
-
-			var payload = JSON.stringify(certOrder);
-			if (me.debug) {
-				console.debug('\n[DEBUG] newOrder\n');
-			}
-			return ACME._jwsRequest(me, {
-				options: options,
-				url: me._directoryUrls.newOrder,
-				protected: { kid: options._kid },
-				payload: Enc.strToBuf(payload)
-			}).then(function(resp) {
-				var location = resp.headers.location;
-				var setAuths;
-				var validAuths = [];
-				var auths = [];
-				if (me.debug) {
-					console.debug('[ordered]', location);
-				} // the account id url
-				if (me.debug) {
-					console.debug(resp);
-				}
-				options._authorizations = resp.body.authorizations;
-				options._order = location;
-				options._finalize = resp.body.finalize;
-				//if (me.debug) console.debug('[DEBUG] finalize:', options._finalize); return;
-
-				if (!options._authorizations) {
-					return Promise.reject(
-						new Error(
-							"[ACME.js] authorizations were not fetched for '" +
-								options.domains.join() +
-								"':\n" +
-								JSON.stringify(resp.body)
-						)
-					);
-				}
-				if (me.debug) {
-					console.debug('[ACME.js] POST newOrder has authorizations');
-				}
-				setAuths = options._authorizations.slice(0);
-
-				var accountKeyThumb;
-				function setThumbnail() {
-					return ACME._importKeypair(
-						me,
-						options.accountKey || options.accountKeypair
-					).then(function(pair) {
-						return me.Keypairs.thumbprint({
-							jwk: pair.public
-						}).then(function(_thumb) {
-							accountKeyThumb = _thumb;
-						});
-					});
-				}
-
-				function setNext() {
-					var authUrl = setAuths.shift();
-					if (!authUrl) {
-						return;
-					}
-
-					return ACME._getChallenges(me, options, authUrl).then(
-						function(results) {
-							// var domain = options.domains[i]; // results.identifier.value
-
-							// If it's already valid, we're golden it regardless
-							if (
-								results.challenges.some(function(ch) {
-									return 'valid' === ch.status;
-								})
-							) {
-								return setNext();
-							}
-
-							var challenge = ACME._chooseChallenge(
-								options,
-								results
-							);
-							if (!challenge) {
-								// For example, wildcards require dns-01 and, if we don't have that, we have to bail
-								return Promise.reject(
-									new Error(
-										"Server didn't offer any challenge we can handle for '" +
-											options.domains.join() +
-											"'."
-									)
-								);
-							}
-
-							return ACME._challengeToAuth(
-								me,
-								options,
-								accountKeyThumb,
-								results,
-								challenge,
-								false
-							).then(function(auth) {
-								auths.push(auth);
-								return ACME._setChallenge(
-									me,
-									options,
-									auth
-								).then(setNext);
-							});
-						}
-					);
-				}
-
-				function waitAll() {
-					// TODO take the max wait of all challenge plugins and wait that long, or 1000ms
-					var DELAY = me.setChallengeWait || 7000;
-					if (true || me.debug) {
-						console.debug(
-							'\n[DEBUG] waitChallengeDelay %s\n',
-							DELAY
-						);
-					}
-					return ACME._wait(DELAY);
-				}
-
-				function checkNext() {
-					var auth = auths.shift();
-					if (!auth) {
-						return;
-					}
-
-					var ch = auth.challenge;
-					if (!me._canUse[ch.type] || me.skipChallengeTest) {
-						// not so much "valid" as "not invalid"
-						// but in this case we can't confirm either way
-						validAuths.push(auth);
-						return checkNext();
-					}
-
-					return ACME.challengeTests[ch.type](me, auth)
-						.then(function() {
-							validAuths.push(auth);
-						})
-						.then(checkNext);
-				}
-
-				function presentNext() {
-					var auth = validAuths.shift();
-					if (!auth) {
-						return;
-					}
-					return ACME._postChallenge(me, options, auth).then(
-						presentNext
-					);
-				}
-
-				function finalizeOrder() {
-					if (me.debug) {
-						console.debug('[getCertificate] next.then');
-					}
-					var validatedDomains = certOrder.identifiers.map(function(
-						ident
-					) {
-						return ident.value;
-					});
-
-					return ACME._finalizeOrder(me, options, validatedDomains);
-				}
-
-				function retrieveCerts(order) {
-					//#console.debug('ACME.js: order was finalized');
-
-					// POST-as-GET
-					return ACME._jwsRequest(me, {
-						options: options,
-						url: options._certificate,
-						protected: { kid: options._kid },
-						payload: Enc.binToBuf(''),
-						json: true
-					}).then(function(resp) {
-						//#console.debug('ACME.js: csr submitted and cert received:');
-
-						// https://github.com/certbot/certbot/issues/5721
-						var certsarr = ACME.splitPemChain(
-							ACME.formatPemChain(resp.body || '')
-						);
-						//  cert, chain, fullchain, privkey, /*TODO, subject, altnames, issuedAt, expiresAt */
-						var certs = {
-							expires: order.expires,
-							identifiers: order.identifiers,
-							//, authorizations: order.authorizations
-							cert: certsarr.shift(),
-							//, privkey: privkeyPem
-							chain: certsarr.join('\n')
-						};
-						//#console.debug(certs);
-						return certs;
-					});
-				}
-
-				// First we set each and every challenge
-				// Then we ask for each challenge to be checked
-				// Doing otherwise would potentially cause us to poison our own DNS cache with misses
-				return setThumbnail()
-					.then(setNext)
-					.then(waitAll)
-					.then(checkNext)
-					.then(presentNext)
-					.then(finalizeOrder)
-					.then(retrieveCerts);
-			});
-		});
+	return promiseZones.then(function(zonenames) {
+		options.zonenames = zonenames;
+		// Do a little dry-run / self-test
+		if (!me.skipDryRun && !options.skipDryRun) {
+			return ACME._dryRun(me, options);
+		}
+	});
 };
 
-ACME._generateCsrWeb64 = function(me, options, validatedDomains) {
-	var csr;
-	if (options.csr) {
-		csr = options.csr;
-		// if der, convert to base64
-		if ('string' !== typeof csr) {
-			csr = Enc.bufToUrlBase64(csr);
+// Request a challenge for each authorization in the order
+ACME._getAllChallenges = function(me, options, order) {
+	var claims = [];
+	//#console.debug("[acme-v2] POST newOrder has authorizations");
+	var challengeAuths = order.authorizations.slice(0);
+
+	function getNext() {
+		var authUrl = challengeAuths.shift();
+		if (!authUrl) {
+			return claims;
 		}
-		// TODO PEM.parseBlock()
-		// nix PEM headers, if any
-		if ('-' === csr[0]) {
-			csr = csr
-				.split(/\n+/)
-				.slice(1, -1)
-				.join('');
-		}
-		csr = Enc.base64ToUrlBase64(csr.trim().replace(/\s+/g, ''));
-		return Promise.resolve(csr);
+
+		return ACME._getChallenges(me, options, authUrl).then(function(claim) {
+			// var domain = options.domains[i]; // claim.identifier.value
+			claims.push(claim);
+			return getNext();
+		});
 	}
+
+	return getNext().then(function() {
+		return claims;
+	});
+};
+
+// _kid
+// registerAccount
+// postChallenge
+// finalizeOrder
+// getCertificate
+ACME._getCertificate = function(me, options) {
+	//#console.debug('[ACME.js] certificates.create');
+	return ACME._orderCertificate(me, options).then(function(order) {
+		return ACME._finalizeOrder(me, options, order);
+	});
+};
+
+ACME._getCsrWeb64 = function(me, options) {
+	var csr = options.csr;
+	// if der, convert to base64
+	if ('string' !== typeof csr) {
+		csr = Enc.bufToUrlBase64(csr);
+	}
+	// TODO PEM.parseBlock()
+	// nix PEM headers, if any
+	if ('-' === csr[0]) {
+		csr = csr
+			.split(/\n+/)
+			.slice(1, -1)
+			.join('');
+	}
+	return Enc.base64ToUrlBase64(csr.trim().replace(/\s+/g, ''));
 };
 
 ACME.create = function create(me) {
@@ -1251,14 +1136,11 @@ ACME.create = function create(me) {
 	}
 	// me.debug = true;
 	me.challengePrefixes = ACME.challengePrefixes;
-	me.Keypairs = me.Keypairs || Keypairs;
 	me._nonces = [];
-	me._canUse = {};
+	me._canCheck = {};
 	if (!me._baseUrl) {
 		me._baseUrl = '';
 	}
-	//me.Keypairs = me.Keypairs || require('keypairs');
-	//me.request = me.request || require('@root/request');
 	if (!me.dns01) {
 		me.dns01 = function(ch) {
 			return native._dns01(me, ch);
@@ -1309,7 +1191,7 @@ ACME.create = function create(me) {
 	me.accounts = {
 		create: function(options) {
 			try {
-				return ACME._registerAccount(me, options);
+				return A._registerAccount(me, options);
 			} catch (e) {
 				return Promise.reject(e);
 			}
@@ -1319,7 +1201,13 @@ ACME.create = function create(me) {
 		// create + get challlenges
 		request: function(options) {
 			try {
-				return ACME._createOrder(me, options);
+				ACME._normalizePresenters(me, options, options.challenges);
+				return ACME._orderCertificate(me, options).then(function(
+					order
+				) {
+					options.order = order;
+					return order;
+				});
 			} catch (e) {
 				return Promise.reject(e);
 			}
@@ -1327,7 +1215,8 @@ ACME.create = function create(me) {
 		// set challenges, check challenges, finalize order, return order
 		complete: function(options) {
 			try {
-				return ACME._finalizeOrder(me, options);
+				ACME._normalizePresenters(me, options, options.challenges);
+				return ACME._finalizeOrder(me, options, options.order);
 			} catch (e) {
 				return Promise.reject(e);
 			}
@@ -1336,6 +1225,7 @@ ACME.create = function create(me) {
 	me.certificates = {
 		create: function(options) {
 			try {
+				ACME._normalizePresenters(me, options, options.challenges);
 				return ACME._getCertificate(me, options);
 			} catch (e) {
 				return Promise.reject(e);
@@ -1343,94 +1233,6 @@ ACME.create = function create(me) {
 		}
 	};
 	return me;
-};
-
-// Handle nonce, signing, and request altogether
-ACME._jwsRequest = function(me, bigopts) {
-	return ACME._getNonce(me).then(function(nonce) {
-		bigopts.protected.nonce = nonce;
-		bigopts.protected.url = bigopts.url;
-		// protected.alg: added by Keypairs.signJws
-		if (!bigopts.protected.jwk) {
-			// protected.kid must be overwritten due to ACME's interpretation of the spec
-			if (!bigopts.protected.kid) {
-				bigopts.protected.kid = bigopts.options._kid;
-			}
-		}
-
-		// this will shasum the thumbnail the 2nd time
-		return me.Keypairs.signJws({
-			jwk:
-				bigopts.options.accountKey ||
-				bigopts.options.accountKeypair.privateKeyJwk,
-			protected: bigopts.protected,
-			payload: bigopts.payload
-		})
-			.then(function(jws) {
-				//#console.debug('[ACME.js] url: ' + bigopts.url + ':');
-				//#console.debug(jws);
-				return ACME._request(me, { url: bigopts.url, json: jws });
-			})
-			.catch(function(e) {
-				if (/badNonce$/.test(e.urn)) {
-					// retry badNonces
-					var retryable = bigopts._retries >= 2;
-					if (!retryable) {
-						bigopts._retries = (bigopts._retries || 0) + 1;
-						return ACME._jwsRequest(me, bigopts);
-					}
-				}
-				throw e;
-			});
-	});
-};
-
-// Handle some ACME-specific defaults
-ACME._request = function(me, opts) {
-	if (!opts.headers) {
-		opts.headers = {};
-	}
-	if (opts.json && true !== opts.json) {
-		opts.headers['Content-Type'] = 'application/jose+json';
-		opts.body = JSON.stringify(opts.json);
-		if (!opts.method) {
-			opts.method = 'POST';
-		}
-	}
-	return me.request(opts).then(function(resp) {
-		if (resp.toJSON) {
-			resp = resp.toJSON();
-		}
-		if (resp.headers['replay-nonce']) {
-			ACME._setNonce(me, resp.headers['replay-nonce']);
-		}
-
-		var e;
-		var err;
-		if (resp.body) {
-			err = resp.body.error;
-			e = new Error('');
-			if (400 === resp.body.status) {
-				err = { type: resp.body.type, detail: resp.body.detail };
-			}
-			if (err) {
-				e.status = resp.body.status;
-				e.code = 'E_ACME';
-				if (e.status) {
-					e.message = '[' + e.status + '] ';
-				}
-				e.detail = err.detail;
-				e.message += err.detail || JSON.stringify(err);
-				e.urn = err.type;
-				e.uri = resp.body.url;
-				e._rawError = err;
-				e._rawBody = resp.body;
-				throw e;
-			}
-		}
-
-		return resp;
-	});
 };
 
 // A very generic, swappable request lib
@@ -1455,50 +1257,6 @@ ACME._defaultRequest = function(opts) {
 
 	return http.request(opts);
 };
-
-ACME._importKeypair = function(me, kp) {
-	var jwk = kp.privateKeyJwk;
-	if (kp.kty) {
-		jwk = kp;
-		kp = {};
-	}
-	var pub;
-	var p;
-	if (jwk) {
-		// nix the browser jwk extras
-		jwk.key_ops = undefined;
-		jwk.ext = undefined;
-		pub = me.Keypairs.neuter({ jwk: jwk });
-		p = Promise.resolve({
-			private: jwk,
-			public: pub
-		});
-	} else {
-		p = me.Keypairs.import({ pem: kp.privateKeyPem });
-	}
-	return p.then(function(pair) {
-		kp.privateKeyJwk = pair.private;
-		kp.publicKeyJwk = pair.public;
-		if (pair.public.kid) {
-			pair = JSON.parse(JSON.stringify(pair));
-			delete pair.public.kid;
-			delete pair.private.kid;
-		}
-		return pair;
-	});
-};
-
-/*
-TODO
-Per-Order State Params
-      _kty
-      _alg
-      _finalize
-      _expires
-      _certificate
-      _order
-      _authorizations
-*/
 
 ACME._toWebsafeBase64 = function(b64) {
 	return b64
@@ -1532,6 +1290,8 @@ ACME._removeChallenge = function(me, options, auth) {
 	if (!removeChallenge) {
 		throw new Error('challenge plugin is missing remove()');
 	}
+
+	// TODO normalize, warn, and just use promises
 	if (1 === removeChallenge.length) {
 		return Promise.resolve(removeChallenge(auth)).then(
 			function() {},
@@ -1591,6 +1351,19 @@ ACME._getZones = function(me, presenter, dnsHosts) {
 	);
 };
 
+ACME._notify = function(me, options, ev, params) {
+	if (!options.notify && !me.notify) {
+		console.info(ev, params);
+		return;
+	}
+	try {
+		(options.notify || me.notify)(ev, params);
+	} catch (e) {
+		console.error('`acme.notify(ev, params)` Error:');
+		console.error(e);
+	}
+};
+
 ACME._wrapCb = function(me, options, _name, args, _desc) {
 	return new Promise(function(resolve, reject) {
 		if (options[_name].length <= 1) {
@@ -1635,5 +1408,83 @@ function pluckZone(zonenames, dnsHost) {
 			return b.length - a.length;
 		})[0];
 }
+
+E.NO_SUITABLE_CHALLENGE = function(domain, challenges, presenters) {
+	// Bail with a descriptive message if no usable challenge could be selected
+	// For example, wildcards require dns-01 and, if we don't have that, we have to bail
+	var enabled = presenters.join(', ') || 'none';
+	var suitable =
+		challenges
+			.map(function(r) {
+				return r.type;
+			})
+			.join(', ') || 'none';
+	return new Error(
+		"None of the challenge types that you've enabled ( " +
+			enabled +
+			' )' +
+			" are suitable for validating the domain you've selected (" +
+			domain +
+			').' +
+			' You must enable one of ( ' +
+			suitable +
+			' ).'
+	);
+};
+E.UNHANDLED_ORDER_STATUS = function(options, domains, resp) {
+	return new Error(
+		"Didn't finalize order: Unhandled status '" +
+			resp.body.status +
+			"'." +
+			' This is not one of the known statuses...\n' +
+			"Requested: '" +
+			options.domains.join(', ') +
+			"'\n" +
+			"Validated: '" +
+			domains.join(', ') +
+			"'\n" +
+			JSON.stringify(resp.body, null, 2) +
+			'\n\n' +
+			'Please open an issue at https://git.rootprojects.org/root/acme.js'
+	);
+};
+E.DOUBLE_READY_ORDER = function(options, domains, resp) {
+	return new Error(
+		"Did not finalize order: status 'ready'." +
+			" Hmmm... this state shouldn't be possible here. That was the last state." +
+			" This one should at least be 'processing'.\n" +
+			"Requested: '" +
+			options.domains.join(', ') +
+			"'\n" +
+			"Validated: '" +
+			domains.join(', ') +
+			"'\n" +
+			JSON.stringify(resp.body, null, 2) +
+			'\n\n' +
+			'Please open an issue at https://git.rootprojects.org/root/acme.js'
+	);
+};
+E.ORDER_INVALID = function(options, domains, resp) {
+	return new Error(
+		"Did not finalize order: status 'invalid'." +
+			' Best guess: One or more of the domain challenges could not be verified' +
+			' (or the order was canceled).\n' +
+			"Requested: '" +
+			options.domains.join(', ') +
+			"'\n" +
+			"Validated: '" +
+			domains.join(', ') +
+			"'\n" +
+			JSON.stringify(resp.body, null, 2)
+	);
+};
+E.NO_AUTHORIZATIONS = function(options, resp) {
+	return new Error(
+		"[acme-v2.js] authorizations were not fetched for '" +
+			options.domains.join() +
+			"':\n" +
+			JSON.stringify(resp.body)
+	);
+};
 
 // TODO accountKey vs accountKeypair

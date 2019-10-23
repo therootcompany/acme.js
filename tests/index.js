@@ -8,9 +8,6 @@ var PEM = require('@root/pem');
 var punycode = require('punycode');
 var ACME = require('../acme.js');
 var Keypairs = require('@root/keypairs');
-var acme = ACME.create({
-	// debug: true
-});
 
 // TODO exec npm install --save-dev CHALLENGE_MODULE
 if (!process.env.CHALLENGE_OPTIONS) {
@@ -32,6 +29,22 @@ config.debug = !/^PROD/i.test(config.env);
 var pluginPrefix = 'acme-' + config.challengeType + '-';
 var pluginName = config.challengeModule;
 var plugin;
+
+var acme = ACME.create({
+	// debug: true
+	maintainerEmail: config.email,
+	notify: function(ev, params) {
+		console.info(
+			ev,
+			params.subject || params.altname || params.domain,
+			params.status
+		);
+		if ('error' === ev) {
+			console.error(params);
+			console.error(params.error);
+		}
+	}
+});
 
 function badPlugin(err) {
 	if ('MODULE_NOT_FOUND' !== err.code) {
@@ -88,7 +101,7 @@ async function happyPath(accKty, srvKty, rnd) {
 	}
 
 	var accountKeypair = await Keypairs.generate({ kty: accKty });
-  var accountKey = accountKeypair.private;
+	var accountKey = accountKeypair.private;
 	if (config.debug) {
 		console.info('Account Key Created');
 		console.info(JSON.stringify(accountKey, null, 2));
