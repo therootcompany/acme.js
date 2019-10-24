@@ -122,29 +122,26 @@ U._setNonce = function(me, nonce) {
 	me._nonces.unshift({ nonce: nonce, createdAt: Date.now() });
 };
 
-U._importKeypair = function(me, kp) {
-	var jwk = kp.privateKeyJwk;
-	if (kp.kty) {
-		jwk = kp;
-		kp = {};
-	}
-	var pub;
+U._importKeypair = function(me, key) {
 	var p;
-	if (jwk) {
+	var pub;
+
+	if (key && key.kty) {
 		// nix the browser jwk extras
-		jwk.key_ops = undefined;
-		jwk.ext = undefined;
-		pub = Keypairs.neuter({ jwk: jwk });
+		key.key_ops = undefined;
+		key.ext = undefined;
+		pub = Keypairs.neuter({ jwk: key });
 		p = Promise.resolve({
-			private: jwk,
+			private: key,
 			public: pub
 		});
+	} else if ('string' === typeof key) {
+		p = Keypairs.import({ pem: key });
 	} else {
-		p = Keypairs.import({ pem: kp.privateKeyPem });
+		throw new Error('no private key given');
 	}
+
 	return p.then(function(pair) {
-		kp.privateKeyJwk = pair.private;
-		kp.publicKeyJwk = pair.public;
 		if (pair.public.kid) {
 			pair = JSON.parse(JSON.stringify(pair));
 			delete pair.public.kid;

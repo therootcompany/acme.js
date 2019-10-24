@@ -35,55 +35,46 @@ var tests = [
 	'----\nxxxx\nyyyy\n----\r\n----\nxxxx\ryyyy\n----\n'
 ];
 
-function formatPemChain(str) {
-	return (
-		str
-			.trim()
-			.replace(/[\r\n]+/g, '\n')
-			.replace(/\-\n\-/g, '-\n\n-') + '\n'
-	);
-}
-function splitPemChain(str) {
-	return str
-		.trim()
-		.split(/[\r\n]{2,}/g)
-		.map(function(str) {
-			return str + '\n';
-		});
-}
+var ACME = require('../');
 
-tests.forEach(function(str) {
-	var actual = formatPemChain(str);
-	if (expected !== actual) {
-		console.error('input:   ', JSON.stringify(str));
-		console.error('expected:', JSON.stringify(expected));
-		console.error('actual:  ', JSON.stringify(actual));
-		throw new Error('did not pass');
+module.exports = function() {
+	console.info('\n[Test] can split and format PEM chain properly');
+
+	tests.forEach(function(str) {
+		var actual = ACME.formatPemChain(str);
+		if (expected !== actual) {
+			console.error('input:   ', JSON.stringify(str));
+			console.error('expected:', JSON.stringify(expected));
+			console.error('actual:  ', JSON.stringify(actual));
+			throw new Error('did not pass');
+		}
+	});
+
+	if (
+		'----\nxxxx\nyyyy\n----\n' !==
+		ACME.formatPemChain('\n\n----\r\nxxxx\r\nyyyy\r\n----\n\n')
+	) {
+		throw new Error('Not proper for single cert in chain');
 	}
-});
 
-if (
-	'----\nxxxx\nyyyy\n----\n' !==
-	formatPemChain('\n\n----\r\nxxxx\r\nyyyy\r\n----\n\n')
-) {
-	throw new Error('Not proper for single cert in chain');
-}
-
-if (
-	'--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n' !==
-	formatPemChain(
-		'\n\n\n--B--\nxxxx\nyyyy\n--E--\n\n\n\n--B--\nxxxx\nyyyy\n--E--\n\n\n--B--\nxxxx\nyyyy\n--E--\n\n\n'
-	)
-) {
-	throw new Error('Not proper for three certs in chain');
-}
-
-splitPemChain(
-	'--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n'
-).forEach(function(str) {
-	if ('--B--\nxxxx\nyyyy\n--E--\n' !== str) {
-		throw new Error('bad thingy');
+	if (
+		'--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n' !==
+		ACME.formatPemChain(
+			'\n\n\n--B--\nxxxx\nyyyy\n--E--\n\n\n\n--B--\nxxxx\nyyyy\n--E--\n\n\n--B--\nxxxx\nyyyy\n--E--\n\n\n'
+		)
+	) {
+		throw new Error('Not proper for three certs in chain');
 	}
-});
 
-console.info('PASS');
+	ACME.splitPemChain(
+		'--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n'
+	).forEach(function(str) {
+		if ('--B--\nxxxx\nyyyy\n--E--\n' !== str) {
+			throw new Error('bad thingy');
+		}
+	});
+
+	console.info('PASS');
+
+  return Promise.resolve();
+};

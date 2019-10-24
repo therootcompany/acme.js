@@ -179,17 +179,17 @@ ACME._testChallengeOptions = function() {
 
 ACME._thumber = function(me, options, thumb) {
 	var thumbPromise;
-	return function() {
+	return function(key) {
 		if (thumb) {
 			return Promise.resolve(thumb);
 		}
 		if (thumbPromise) {
 			return thumbPromise;
 		}
-		thumbPromise = U._importKeypair(
-			me,
-			options.accountKey || options.accountKeypair
-		).then(function(pair) {
+		if (!key) {
+			key = options.accountKey || options.accountKeypair;
+		}
+		thumbPromise = U._importKeypair(null, key).then(function(pair) {
 			return Keypairs.thumbprint({
 				jwk: pair.public
 			});
@@ -266,7 +266,14 @@ ACME._dryRun = function(me, realOptions) {
 					type: ch.type
 					//challenge: ch
 				});
-				noopts.challenges[ch.type].remove({ challenge: ch });
+				noopts.challenges[ch.type]
+					.remove({ challenge: ch })
+					.catch(function(err) {
+						err.action = 'challenge_remove';
+						err.altname = ch.altname;
+						err.type = ch.type;
+						ACME._notify(me, noopts, 'error', err);
+					});
 			});
 		}
 
@@ -310,95 +317,117 @@ ACME._computeAuths = function(me, options, thumb, request, dryrun) {
 		);
 	}
 
-	var getThumbprint = ACME._thumber(me, options, thumb);
+	var getThumbprint = ACME._thumber(null, options, thumb);
 
-	return getThumbprint().then(function(thumb) {
-		return Promise.all(
-			request.challenges.map(function(challenge) {
-				// Don't do extra work for challenges that we can't satisfy
-				if (!options._presenterTypes.includes(challenge.type)) {
-					return null;
-				}
+	return Promise.all(
+		request.challenges.map(function(challenge) {
+			// Don't do extra work for challenges that we can't satisfy
+			if (!options._presenterTypes.includes(challenge.type)) {
+				return null;
+			}
 
-				var auth = {};
+			var auth = {};
 
-				// straight copy from the new order response
-				// { identifier, status, expires, challenges, wildcard }
-				Object.keys(request).forEach(function(key) {
-					auth[key] = request[key];
+			// straight copy from the new order response
+			// { identifier, status, expires, challenges, wildcard }
+			Object.keys(request).forEach(function(key) {
+				auth[key] = request[key];
+			});
+
+			// copy from the challenge we've chosen
+			// { type, status, url, token }
+			// (note the duplicate status overwrites the one above, but they should be the same)
+			Object.keys(challenge).forEach(function(key) {
+				// don't confused devs with the id url
+				auth[key] = challenge[key];
+			});
+
+			// batteries-included helpers
+			auth.hostname = auth.identifier.value;
+			// because I'm not 100% clear if the wildcard identifier does or doesn't
+			// have the leading *. in all cases
+			auth.altname = ACME._untame(auth.identifier.value, auth.wildcard);
+
+			var zone = pluckZone(
+				options.zonenames || [],
+				auth.identifier.value
+			);
+
+			return ACME.computeChallenge({
+				accountKey: options.accountKey,
+				_getThumbprint: getThumbprint,
+				challenge: auth,
+				zone: zone,
+				dnsPrefix: dnsPrefix
+			}).then(function(resp) {
+				Object.keys(resp).forEach(function(k) {
+					auth[k] = resp[k];
 				});
+				return auth;
+			});
+		})
+	).then(function(auths) {
+		return auths.filter(Boolean);
+	});
+};
 
-				// copy from the challenge we've chosen
-				// { type, status, url, token }
-				// (note the duplicate status overwrites the one above, but they should be the same)
-				Object.keys(challenge).forEach(function(key) {
-					// don't confused devs with the id url
-					auth[key] = challenge[key];
-				});
+ACME.computeChallenge = function(opts) {
+	var auth = opts.challenge;
+	var hostname = auth.hostname || opts.hostname;
+	var zone = opts.zone;
+	var thumb = opts.thumbprint || '';
+	var accountKey = opts.accountKey;
+	var getThumbprint = opts._getThumbprint || ACME._thumber(null, opts, thumb);
+	var dnsPrefix = opts.dnsPrefix || ACME.challengePrefixes['dns-01'];
 
-				// batteries-included helpers
-				auth.hostname = auth.identifier.value;
-				// because I'm not 100% clear if the wildcard identifier does or doesn't
-				// have the leading *. in all cases
-				auth.altname = ACME._untame(
-					auth.identifier.value,
-					auth.wildcard
-				);
+	return getThumbprint(accountKey).then(function(thumb) {
+		var resp = {};
+		resp.thumbprint = thumb;
+		//   keyAuthorization = token + '.' + base64url(JWK_Thumbprint(accountKey))
+		resp.keyAuthorization = auth.token + '.' + thumb;
 
-				auth.thumbprint = thumb;
-				//   keyAuthorization = token + '.' + base64url(JWK_Thumbprint(accountKey))
-				auth.keyAuthorization = challenge.token + '.' + auth.thumbprint;
+		if ('http-01' === auth.type) {
+			// conflicts with ACME challenge id url is already in use,
+			// so we call this challengeUrl instead
+			// TODO auth.http01Url ?
+			resp.challengeUrl =
+				'http://' +
+				// `hostname` is an alias of `auth.indentifier.value`
+				hostname +
+				ACME.challengePrefixes['http-01'] +
+				'/' +
+				auth.token;
+		}
 
-				if ('http-01' === auth.type) {
-					// conflicts with ACME challenge id url is already in use,
-					// so we call this challengeUrl instead
-					// TODO auth.http01Url ?
-					auth.challengeUrl =
-						'http://' +
-						auth.identifier.value +
-						ACME.challengePrefixes['http-01'] +
-						'/' +
-						auth.token;
-					return auth;
-				}
+		if ('dns-01' !== auth.type) {
+			return resp;
+		}
 
-				if ('dns-01' !== auth.type) {
-					return auth;
-				}
-
-				var zone = pluckZone(
-					options.zonenames || [],
-					auth.identifier.value
-				);
-
-				// Always calculate dnsAuthorization because we
-				// may need to present to the user for confirmation / instruction
-				// _as part of_ the decision making process
-				return sha2
-					.sum(256, auth.keyAuthorization)
-					.then(function(hash) {
-						return Enc.bufToUrlBase64(new Uint8Array(hash));
-					})
-					.then(function(hash64) {
-						auth.dnsHost =
-							dnsPrefix + '.' + auth.hostname.replace('*.', '');
-
-						auth.dnsAuthorization = hash64;
-						auth.keyAuthorizationDigest = hash64;
-
-						if (zone) {
-							auth.dnsZone = zone;
-							auth.dnsPrefix = auth.dnsHost
-								.replace(newZoneRegExp(zone), '')
-								.replace(/\.$/, '');
-						}
-
-						return auth;
-					});
+		// Always calculate dnsAuthorization because we
+		// may need to present to the user for confirmation / instruction
+		// _as part of_ the decision making process
+		return sha2
+			.sum(256, resp.keyAuthorization)
+			.then(function(hash) {
+				return Enc.bufToUrlBase64(Uint8Array.from(hash));
 			})
-		).then(function(auths) {
-			return auths.filter(Boolean);
-		});
+			.then(function(hash64) {
+				resp.dnsHost = dnsPrefix + '.' + hostname; // .replace('*.', '');
+
+				// deprecated
+				resp.dnsAuthorization = hash64;
+				// should use this instead
+				resp.keyAuthorizationDigest = hash64;
+
+				if (zone) {
+					resp.dnsZone = zone;
+					resp.dnsPrefix = resp.dnsHost
+						.replace(newZoneRegExp(zone), '')
+						.replace(/\.$/, '');
+				}
+
+				return resp;
+			});
 	});
 };
 
@@ -583,6 +612,7 @@ ACME._setChallenges = function(me, options, order) {
 	var claims = order._claims.slice(0);
 	var valids = [];
 	var auths = [];
+	var placed = [];
 	var USE_DNS = false;
 	var DNS_DELAY = 0;
 
@@ -618,6 +648,7 @@ ACME._setChallenges = function(me, options, order) {
 					);
 				}
 				auths.push(selected);
+				placed.push(selected);
 				ACME._notify(me, options, 'challenge_select', {
 					// API-locked
 					altname: ACME._untame(
@@ -651,10 +682,13 @@ ACME._setChallenges = function(me, options, order) {
 	function waitAll() {
 		//#console.debug('\n[DEBUG] waitChallengeDelay %s\n', DELAY);
 		if (!DNS_DELAY || DNS_DELAY <= 0) {
-			console.warn(
-				'the given dns-01 challenge did not specify `propagationDelay`'
-			);
-			console.warn('the default of 5000ms will be used');
+			if (!ACME._propagationDelayWarning) {
+				console.warn(
+					'warn: the given dns-01 challenge did not specify `propagationDelay`'
+				);
+				console.warn('warn: the default of 5000ms will be used');
+				ACME._propagationDelayWarning = true;
+			}
 			DNS_DELAY = 5000;
 		}
 		return ACME._wait(DNS_DELAY);
@@ -683,7 +717,22 @@ ACME._setChallenges = function(me, options, order) {
 	// is so that we don't poison our own DNS cache with misses.
 	return setNext()
 		.then(waitAll)
-		.then(checkNext);
+		.then(checkNext)
+		.catch(function(err) {
+			if (!options.debug) {
+				placed.forEach(function(ch) {
+					options.challenges[ch.type]
+						.remove({ challenge: ch })
+						.catch(function(err) {
+							err.action = 'challenge_remove';
+							err.altname = ch.altname;
+							err.type = ch.type;
+							ACME._notify(me, options, 'error', err);
+						});
+				});
+			}
+			throw err;
+		});
 };
 
 ACME._normalizePresenters = function(me, options, presenters) {
@@ -1282,40 +1331,6 @@ ACME._prnd = function(n) {
 };
 ACME._toHex = function(pair) {
 	return parseInt(pair, 10).toString(16);
-};
-ACME._removeChallenge = function(me, options, auth) {
-	var challengers = options.challenges || {};
-	var ch = auth.challenge;
-	var removeChallenge = challengers[ch.type] && challengers[ch.type].remove;
-	if (!removeChallenge) {
-		throw new Error('challenge plugin is missing remove()');
-	}
-
-	// TODO normalize, warn, and just use promises
-	if (1 === removeChallenge.length) {
-		return Promise.resolve(removeChallenge(auth)).then(
-			function() {},
-			function(e) {
-				console.error('Error during remove challenge:');
-				console.error(e);
-			}
-		);
-	} else if (2 === removeChallenge.length) {
-		return new Promise(function(resolve) {
-			removeChallenge(auth, function(err) {
-				resolve();
-				if (err) {
-					console.error('Error during remove challenge:');
-					console.error(err);
-				}
-				return err;
-			});
-		});
-	} else {
-		throw new Error(
-			"Bad function signature for '" + auth.type + "' challenge.remove()"
-		);
-	}
 };
 
 ACME._depInit = function(me, presenter) {
