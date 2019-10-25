@@ -55,19 +55,35 @@ However, in keeping to our values we've made the source visible for others to in
 # API Overview
 
 ```js
-ACME.create({ maintainerEmail, packageAgent });
+ACME.create({ maintainerEmail, packageAgent, notify });
 acme.init(directoryUrl);
 acme.accounts.create({ subscriberEmail, agreeToTerms, accountKey });
 acme.certificates.create({
 	customerEmail, // do not use
 	account,
 	accountKey,
-	serverKey,
 	csr,
 	domains,
 	challenges
 });
 ```
+
+| Parameter       | Description                                                                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------------- |
+| account         | an object containing the Let's Encrypt Account ID as "kid" (misnomer, not actually a key id/thumbprint)     |
+| accountKey      | an RSA or EC public/private keypair in JWK format                                                           |
+| agreeToTerms    | set to `true` to agree to the Let's Encrypt Subscriber Agreement                                            |
+| challenges      | the 'http-01', 'alpn-01', and/or 'dns-01' challenge plugins (`get`, `set`, and `remove` callbacks) to use   |
+| csr             | a Certificate Signing Request (CSR), which may be generated with csr.js, openssl, or another                |
+| customerEmail   | Don't use this. Given as an example to differentiate between Maintainer, Subscriber, and End-User           |
+| directoryUrl    | should be the Let's Encrypt Directory URL<br>`https://acme-staging-v02.api.letsencrypt.org/directory`       |
+| domains         | the list of altnames (subject first) that are listed in the CSR and will be listed on the certificate       |
+| notify          | all callback for logging events and errors in the form `function (ev, args) { ... }`                        |
+| maintainerEmail | should be a contact for the author of the code to receive critical bug and security notices                 |
+| packageAgent    | should be an RFC72321-style user-agent string to append to the ACME client (ex: mypackage/v1.1.1)           |
+| subscriberEmail | should be a contact for the service provider to receive renewal failure notices and manage the ACME account |
+
+Helper Functions
 
 ```js
 ACME.computeChallenge({

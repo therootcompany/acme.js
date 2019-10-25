@@ -1,13 +1,14 @@
 {
 	"name": "@root/acme",
-	"version": "3.0.0-wip.4",
+	"version": "3.0.0",
 	"description": "Free SSL certificates for Node.js and Browsers. Issued via Let's Encrypt",
 	"homepage": "https://rootprojects.org/acme/",
 	"main": "acme.js",
 	"browser": {
 		"./lib/native.js": "./lib/browser.js",
 		"./lib/node/sha2.js": "./lib/browser/sha2.js",
-		"./lib/node/http.js": "./lib/browser/http.js"
+		"./lib/node/http.js": "./lib/browser/http.js",
+		"./lib/node/client-user-agent.js": "./lib/browser/client-user-agent.js"
 	},
 	"files": [
 		"*.js",
