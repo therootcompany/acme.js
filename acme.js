@@ -14,7 +14,8 @@ var sha2 = require('@root/keypairs/lib/node/sha2.js');
 var http = require('./lib/node/http.js');
 var A = require('./account.js');
 var U = require('./utils.js');
-var E = require('./errors');
+var E = require('./errors.js');
+var M = require('./maintainers.js');
 
 var native = require('./lib/native.js');
 
@@ -26,6 +27,20 @@ ACME.create = function create(me) {
 	// me.debug = true;
 	me._nonces = [];
 	me._canCheck = {};
+
+	if (!/.+@.+\..+/.test(me.maintainerEmail)) {
+		throw new Error(
+			'you should supply `maintainerEmail` as a contact for security and critical bug notices'
+		);
+	}
+
+	if (!/\w\/v?\d/.test(me.packageAgent) && false !== me.packageAgent) {
+		console.error(
+			"\nyou should supply `packageAgent` as an rfc7231-style User-Agent such as Foo/v1.1\n\n\t// your package agent should be this:\n\tvar pkg = require('./package.json');\n\tvar agent = pkg.name + '/' + pkg.version\n"
+		);
+		process.exit(1);
+		return;
+	}
 
 	if (!me.dns01) {
 		me.dns01 = function(ch) {
@@ -43,15 +58,17 @@ ACME.create = function create(me) {
 		};
 	}
 
-	if (!me.request) {
-		me.request = http.request;
+	if (!me.__request) {
+		me.__request = http.request;
 	}
 	// passed to dependencies
-	me._urequest = function(opts) {
+	me.request = function(opts) {
 		return U._request(me, opts);
 	};
 
 	me.init = function(opts) {
+		M.init(me);
+
 		function fin(dir) {
 			me._directoryUrls = dir;
 			me._tos = dir.meta.termsOfService;
@@ -1241,7 +1258,7 @@ ACME._prepRequest = function(me, options) {
 				!presenter._acme_initialized
 			) {
 				presenter._acme_initialized = true;
-				return presenter.init({ type: '*', request: me._urequest });
+				return presenter.init({ type: '*', request: me.request });
 			}
 		});
 	});
