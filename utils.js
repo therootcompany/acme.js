@@ -82,9 +82,14 @@ U._request = function(me, opts) {
 	if (ua && !opts.headers['User-Agent']) {
 		opts.headers['User-Agent'] = ua;
 	}
-	if (opts.json && true !== opts.json) {
-		opts.headers['Content-Type'] = 'application/jose+json';
-		opts.body = JSON.stringify(opts.json);
+	if (opts.json) {
+		opts.headers.Accept = 'application/json';
+		if (true !== opts.json) {
+			opts.body = JSON.stringify(opts.json);
+		}
+		if (/*opts.jose ||*/ opts.json.protected) {
+			opts.headers['Content-Type'] = 'application/jose+json';
+		}
 	}
 	if (!opts.method) {
 		opts.method = 'GET';
@@ -92,16 +97,10 @@ U._request = function(me, opts) {
 			opts.method = 'POST';
 		}
 	}
-	if (opts.json) {
-		opts.headers.Accept = 'application/json';
-		if (true !== opts.json) {
-			opts.body = JSON.stringify(opts.json);
-		}
-	}
 
 	//console.log('\n[debug] REQUEST');
 	//console.log(opts);
-	return me.request(opts).then(function(resp) {
+	return me.__request(opts).then(function(resp) {
 		if (resp.toJSON) {
 			resp = resp.toJSON();
 		}

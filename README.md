@@ -1,4 +1,4 @@
-# [ACME.js](https://git.rootprojects.org/root/acme.js) v3
+# [ACME.js](https://git.rootprojects.org/root/acme.js) (RFC 8555 / November 2019)
 
 | Built by [Root](https://therootcompany.com) for [Greenlock](https://greenlock.domains)
 
@@ -51,6 +51,31 @@ If they don't, please open an issue to let us know why.
 
 We'd much rather improve the app than have a hundred different versions running in the wild.
 However, in keeping to our values we've made the source visible for others to inspect, improve, and modify.
+
+# API Overview
+
+```js
+ACME.create({ maintainerEmail, packageAgent });
+acme.init(directoryUrl);
+acme.accounts.create({ subscriberEmail, agreeToTerms, accountKey });
+acme.certificates.create({
+	customerEmail, // do not use
+	account,
+	accountKey,
+	serverKey,
+	csr,
+	domains,
+	challenges
+});
+```
+
+```js
+ACME.computeChallenge({
+	accountKey: jwk,
+	hostname: 'example.com',
+	challenge: { type: 'dns-01', token: 'xxxx' }
+});
+```
 
 # Install
 
@@ -234,9 +259,6 @@ is a required part of the process, which requires `set` and `remove` callbacks/p
 
 ```js
 var certinfo = await acme.certificates.create({
-	agreeToTerms: function(tos) {
-		return tos;
-	},
 	account: account,
 	accountKey: accountPrivateJwk,
 	csr: csr,

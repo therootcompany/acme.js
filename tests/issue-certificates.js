@@ -2,12 +2,14 @@
 
 require('dotenv').config();
 
+var pkg = require('../package.json');
 var CSR = require('@root/csr');
 var Enc = require('@root/encoding/base64');
 var PEM = require('@root/pem');
 var punycode = require('punycode');
 var ACME = require('../acme.js');
 var Keypairs = require('@root/keypairs');
+var ecJwk = require('../fixtures/account.jwk.json');
 
 // TODO exec npm install --save-dev CHALLENGE_MODULE
 if (!process.env.CHALLENGE_OPTIONS) {
@@ -36,6 +38,7 @@ module.exports = function() {
 	var acme = ACME.create({
 		// debug: true
 		maintainerEmail: config.email,
+		packageAgent: 'test-' + pkg.name + '/' + pkg.version,
 		notify: function(ev, params) {
 			console.info(
 				'\t' + ev,
@@ -104,6 +107,10 @@ module.exports = function() {
 		}
 
 		var accountKeypair = await Keypairs.generate({ kty: accKty });
+		if (/EC/i.test(accKty)) {
+			// to test that an existing account gets back data
+			accountKeypair = ecJwk;
+		}
 		var accountKey = accountKeypair.private;
 		if (config.debug) {
 			console.info('Account Key Created');
