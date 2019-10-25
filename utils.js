@@ -3,6 +3,7 @@
 var U = module.exports;
 
 var Keypairs = require('@root/keypairs');
+var UserAgent = require('./lib/node/client-user-agent.js');
 
 // Handle nonce, signing, and request altogether
 U._jwsRequest = function(me, bigopts) {
@@ -12,16 +13,14 @@ U._jwsRequest = function(me, bigopts) {
 		// protected.alg: added by Keypairs.signJws
 		if (!bigopts.protected.jwk) {
 			// protected.kid must be overwritten due to ACME's interpretation of the spec
-			if (!bigopts.protected.kid) {
-				bigopts.protected.kid = bigopts.options._kid;
+			if (!('kid' in bigopts.protected)) {
+				bigopts.protected.kid = bigopts.kid;
 			}
 		}
 
 		// this will shasum the thumbprint the 2nd time
 		return Keypairs.signJws({
-			jwk:
-				bigopts.options.accountKey ||
-				bigopts.options.accountKeypair.privateKeyJwk,
+			jwk: bigopts.accountKey,
 			protected: bigopts.protected,
 			payload: bigopts.payload
 		})
@@ -72,16 +71,36 @@ U._getNonce = function(me) {
 
 // Handle some ACME-specific defaults
 U._request = function(me, opts) {
+	// no-op on browser
+	var ua = UserAgent.get(me, opts);
+
+	// Note: the required User-Agent string will be set in node, but not browsers
 	if (!opts.headers) {
 		opts.headers = {};
+	}
+
+	if (ua && !opts.headers['User-Agent']) {
+		opts.headers['User-Agent'] = ua;
 	}
 	if (opts.json && true !== opts.json) {
 		opts.headers['Content-Type'] = 'application/jose+json';
 		opts.body = JSON.stringify(opts.json);
-		if (!opts.method) {
+	}
+	if (!opts.method) {
+		opts.method = 'GET';
+		if (opts.body) {
 			opts.method = 'POST';
 		}
 	}
+	if (opts.json) {
+		opts.headers.Accept = 'application/json';
+		if (true !== opts.json) {
+			opts.body = JSON.stringify(opts.json);
+		}
+	}
+
+	//console.log('\n[debug] REQUEST');
+	//console.log(opts);
 	return me.request(opts).then(function(resp) {
 		if (resp.toJSON) {
 			resp = resp.toJSON();
@@ -89,6 +108,9 @@ U._request = function(me, opts) {
 		if (resp.headers['replay-nonce']) {
 			U._setNonce(me, resp.headers['replay-nonce']);
 		}
+		//console.log('[debug] RESPONSE:');
+		//console.log(resp.headers);
+		//console.log(resp.body);
 
 		var e;
 		var err;
@@ -122,7 +144,7 @@ U._setNonce = function(me, nonce) {
 	me._nonces.unshift({ nonce: nonce, createdAt: Date.now() });
 };
 
-U._importKeypair = function(me, key) {
+U._importKeypair = function(key) {
 	var p;
 	var pub;
 

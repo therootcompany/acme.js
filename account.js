@@ -8,23 +8,18 @@ var Enc = require('@root/encoding/bytes');
 
 A._getAccountKid = function(me, options) {
 	// It's just fine if there's no account, we'll go get the key id we need via the existing key
-	options._kid =
-		options._kid ||
-		options.accountKid ||
-		(options.account &&
-			(options.account.kid ||
-				(options.account.key && options.account.key.kid)));
+	var kid =
+		options.kid ||
+		(options.account && (options.account.key && options.account.key.kid));
 
-	if (options._kid) {
-		return Promise.resolve(options._kid);
+	if (kid) {
+		return Promise.resolve(kid);
 	}
 
 	//return Promise.reject(new Error("must include KeyID"));
 	// This is an idempotent request. It'll return the same account for the same public key.
 	return A._registerAccount(me, options).then(function(account) {
-		options._kid = account.key.kid;
-		// start back from the top
-		return options._kid;
+		return account.key.kid;
 	});
 };
 
@@ -54,50 +49,33 @@ A._registerAccount = function(me, options) {
 	function agree(tosUrl) {
 		var err;
 		if (me._tos !== tosUrl) {
-			err = new Error("You must agree to the ToS at '" + me._tos + "'");
+			err = new Error("must agree to '" + tosUrl + "'");
 			err.code = 'E_AGREE_TOS';
 			throw err;
 		}
+		return true;
+	}
 
-		return U._importKeypair(
-			me,
-			options.accountKey || options.accountKeypair
-		).then(function(pair) {
+	function getAccount() {
+		return U._importKeypair(options.accountKey).then(function(pair) {
 			var contact;
 			if (options.contact) {
 				contact = options.contact.slice(0);
-			} else if (options.subscriberEmail || options.email) {
-				contact = [
-					'mailto:' + (options.subscriberEmail || options.email)
-				];
+			} else if (options.subscriberEmail) {
+				contact = ['mailto:' + options.subscriberEmail];
 			}
+
 			var accountRequest = {
-				termsOfServiceAgreed: tosUrl === me._tos,
+				termsOfServiceAgreed: true,
 				onlyReturnExisting: false,
 				contact: contact
 			};
-			var pExt;
-			if (options.externalAccount) {
-				pExt = Keypairs.signJws({
-					// TODO is HMAC the standard, or is this arbitrary?
-					secret: options.externalAccount.secret,
-					protected: {
-						alg: options.externalAccount.alg || 'HS256',
-						kid: options.externalAccount.id,
-						url: me._directoryUrls.newAccount
-					},
-					payload: Enc.strToBuf(JSON.stringify(pair.public))
-				}).then(function(jws) {
-					accountRequest.externalAccountBinding = jws;
-					return accountRequest;
-				});
-			} else {
-				pExt = Promise.resolve(accountRequest);
-			}
-			return pExt.then(function(accountRequest) {
-				var payload = JSON.stringify(accountRequest);
+
+			var pub = pair.public;
+			return attachExtAcc(pub, accountRequest).then(function(accReq) {
+				var payload = JSON.stringify(accReq);
 				return U._jwsRequest(me, {
-					options: options,
+					accountKey: options.accountKey,
 					url: me._directoryUrls.newAccount,
 					protected: { kid: false, jwk: pair.public },
 					payload: Enc.strToBuf(payload)
@@ -118,31 +96,39 @@ A._registerAccount = function(me, options) {
 						);
 					}
 
-					var location = resp.headers.location;
-					// the account id url
-					options._kid = location;
-					//#console.debug('[DEBUG] new account location:');
-					//#console.debug(location);
-					//#console.debug(resp);
-
-					/*
-            {
-              contact: ["mailto:jon@example.com"],
-              orders: "https://some-url",
-              status: 'valid'
-            }
-            */
+					// the account id url is the "kid"
+					var kid = resp.headers.location;
 					if (!account) {
 						account = { _emptyResponse: true };
 					}
-					// https://git.rootprojects.org/root/acme.js/issues/8
 					if (!account.key) {
 						account.key = {};
 					}
-					account.key.kid = options._kid;
+					account.key.kid = kid;
 					return account;
 				});
 			});
+		});
+	}
+
+	// for external accounts (probably useless, but spec'd)
+	function attachExtAcc(pubkey, accountRequest) {
+		if (!options.externalAccount) {
+			return Promise.resolve(accountRequest);
+		}
+
+		return Keypairs.signJws({
+			// TODO is HMAC the standard, or is this arbitrary?
+			secret: options.externalAccount.secret,
+			protected: {
+				alg: options.externalAccount.alg || 'HS256',
+				kid: options.externalAccount.id,
+				url: me._directoryUrls.newAccount
+			},
+			payload: Enc.strToBuf(JSON.stringify(pubkey))
+		}).then(function(jws) {
+			accountRequest.externalAccountBinding = jws;
+			return accountRequest;
 		});
 	}
 
@@ -157,5 +143,6 @@ A._registerAccount = function(me, options) {
 			}
 			return agreeToTerms(me._tos);
 		})
-		.then(agree);
+		.then(agree)
+		.then(getAccount);
 };
