@@ -1,0 +1,12 @@
+{
+	"server": "nginx",
+	"date": "Thu, 24 Oct 2019 23:41:44 GMT",
+	"content-type": "application/pem-certificate-chain",
+	"content-length": "3806",
+	"connection": "close",
+	"cache-control": "public, max-age=0, no-cache",
+	"link": "<https://acme-staging-v02.api.letsencrypt.org/directory>;rel=\"index\"",
+	"replay-nonce": "0002vmpuKxQvokCGu5-cbVhsXkBHweBkdFnNrIpufnVn8mc",
+	"x-frame-options": "DENY",
+	"strict-transport-security": "max-age=604800"
+}

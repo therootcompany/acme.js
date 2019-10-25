@@ -1,0 +1,10 @@
+{
+	"server": "nginx",
+	"date": "Thu, 24 Oct 2019 23:41:24 GMT",
+	"connection": "close",
+	"cache-control": "public, max-age=0, no-cache",
+	"link": "<https://acme-staging-v02.api.letsencrypt.org/directory>;rel=\"index\"",
+	"replay-nonce": "0001IPeC3ta_uKoe-5GjpqQYFR1C-QcKJsTUZsGZMQOK69g",
+	"x-frame-options": "DENY",
+	"strict-transport-security": "max-age=604800"
+}

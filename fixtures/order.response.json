@@ -1,0 +1,26 @@
+{
+	"status": "pending",
+	"expires": "2019-10-31T23:41:32.669736375Z",
+	"identifiers": [
+		{
+			"type": "dns",
+			"value": "*.xn--baz-acmejs-2ea4-zk8x.test.utahrust.com"
+		},
+		{
+			"type": "dns",
+			"value": "xn--bar-acmejs-2ea4-zk8x.test.utahrust.com"
+		},
+		{
+			"type": "dns",
+			"value": "xn--baz-acmejs-2ea4-zk8x.test.utahrust.com"
+		},
+		{ "type": "dns", "value": "xn--foo-acmejs-2ea4-zk8x.test.utahrust.com" }
+	],
+	"authorizations": [
+		"https://acme-staging-v02.api.letsencrypt.org/acme/authz-v3/16603341",
+		"https://acme-staging-v02.api.letsencrypt.org/acme/authz-v3/16603342",
+		"https://acme-staging-v02.api.letsencrypt.org/acme/authz-v3/16603343",
+		"https://acme-staging-v02.api.letsencrypt.org/acme/authz-v3/16603344"
+	],
+	"finalize": "https://acme-staging-v02.api.letsencrypt.org/acme/finalize/11408075/57799471"
+}

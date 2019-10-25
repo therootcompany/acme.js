@@ -1,0 +1,13 @@
+{
+	"server": "nginx",
+	"date": "Thu, 24 Oct 2019 23:41:32 GMT",
+	"content-type": "application/json",
+	"content-length": "420",
+	"connection": "close",
+	"boulder-requester": "11408075",
+	"cache-control": "public, max-age=0, no-cache",
+	"link": "<https://acme-staging-v02.api.letsencrypt.org/directory>;rel=\"index\"",
+	"replay-nonce": "0001oSNAwnYV2QZPtpcBdyMQguqpx0R5K8EwKqc2OylUbno",
+	"x-frame-options": "DENY",
+	"strict-transport-security": "max-age=604800"
+}

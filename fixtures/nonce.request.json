@@ -1,0 +1,7 @@
+{
+	"method": "HEAD",
+	"url": "https://acme-staging-v02.api.letsencrypt.org/acme/new-nonce",
+	"headers": {
+		"User-Agent": "ACME.js/v3 node/v10.13.0 Darwin darwin/17.7.0 Darwin/x64"
+	}
+}

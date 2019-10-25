@@ -1,0 +1,9 @@
+{
+	"method": "GET",
+	"url": "https://acme-staging-v02.api.letsencrypt.org/directory",
+	"json": true,
+	"headers": {
+		"User-Agent": "ACME.js/v3 node/v10.13.0 darwin/17.7.0 Darwin/x64",
+		"Accept": "application/json"
+	}
+}

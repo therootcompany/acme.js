@@ -1,0 +1,14 @@
+{
+	"server": "nginx",
+	"date": "Thu, 24 Oct 2019 23:41:24 GMT",
+	"content-type": "application/json",
+	"content-length": "340",
+	"connection": "close",
+	"boulder-requester": "11408075",
+	"cache-control": "public, max-age=0, no-cache",
+	"link": "<https://acme-staging-v02.api.letsencrypt.org/directory>;rel=\"index\", <https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf>;rel=\"terms-of-service\"",
+	"location": "https://acme-staging-v02.api.letsencrypt.org/acme/acct/11408075",
+	"replay-nonce": "0002O1dowqaEQWEHtP2Cz9BYJuOU91uRvRM1uPFbcdwaj-0",
+	"x-frame-options": "DENY",
+	"strict-transport-security": "max-age=604800"
+}

@@ -1,0 +1,1 @@
+// there is no nonce response body, see the headers

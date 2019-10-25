@@ -1,0 +1,121 @@
+[
+	[
+		{
+			"url": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603342/I4uhGQ",
+			"json": {
+				"protected": "eyJraWQiOiJodHRwczovL2FjbWUtc3RhZ2luZy12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMTE0MDgwNzUiLCJub25jZSI6IjAwMDIybXdZUUhpR0NMMVRacUViYkNBZ1N1djJYMXctSGhkMWR0TV9zRllXRGlNIiwidXJsIjoiaHR0cHM6Ly9hY21lLXN0YWdpbmctdjAyLmFwaS5sZXRzZW5jcnlwdC5vcmcvYWNtZS9jaGFsbC12My8xNjYwMzM0Mi9JNHVoR1EiLCJhbGciOiJFUzI1NiJ9",
+				"payload": "e30",
+				"signature": "90XygqCrKMhqsoFD4-J56yYgEKuevnw7V-4MaP_lZKzMn9vnhK_CtWh0k5kRuePhJzopTRrWkRzXz9OExlt9WQ"
+			},
+			"headers": {
+				"User-Agent": "ACME.js/v3 node/v10.13.0 darwin/17.7.0 Darwin/x64",
+				"Content-Type": "application/jose+json",
+				"Accept": "application/json"
+			},
+			"body": "{\"protected\":\"eyJraWQiOiJodHRwczovL2FjbWUtc3RhZ2luZy12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMTE0MDgwNzUiLCJub25jZSI6IjAwMDIybXdZUUhpR0NMMVRacUViYkNBZ1N1djJYMXctSGhkMWR0TV9zRllXRGlNIiwidXJsIjoiaHR0cHM6Ly9hY21lLXN0YWdpbmctdjAyLmFwaS5sZXRzZW5jcnlwdC5vcmcvYWNtZS9jaGFsbC12My8xNjYwMzM0Mi9JNHVoR1EiLCJhbGciOiJFUzI1NiJ9\",\"payload\":\"e30\",\"signature\":\"90XygqCrKMhqsoFD4-J56yYgEKuevnw7V-4MaP_lZKzMn9vnhK_CtWh0k5kRuePhJzopTRrWkRzXz9OExlt9WQ\"}",
+			"method": "POST"
+		},
+		{
+			"server": "nginx",
+			"date": "Thu, 24 Oct 2019 23:41:42 GMT",
+			"content-type": "application/json",
+			"content-length": "292",
+			"connection": "close",
+			"boulder-requester": "11408075",
+			"cache-control": "public, max-age=0, no-cache",
+			"link": "<https://acme-staging-v02.api.letsencrypt.org/directory>;rel=\"index\", <https://acme-staging-v02.api.letsencrypt.org/acme/authz-v3/16603342>;rel=\"up\"",
+			"location": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603342/I4uhGQ",
+			"replay-nonce": "0001XZufnGiSHfABU10B8FWCxHzvqPN991zSEO3-uQnNZqI",
+			"x-frame-options": "DENY",
+			"strict-transport-security": "max-age=604800"
+		},
+		{
+			"type": "dns-01",
+			"status": "valid",
+			"url": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603342/I4uhGQ",
+			"token": "NsJOLEHJONiQqkADO_lecQ2J0u-g6I2tvkgqevUBbUA",
+			"validationRecord": [
+				{ "hostname": "xn--bar-acmejs-2ea4-zk8x.test.utahrust.com" }
+			]
+		}
+	],
+
+	[
+		{
+			"url": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603343/Umv_5w",
+			"json": {
+				"protected": "eyJraWQiOiJodHRwczovL2FjbWUtc3RhZ2luZy12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMTE0MDgwNzUiLCJub25jZSI6IjAwMDFYWnVmbkdpU0hmQUJVMTBCOEZXQ3hIenZxUE45OTF6U0VPMy11UW5OWnFJIiwidXJsIjoiaHR0cHM6Ly9hY21lLXN0YWdpbmctdjAyLmFwaS5sZXRzZW5jcnlwdC5vcmcvYWNtZS9jaGFsbC12My8xNjYwMzM0My9VbXZfNXciLCJhbGciOiJFUzI1NiJ9",
+				"payload": "e30",
+				"signature": "I5p1OLU52W7m-oHeRWAuZQyf5saBlm1Mv5UV8kqRLVxxt-kMEJLXwKgP0kgfz-rXjnZheYnrKiKERZX1wt7RdA"
+			},
+			"headers": {
+				"User-Agent": "ACME.js/v3 node/v10.13.0 darwin/17.7.0 Darwin/x64",
+				"Content-Type": "application/jose+json",
+				"Accept": "application/json"
+			},
+			"body": "{\"protected\":\"eyJraWQiOiJodHRwczovL2FjbWUtc3RhZ2luZy12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMTE0MDgwNzUiLCJub25jZSI6IjAwMDFYWnVmbkdpU0hmQUJVMTBCOEZXQ3hIenZxUE45OTF6U0VPMy11UW5OWnFJIiwidXJsIjoiaHR0cHM6Ly9hY21lLXN0YWdpbmctdjAyLmFwaS5sZXRzZW5jcnlwdC5vcmcvYWNtZS9jaGFsbC12My8xNjYwMzM0My9VbXZfNXciLCJhbGciOiJFUzI1NiJ9\",\"payload\":\"e30\",\"signature\":\"I5p1OLU52W7m-oHeRWAuZQyf5saBlm1Mv5UV8kqRLVxxt-kMEJLXwKgP0kgfz-rXjnZheYnrKiKERZX1wt7RdA\"}",
+			"method": "POST"
+		},
+		{
+			"server": "nginx",
+			"date": "Thu, 24 Oct 2019 23:41:43 GMT",
+			"content-type": "application/json",
+			"content-length": "292",
+			"connection": "close",
+			"boulder-requester": "11408075",
+			"cache-control": "public, max-age=0, no-cache",
+			"link": "<https://acme-staging-v02.api.letsencrypt.org/directory>;rel=\"index\", <https://acme-staging-v02.api.letsencrypt.org/acme/authz-v3/16603343>;rel=\"up\"",
+			"location": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603343/Umv_5w",
+			"replay-nonce": "00012YkSGH0-3llPNZT_hV8Ovw11jJU9YyppuJ--gJldLTo",
+			"x-frame-options": "DENY",
+			"strict-transport-security": "max-age=604800"
+		},
+		{
+			"type": "dns-01",
+			"status": "pending",
+			"url": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603343/Umv_5w",
+			"token": "Cc3I3F1Pvc_aweOeRdtzR1h2C_uhseAbiWMQkwb6Kf8"
+		}
+	],
+	[
+		{
+			"url": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603344/Hqvliw",
+			"json": {
+				"protected": "eyJraWQiOiJodHRwczovL2FjbWUtc3RhZ2luZy12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMTE0MDgwNzUiLCJub25jZSI6IjAwMDJxT0s4WGhNcWtCVWgzYk1LUV9ZMUo2QXJUbEVOR01BTUQ4bHc3WjNtT2JvIiwidXJsIjoiaHR0cHM6Ly9hY21lLXN0YWdpbmctdjAyLmFwaS5sZXRzZW5jcnlwdC5vcmcvYWNtZS9jaGFsbC12My8xNjYwMzM0NC9IcXZsaXciLCJhbGciOiJFUzI1NiJ9",
+				"payload": "e30",
+				"signature": "ltAp1E52XSMMZpleycguLlo4Hii0FxAbiXcmZBdA-vTjqJb8S1X4CVYQ-qebmYFlCipRhe9Juaj6zpvX7UbTnQ"
+			},
+			"headers": {
+				"User-Agent": "ACME.js/v3 node/v10.13.0 darwin/17.7.0 Darwin/x64",
+				"Content-Type": "application/jose+json",
+				"Accept": "application/json"
+			},
+			"body": "{\"protected\":\"eyJraWQiOiJodHRwczovL2FjbWUtc3RhZ2luZy12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMTE0MDgwNzUiLCJub25jZSI6IjAwMDJxT0s4WGhNcWtCVWgzYk1LUV9ZMUo2QXJUbEVOR01BTUQ4bHc3WjNtT2JvIiwidXJsIjoiaHR0cHM6Ly9hY21lLXN0YWdpbmctdjAyLmFwaS5sZXRzZW5jcnlwdC5vcmcvYWNtZS9jaGFsbC12My8xNjYwMzM0NC9IcXZsaXciLCJhbGciOiJFUzI1NiJ9\",\"payload\":\"e30\",\"signature\":\"ltAp1E52XSMMZpleycguLlo4Hii0FxAbiXcmZBdA-vTjqJb8S1X4CVYQ-qebmYFlCipRhe9Juaj6zpvX7UbTnQ\"}",
+			"method": "POST"
+		},
+
+		{
+			"server": "nginx",
+			"date": "Thu, 24 Oct 2019 23:41:44 GMT",
+			"content-type": "application/json",
+			"content-length": "292",
+			"connection": "close",
+			"boulder-requester": "11408075",
+			"cache-control": "public, max-age=0, no-cache",
+			"link": "<https://acme-staging-v02.api.letsencrypt.org/directory>;rel=\"index\", <https://acme-staging-v02.api.letsencrypt.org/acme/authz-v3/16603344>;rel=\"up\"",
+			"location": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603344/Hqvliw",
+			"replay-nonce": "0001RZo7OXhCjsG_9mtrLylmz443TVc9FOsyhfergGWmkDM",
+			"x-frame-options": "DENY",
+			"strict-transport-security": "max-age=604800"
+		},
+		{
+			"type": "dns-01",
+			"status": "valid",
+			"url": "https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603344/Hqvliw",
+			"token": "uv7D1YC7oWvMY8-EC2blKxmSFExYHwjCcKjGpuodwWs",
+			"validationRecord": [
+				{ "hostname": "xn--foo-acmejs-2ea4-zk8x.test.utahrust.com" }
+			]
+		}
+	]
+]

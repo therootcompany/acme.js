@@ -1,0 +1,15 @@
+{
+	"url": "https://acme-staging-v02.api.letsencrypt.org/acme/cert/fa78326c21c0c7f06c03931900bead4fe3ee",
+	"json": {
+		"protected": "eyJraWQiOiJodHRwczovL2FjbWUtc3RhZ2luZy12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMTE0MDgwNzUiLCJub25jZSI6IjAwMDExLW5qUV91MWp4N1dqVEdfY1Blam05UUxLZWxFcUVFdEpEa3JlVHJ5OVI4IiwidXJsIjoiaHR0cHM6Ly9hY21lLXN0YWdpbmctdjAyLmFwaS5sZXRzZW5jcnlwdC5vcmcvYWNtZS9jZXJ0L2ZhNzgzMjZjMjFjMGM3ZjA2YzAzOTMxOTAwYmVhZDRmZTNlZSIsImFsZyI6IkVTMjU2In0",
+		"payload": "",
+		"signature": "639Q5Eo2_xWh3ylRy3olXJVXz_4JTrpVFkUmz9-h1l8Hrsmg47I0HFgMrHslfKEJfj86zGUh9XY-VtBF2IFcIQ"
+	},
+	"headers": {
+		"User-Agent": "ACME.js/v3 node/v10.13.0 darwin/17.7.0 Darwin/x64",
+		"Content-Type": "application/jose+json",
+		"Accept": "application/json"
+	},
+	"body": "{\"protected\":\"eyJraWQiOiJodHRwczovL2FjbWUtc3RhZ2luZy12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMTE0MDgwNzUiLCJub25jZSI6IjAwMDExLW5qUV91MWp4N1dqVEdfY1Blam05UUxLZWxFcUVFdEpEa3JlVHJ5OVI4IiwidXJsIjoiaHR0cHM6Ly9hY21lLXN0YWdpbmctdjAyLmFwaS5sZXRzZW5jcnlwdC5vcmcvYWNtZS9jZXJ0L2ZhNzgzMjZjMjFjMGM3ZjA2YzAzOTMxOTAwYmVhZDRmZTNlZSIsImFsZyI6IkVTMjU2In0\",\"payload\":\"\",\"signature\":\"639Q5Eo2_xWh3ylRy3olXJVXz_4JTrpVFkUmz9-h1l8Hrsmg47I0HFgMrHslfKEJfj86zGUh9XY-VtBF2IFcIQ\"}",
+	"method": "POST"
+}

@@ -2,11 +2,11 @@
 	"key": {
 		"kty": "EC",
 		"crv": "P-256",
-		"x": "9JZE7ZMAAQ-26oP-_pzd9gy2CbuEvgvrB42R1rP2Pb0",
-		"y": "8yvSYK5sAx30upYpqVknnPPQlK1T3zGTLbJRC-DH_qw"
+		"x": "BkFlaPPR-INb_puoXsenJFQbKpRP3dkiBnCF8NSM_yY",
+		"y": "VB0Hc3bhayIKk8BQbDbRL0Id-KKXhVAaDXKwDD6MD28"
 	},
 	"contact": ["mailto:letsencrypt+staging@therootcompany.com"],
 	"initialIp": "66.219.236.169",
-	"createdAt": "2019-10-24T23:19:57.480171297Z",
+	"createdAt": "2019-10-24T23:41:24.38248946Z",
 	"status": "valid"
 }

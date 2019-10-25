@@ -1,0 +1,5 @@
+{ type: 'dns-01',
+  status: 'pending',
+  url:
+   'https://acme-staging-v02.api.letsencrypt.org/acme/chall-v3/16603341/yCthUw',
+  token: 'DiO9DFHuFTpNsJxIbOxfVCSPVkpe4lJUjozeSyzkMjI' }

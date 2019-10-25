@@ -1,0 +1,10 @@
+{
+	"server": "nginx",
+	"date": "Thu, 24 Oct 2019 23:41:24 GMT",
+	"content-type": "application/json",
+	"content-length": "724",
+	"connection": "close",
+	"cache-control": "public, max-age=0, no-cache",
+	"x-frame-options": "DENY",
+	"strict-transport-security": "max-age=604800"
+}
