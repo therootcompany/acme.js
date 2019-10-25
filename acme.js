@@ -1347,7 +1347,7 @@ ACME._prnd = function(n) {
 
 ACME._notify = function(me, options, ev, params) {
 	if (!options.notify && !me.notify) {
-		console.info(ev, params);
+		//console.info(ev, params);
 		return;
 	}
 	try {
