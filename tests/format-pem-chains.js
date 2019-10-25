@@ -76,5 +76,5 @@ module.exports = function() {
 
 	console.info('PASS');
 
-  return Promise.resolve();
+	return Promise.resolve();
 };
