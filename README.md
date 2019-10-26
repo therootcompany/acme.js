@@ -6,6 +6,23 @@ ACME.js is a _low-level_ client for Let's Encrypt.
 
 Looking for an **easy**, _high-level_ client? Check out [Greenlock.js](https://git.rootprojects.org/root/greenlock.js).
 
+```js
+var acme = ACME.create({ maintainerEmail, packageAgent, notify });
+await acme.init(directoryUrl);
+
+// Create Let's Encrypt Account
+var accountOptions = { subscriberEmail, agreeToTerms, accountKey };
+var account = await acme.accounts.create(accountOptions);
+
+// Validate Domains
+var certificateOptions = { account, accountKey, csr, domains, challenges };
+var pems = await acme.certificates.create(certificateOptions);
+
+// Get SSL Certificate
+var fullchain = pems.cert + '\n' + pems.chain + '\n';
+await fs.promises.writeFile('fullchain.pem', fullchain, 'ascii');
+```
+
 # Online Demo
 
 See https://greenlock.domains
@@ -185,7 +202,6 @@ A basic example includes the following:
 
 [examples/README.md](https://git.rootprojects.org/root/acme.js/src/branch/master/examples/README.md)
 covers all of these steps, with comments.
-
 
 # Install
 
