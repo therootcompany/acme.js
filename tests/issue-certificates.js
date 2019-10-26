@@ -135,7 +135,7 @@ module.exports = function() {
 				console.info();
 			}
 			agreed = true;
-			return Promise.resolve(tos);
+			return Promise.resolve(agreed);
 		}
 		if (config.debug) {
 			console.info('New Subscriber Account');

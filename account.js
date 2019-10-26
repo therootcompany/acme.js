@@ -46,10 +46,10 @@ A._getAccountKid = function(me, options) {
 A._registerAccount = function(me, options) {
 	//#console.debug('[ACME.js] accounts.create');
 
-	function agree(tosUrl) {
+	function agree(agreed) {
 		var err;
-		if (me._tos !== tosUrl) {
-			err = new Error("must agree to '" + tosUrl + "'");
+		if (!agreed) {
+			err = new Error("must agree to '" + me._tos + "'");
 			err.code = 'E_AGREE_TOS';
 			throw err;
 		}
@@ -136,12 +136,30 @@ A._registerAccount = function(me, options) {
 		.then(function() {
 			//#console.debug('[ACME.js] agreeToTerms');
 			var agreeToTerms = options.agreeToTerms;
-			if (true === agreeToTerms) {
-				agreeToTerms = function(tos) {
-					return tos;
+			if (!agreeToTerms) {
+				agreeToTerms = function(terms) {
+					console.log(
+						'By using this software you accept this Subscriber Agreement and Terms of Service:'
+					);
+					console.info(
+						'ACME Subscriber Agreement:',
+						terms.acmeSubscriberTermsUrl
+					);
+					console.info(
+						'Greenlock/ACME.js Terms of Use:',
+						terms.terms.acmeJsTermsUrl
+					);
+					return true;
+				};
+			} else if (true === agreeToTerms) {
+				agreeToTerms = function(terms) {
+					return terms && true;
 				};
 			}
-			return agreeToTerms(me._tos);
+			return agreeToTerms({
+				acmeSubscriberTosUrl: me._tos,
+				acmeJsTosUrl: 'https://rootprojects.org/legal/#terms'
+			});
 		})
 		.then(agree)
 		.then(getAccount);

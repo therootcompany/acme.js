@@ -55,6 +55,7 @@ M._init = function(me, tz, locale) {
 						'https://api.rootprojects.org/api/projects/ACME.js/dependents',
 					json: {
 						maintainer: me.maintainerEmail,
+            package: me.packageAgent,
 						tz: tz,
 						locale: locale
 					}

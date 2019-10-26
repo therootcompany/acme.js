@@ -110,7 +110,7 @@ ACME.create = function create(me) {
 		// create + get challlenges
 		get: function(options) {
 			return A._getAccountKid(me, options).then(function(kid) {
-				ACME._normalizePresenters(options, options.challenges);
+				ACME._normalizePresenters(me, options, options.challenges);
 				return ACME._orderCert(me, options, kid).then(function(order) {
 					return order.claims;
 				});
@@ -119,7 +119,7 @@ ACME.create = function create(me) {
 		// set challenges, check challenges, finalize order, return order
 		present: function(options) {
 			return A._getAccountKid(me, options).then(function(kid) {
-				ACME._normalizePresenters(options, options.challenges);
+				ACME._normalizePresenters(me, options, options.challenges);
 				return ACME._finalizeOrder(me, options, kid, options.order);
 			});
 		}
@@ -128,7 +128,7 @@ ACME.create = function create(me) {
 	me.certificates = {
 		create: function(options) {
 			return A._getAccountKid(me, options).then(function(kid) {
-				ACME._normalizePresenters(options, options.challenges);
+				ACME._normalizePresenters(me, options, options.challenges);
 				return ACME._getCertificate(me, options, kid);
 			});
 		}
@@ -216,7 +216,7 @@ ACME._getCertificate = function(me, options, kid) {
 		return ACME._finalizeOrder(me, options, kid, order);
 	});
 };
-ACME._normalizePresenters = function(options, presenters) {
+ACME._normalizePresenters = function(me, options, presenters) {
 	// Prefer this order for efficiency:
 	// * http-01 is the fasest
 	// * tls-alpn-01 is for networks that don't allow plain traffic
@@ -228,6 +228,22 @@ ACME._normalizePresenters = function(options, presenters) {
 			return -1 !== presenterTypes.indexOf(typ);
 		}
 	);
+	if (
+		presenters['dns-01'] &&
+		'number' !== typeof presenters['dns-01'].propagationDelay
+	) {
+		if (!ACME._propagationDelayWarning) {
+			var err = new Error(
+				"dns-01 challenge's `propagationDelay` not set, defaulting to 5000ms"
+			);
+			err.code = 'E_NO_DNS_DELAY';
+			err.description =
+				"Each dns-01 challenge should specify challenges['dns-01'].propagationDelay as an estimate of how long DNS propagation will take.";
+			ACME._notify(me, options, 'warning', err);
+			presenters['dns-01'].propagationDelay = 5000;
+			ACME._propagationDelayWarning = true;
+		}
+	}
 	Object.keys(presenters || {}).forEach(function(k) {
 		var ch = presenters[k];
 		var warned = false;
@@ -908,13 +924,6 @@ ACME._setChallenges = function(me, options, order) {
 	function waitAll() {
 		//#console.debug('\n[DEBUG] waitChallengeDelay %s\n', DELAY);
 		if (!DNS_DELAY || DNS_DELAY <= 0) {
-			if (!ACME._propagationDelayWarning) {
-				console.warn(
-					'warn: the given dns-01 challenge did not specify `propagationDelay`'
-				);
-				console.warn('warn: the default of 5000ms will be used');
-				ACME._propagationDelayWarning = true;
-			}
 			DNS_DELAY = 5000;
 		}
 		return ACME._wait(DNS_DELAY);
