@@ -181,7 +181,7 @@ A basic example includes the following:
     - sign CSR
     - order certificate
 
-See [examples/README.md](https://git.rootprojects.org/root/acme.js/src/branch/master/examples/README.md)
+### See [examples/README.md](https://git.rootprojects.org/root/acme.js/src/branch/master/examples/README.md)
 
 # Install
 
