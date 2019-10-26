@@ -416,7 +416,7 @@ We also offer consulting for all-things-ACME and Let's Encrypt.
 
 # Legal &amp; Rules of the Road
 
-ACME.jsk&trade; is a [trademark](https://rootprojects.org/legal/#trademark) of AJ ONeal
+ACME.js&trade; is a [trademark](https://rootprojects.org/legal/#trademark) of AJ ONeal
 
 The rule of thumb is "attribute, but don't confuse". For example:
 
