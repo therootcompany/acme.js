@@ -162,6 +162,8 @@ If you have a use case for a particular property **open an issue** - we can lock
 
 # Example
 
+### See [examples/README.md](https://git.rootprojects.org/root/acme.js/src/branch/master/examples/README.md)
+
 A basic example includes the following:
 
 1. Initialization
@@ -181,7 +183,9 @@ A basic example includes the following:
     - sign CSR
     - order certificate
 
-### See [examples/README.md](https://git.rootprojects.org/root/acme.js/src/branch/master/examples/README.md)
+[examples/README.md](https://git.rootprojects.org/root/acme.js/src/branch/master/examples/README.md)
+covers all of these steps, with comments.
+
 
 # Install
 
