@@ -354,12 +354,43 @@ node tests/index.js
 
 Join `@rootprojects` `#general` on [Keybase](https://keybase.io) if you'd like to chat with us.
 
+# Contributions
+
+Did this project save you some time? Maybe make your day? Even save the day?
+
+Please say "thanks" via Paypal or Patreon:
+
+-   Paypal: [\$5](https://paypal.me/rootprojects/5) | [\$10](https://paypal.me/rootprojects/10) | Any amount: <paypal@therootcompany.com>
+-   Patreon: <https://patreon.com/rootprojects>
+
+Where does your contribution go?
+
+[Root](https://therootcompany.com) is a collection of experts
+who trust each other and enjoy working together on deep-tech,
+Indie Web projects.
+
+Our goal is to operate as a sustainable community.
+
+Your contributions - both in code and _especially_ financially -
+help to not just this project, but also our broader work
+of [projects](https://rootprojects.org) that fuel the **Indie Web**.
+
+Also, we chat on [Keybase](https://keybase.io)
+in [#rootprojects](https://keybase.io/team/rootprojects)
+
 # Commercial Support
 
-We have both commercial support and commercial licensing available.
+Do you need...
+
+-   more features?
+-   bugfixes, on _your_ timeline?
+-   custom code, built by experts?
+-   commercial support and licensing?
 
 You're welcome to [contact us](mailto:aj@therootcompany.com) in regards to IoT, On-Prem,
 Enterprise, and Internal installations, integrations, and deployments.
+
+We have both commercial support and commercial licensing available.
 
 We also offer consulting for all-things-ACME and Let's Encrypt.
 
