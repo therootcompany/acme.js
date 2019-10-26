@@ -189,7 +189,7 @@ To make it easy to generate, encode, and decode keys and certificates,
 ACME.js uses [Keypairs.js](https://git.rootprojects.org/root/keypairs.js)
 and [CSR.js](https://git.rootprojects.org/root/csr.js)
 
-<detail>
+<details>
 <summary>Node.js</summary>
 
 ```js
@@ -200,9 +200,9 @@ npm install --save @root/acme
 var ACME = require('@root/acme');
 ```
 
-</detail>
+</details>
 
-<detail>
+<details>
 <summary>WebPack</summary>
 
 ```html
@@ -215,9 +215,9 @@ var ACME = require('@root/acme');
 var ACME = require('@root/acme');
 ```
 
-</detail>
+</details>
 
-<detail>
+<details>
 <summary>Vanilla JS</summary>
 
 ```html
@@ -242,7 +242,7 @@ Use
 var ACME = window['@root/acme'];
 ```
 
-</detail>
+</details>
 
 # Challenge Callbacks
 
