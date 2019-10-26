@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 'use strict';
 
-// TODO put postinstall back
+// TODO put postinstall message
