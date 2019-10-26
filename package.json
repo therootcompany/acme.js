@@ -1,6 +1,6 @@
 {
 	"name": "@root/acme",
-	"version": "3.0.1",
+	"version": "3.0.2",
 	"description": "Free SSL certificates for Node.js and Browsers. Issued via Let's Encrypt",
 	"homepage": "https://rootprojects.org/acme/",
 	"main": "acme.js",
@@ -13,6 +13,8 @@
 	"files": [
 		"*.js",
 		"lib",
+		"bin",
+		"scripts",
 		"dist"
 	],
 	"scripts": {
