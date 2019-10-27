@@ -147,7 +147,7 @@ A._registerAccount = function(me, options) {
 					);
 					console.info(
 						'Greenlock/ACME.js Terms of Use:',
-						terms.terms.acmeJsTermsUrl
+						terms.acmeJsTermsUrl
 					);
 					return true;
 				};
