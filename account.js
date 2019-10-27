@@ -157,8 +157,8 @@ A._registerAccount = function(me, options) {
 				};
 			}
 			return agreeToTerms({
-				acmeSubscriberTosUrl: me._tos,
-				acmeJsTosUrl: 'https://rootprojects.org/legal/#terms'
+				acmeSubscriberTermsUrl: me._tos,
+				acmeJsTermsUrl: 'https://rootprojects.org/legal/#terms'
 			});
 		})
 		.then(agree)
