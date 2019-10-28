@@ -55,7 +55,7 @@ M._init = function(me, tz, locale) {
 						'https://api.rootprojects.org/api/projects/ACME.js/dependents',
 					json: {
 						maintainer: me.maintainerEmail,
-            package: me.packageAgent,
+						package: me.packageAgent,
 						tz: tz,
 						locale: locale
 					}
@@ -63,7 +63,10 @@ M._init = function(me, tz, locale) {
 				return me
 					.request(req)
 					.catch(function(err) {
-						if (true || me.debug) {
+						if (me.debug) {
+							console.error(
+								'error adding maintainer to support notices:'
+							);
 							console.error(err);
 						}
 					})

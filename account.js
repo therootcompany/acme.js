@@ -5,6 +5,7 @@ var U = require('./utils.js');
 
 var Keypairs = require('@root/keypairs');
 var Enc = require('@root/encoding/bytes');
+var agreers = {};
 
 A._getAccountKid = function(me, options) {
 	// It's just fine if there's no account, we'll go get the key id we need via the existing key
@@ -138,8 +139,15 @@ A._registerAccount = function(me, options) {
 			var agreeToTerms = options.agreeToTerms;
 			if (!agreeToTerms) {
 				agreeToTerms = function(terms) {
-					console.log(
-						'By using this software you accept this Subscriber Agreement and Terms of Service:'
+					if (agreers[options.subscriberEmail]) {
+						return true;
+					}
+					agreers[options.subscriberEmail] = true;
+					console.info();
+					console.info(
+						'By using this software you (' +
+							options.subscriberEmail +
+							') are agreeing to the following:'
 					);
 					console.info(
 						'ACME Subscriber Agreement:',
@@ -149,6 +157,7 @@ A._registerAccount = function(me, options) {
 						'Greenlock/ACME.js Terms of Use:',
 						terms.acmeJsTermsUrl
 					);
+					console.info();
 					return true;
 				};
 			} else if (true === agreeToTerms) {
