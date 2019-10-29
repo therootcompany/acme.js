@@ -486,6 +486,7 @@ ACME._dryRun = function(me, realOptions, zonenames) {
 					type: ch.type
 					//challenge: ch
 				});
+				// ignore promise return
 				noopts.challenges[ch.type]
 					.remove({ challenge: ch })
 					.catch(function(err) {
