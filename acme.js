@@ -474,7 +474,7 @@ ACME._dryRun = function(me, realOptions, zonenames) {
 		var selected = [];
 		noopts.order._claims = claims.slice(0);
 		noopts.notify = function(ev, params) {
-			if ('challenge_select' === ev) {
+			if ('_challenge_select' === ev) {
 				selected.push(params.challenge);
 			}
 		};
@@ -893,6 +893,15 @@ ACME._setChallenges = function(me, options, order) {
 				placed.push(selected);
 				ACME._notify(me, options, 'challenge_select', {
 					// API-locked
+					altname: ACME._untame(
+						claim.identifier.value,
+						claim.wildcard
+					),
+					type: selected.type,
+					dnsHost: selected.dnsHost,
+					keyAuthorization: selected.keyAuthorization
+				});
+				ACME._notify(me, options, '_challenge_select', {
 					altname: ACME._untame(
 						claim.identifier.value,
 						claim.wildcard
