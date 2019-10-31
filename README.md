@@ -2,9 +2,15 @@
 
 | Built by [Root](https://therootcompany.com) for [Hub](https://rootprojects.org/hub)
 
-ACME.js is a _low-level_ client for Let's Encrypt.
+## Automated Certificate Management Environment
+
+ACME ([RFC 8555](https://tools.ietf.org/html/rfc8555)) is the protocol that powers **Let's Encrypt**.
+
+ACME.js is a _low-level_ client that speaks RFC 8555 to get Free SSL certificates through Let's Encrypt.
 
 Looking for an **easy**, _high-level_ client? Check out [Greenlock.js](https://git.rootprojects.org/root/greenlock.js).
+
+# Quick Start
 
 ```js
 var acme = ACME.create({ maintainerEmail, packageAgent, notify });
@@ -97,7 +103,7 @@ The public API encapsulates the three high-level steps of the ACME protocol:
     - Challenge Presentation
     - Certificate Redemption
 
-## Overview
+## API Overview
 
 The core API can be show in just four functions:
 
@@ -177,7 +183,7 @@ These `notify` events are intended for _logging_ and debugging, NOT as a data AP
 Note: DO NOT rely on **undocumented properties**. They are experimental and **will break**.
 If you have a use case for a particular property **open an issue** - we can lock it down and document it.
 
-# Example
+# Example (Full Walkthrough)
 
 ### See [examples/README.md](https://git.rootprojects.org/root/acme.js/src/branch/master/examples/README.md)
 
