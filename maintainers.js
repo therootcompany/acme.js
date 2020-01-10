@@ -33,8 +33,8 @@ M.init = function(me) {
 };
 
 M._init = function(me, tz, locale) {
-	// prevent a stampede from misconfigured clients in an eternal loop
 	setTimeout(function() {
+		// prevent a stampede from misconfigured clients in an eternal loop
 		me.request({
 			method: 'GET',
 			url: 'https://api.rootprojects.org/api/nonce',
@@ -60,20 +60,19 @@ M._init = function(me, tz, locale) {
 						locale: locale
 					}
 				};
-				return me
-					.request(req)
-					.catch(function(err) {
-						if (me.debug) {
-							console.error(
-								'error adding maintainer to support notices:'
-							);
-							console.error(err);
-						}
-					})
-					.then(function(/*resp*/) {
-						oldCollegeTries[me.maintainerEmail] = true;
-						//console.log(resp);
-					});
+				return me.request(req);
+			})
+			.catch(function(err) {
+				if (me.debug) {
+					console.error(
+						'error adding maintainer to support notices:'
+					);
+					console.error(err);
+				}
+			})
+			.then(function(/*resp*/) {
+				oldCollegeTries[me.maintainerEmail] = true;
+				//console.log(resp);
 			});
 	}, me.__timeout || 3000);
 };

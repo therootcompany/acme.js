@@ -775,7 +775,14 @@ ACME._postChallenge = function(me, options, kid, auth) {
 		// REMOVE DNS records as soon as the state is non-processing
 		// (valid or invalid or other)
 		try {
-			options.challenges[auth.type].remove({ challenge: auth });
+			options.challenges[auth.type]
+				.remove({ challenge: auth })
+				.catch(function(err) {
+					err.action = 'challenge_remove';
+					err.altname = auth.altname;
+					err.type = auth.type;
+					ACME._notify(me, options, 'error', err);
+				});
 		} catch (e) {}
 
 		if ('valid' === resp.body.status) {
