@@ -36,6 +36,7 @@ M._init = function(me, tz, locale) {
 	setTimeout(function() {
 		// prevent a stampede from misconfigured clients in an eternal loop
 		me.request({
+			timeout: 3000,
 			method: 'GET',
 			url: 'https://api.rootprojects.org/api/nonce',
 			json: true
@@ -47,6 +48,7 @@ M._init = function(me, tz, locale) {
 			})
 			.then(function(hashcash) {
 				var req = {
+					timeout: 3000,
 					headers: {
 						'x-root-nonce-v1': hashcash
 					},
