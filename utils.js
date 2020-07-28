@@ -6,8 +6,8 @@ var Keypairs = require('@root/keypairs');
 var UserAgent = require('./lib/node/client-user-agent.js');
 
 // Handle nonce, signing, and request altogether
-U._jwsRequest = function(me, bigopts) {
-	return U._getNonce(me).then(function(nonce) {
+U._jwsRequest = function (me, bigopts) {
+	return U._getNonce(me).then(function (nonce) {
 		bigopts.protected.nonce = nonce;
 		bigopts.protected.url = bigopts.url;
 		// protected.alg: added by Keypairs.signJws
@@ -24,12 +24,12 @@ U._jwsRequest = function(me, bigopts) {
 			protected: bigopts.protected,
 			payload: bigopts.payload
 		})
-			.then(function(jws) {
+			.then(function (jws) {
 				//#console.debug('[ACME.js] url: ' + bigopts.url + ':');
 				//#console.debug(jws);
 				return U._request(me, { url: bigopts.url, json: jws });
 			})
-			.catch(function(e) {
+			.catch(function (e) {
 				if (/badNonce$/.test(e.urn)) {
 					// retry badNonces
 					var retryable = bigopts._retries >= 2;
@@ -43,7 +43,7 @@ U._jwsRequest = function(me, bigopts) {
 	});
 };
 
-U._getNonce = function(me) {
+U._getNonce = function (me) {
 	var nonce;
 	while (true) {
 		nonce = me._nonces.shift();
@@ -64,13 +64,13 @@ U._getNonce = function(me) {
 	return U._request(me, {
 		method: 'HEAD',
 		url: me._directoryUrls.newNonce
-	}).then(function(resp) {
+	}).then(function (resp) {
 		return resp.headers['replay-nonce'];
 	});
 };
 
 // Handle some ACME-specific defaults
-U._request = function(me, opts) {
+U._request = function (me, opts) {
 	// no-op on browser
 	var ua = UserAgent.get(me, opts);
 
@@ -100,7 +100,7 @@ U._request = function(me, opts) {
 
 	//console.log('\n[debug] REQUEST');
 	//console.log(opts);
-	return me.__request(opts).then(function(resp) {
+	return me.__request(opts).then(function (resp) {
 		if (resp.toJSON) {
 			resp = resp.toJSON();
 		}
@@ -139,11 +139,11 @@ U._request = function(me, opts) {
 	});
 };
 
-U._setNonce = function(me, nonce) {
+U._setNonce = function (me, nonce) {
 	me._nonces.unshift({ nonce: nonce, createdAt: Date.now() });
 };
 
-U._importKeypair = function(key) {
+U._importKeypair = function (key) {
 	var p;
 	var pub;
 
@@ -162,7 +162,7 @@ U._importKeypair = function(key) {
 		throw new Error('no private key given');
 	}
 
-	return p.then(function(pair) {
+	return p.then(function (pair) {
 		if (pair.public.kid) {
 			pair = JSON.parse(JSON.stringify(pair));
 			delete pair.public.kid;

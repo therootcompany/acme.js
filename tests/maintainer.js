@@ -11,7 +11,7 @@ native
 		start: 0,
 		end: 2
 	})
-	.then(function(hashcash) {
+	.then(function (hashcash) {
 		if ('00:76de' !== hashcash) {
 			throw new Error('hashcash algorthim changed');
 		}
@@ -25,7 +25,7 @@ native
 				start: 0,
 				end: 2
 			})
-			.then(function(hashcash) {
+			.then(function (hashcash) {
 				if ('10:00' !== hashcash) {
 					throw new Error('hashcash algorthim changed');
 				}
@@ -33,10 +33,7 @@ native
 
 				var now = Date.now();
 				var nonce = '20';
-				var needle = crypto
-					.randomBytes(3)
-					.toString('hex')
-					.slice(0, 5);
+				var needle = crypto.randomBytes(3).toString('hex').slice(0, 5);
 				native
 					._hashcash({
 						alg: 'SHA-256',
@@ -45,7 +42,7 @@ native
 						start: 0,
 						end: Math.ceil(needle.length / 2)
 					})
-					.then(function(hashcash) {
+					.then(function (hashcash) {
 						var later = Date.now();
 						var parts = hashcash.split(':');
 						var answer = parts[1];

@@ -13,12 +13,12 @@ var nameserver = nameservers[index];
 
 app.use('/', express.static(__dirname));
 app.use('/api', express.json());
-app.get('/api/dns/:domain', function(req, res, next) {
+app.get('/api/dns/:domain', function (req, res, next) {
 	var domain = req.params.domain;
 	var casedDomain = domain
 		.toLowerCase()
 		.split('')
-		.map(function(ch) {
+		.map(function (ch) {
 			// dns0x20 takes advantage of the fact that the binary operation for toUpperCase is
 			// ch = ch | 0x20;
 			return Math.round(Math.random()) % 2 ? ch : ch.toUpperCase();
@@ -46,10 +46,10 @@ app.get('/api/dns/:domain', function(req, res, next) {
 		]
 	};
 	var opts = {
-		onError: function(err) {
+		onError: function (err) {
 			next(err);
 		},
-		onMessage: function(packet) {
+		onMessage: function (packet) {
 			var fail0x20;
 
 			if (packet.id !== query.id) {
@@ -62,17 +62,17 @@ app.get('/api/dns/:domain', function(req, res, next) {
 				return;
 			}
 
-			packet.question.forEach(function(q) {
+			packet.question.forEach(function (q) {
 				// if (-1 === q.name.lastIndexOf(cli.casedQuery))
 				if (q.name !== casedDomain) {
 					fail0x20 = q.name;
 				}
 			});
 
-			['question', 'answer', 'authority', 'additional'].forEach(function(
+			['question', 'answer', 'authority', 'additional'].forEach(function (
 				group
 			) {
-				(packet[group] || []).forEach(function(a) {
+				(packet[group] || []).forEach(function (a) {
 					var an = a.name;
 					var i = domain
 						.toLowerCase()
@@ -133,13 +133,13 @@ app.get('/api/dns/:domain', function(req, res, next) {
 				edns_options: packet.edns_options
 			});
 		},
-		onListening: function() {},
-		onSent: function(/*res*/) {},
-		onTimeout: function(res) {
+		onListening: function () {},
+		onSent: function (/*res*/) {},
+		onTimeout: function (res) {
 			console.error('dns timeout:', res);
 			next(new Error('DNS timeout - no response'));
 		},
-		onClose: function() {},
+		onClose: function () {},
 		//, mdns: cli.mdns
 		nameserver: nameserver,
 		port: 53,
@@ -148,13 +148,13 @@ app.get('/api/dns/:domain', function(req, res, next) {
 
 	dig.resolveJson(query, opts);
 });
-app.get('/api/http', function(req, res) {
+app.get('/api/http', function (req, res) {
 	var url = req.query.url;
-	return request({ method: 'GET', url: url }).then(function(resp) {
+	return request({ method: 'GET', url: url }).then(function (resp) {
 		res.send(resp.body);
 	});
 });
-app.get('/api/_acme_api_', function(req, res) {
+app.get('/api/_acme_api_', function (req, res) {
 	res.send({ success: true });
 });
 

@@ -51,7 +51,7 @@ async function main() {
 			challenge: ch,
 			dnsPrefix: '_test-challenge'
 		})
-			.then(function(auth) {
+			.then(function (auth) {
 				if ('dns-01' === ch.type) {
 					if (auth.keyAuthorizationDigest !== expectedKeyAuthDigest) {
 						console.error('[keyAuthorizationDigest]');
@@ -84,7 +84,7 @@ async function main() {
 				console.info('PASS', hostname, ch.type);
 				return next();
 			})
-			.catch(function(err) {
+			.catch(function (err) {
 				err.message =
 					'Error computing ' +
 					ch.type +
@@ -99,12 +99,12 @@ async function main() {
 	return next();
 }
 
-module.exports = function() {
+module.exports = function () {
 	return main(authorization)
-		.then(function() {
+		.then(function () {
 			console.info('PASS');
 		})
-		.catch(function(err) {
+		.catch(function (err) {
 			console.error(err.stack);
 			process.exit(1);
 		});

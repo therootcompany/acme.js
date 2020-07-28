@@ -7,9 +7,9 @@ var key = fs.readFileSync('./privkey.pem');
 var cert = fs.readFileSync('./fullchain.pem');
 
 var server = https
-	.createSecureServer({ key, cert }, function(req, res) {
+	.createSecureServer({ key, cert }, function (req, res) {
 		res.end('Hello, Encrypted World!');
 	})
-	.listen(443, function() {
+	.listen(443, function () {
 		console.info('Listening on', server.address());
 	});

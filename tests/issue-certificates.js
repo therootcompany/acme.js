@@ -32,14 +32,14 @@ var pluginPrefix = 'acme-' + config.challengeType + '-';
 var pluginName = config.challengeModule;
 var plugin;
 
-module.exports = function() {
+module.exports = function () {
 	console.info('\n[Test] end-to-end issue certificates');
 
 	var acme = ACME.create({
 		// debug: true
 		maintainerEmail: config.email,
 		packageAgent: 'test-' + pkg.name + '/' + pkg.version,
-		notify: function(ev, params) {
+		notify: function (ev, params) {
 			console.info(
 				'\t' + ev,
 				params.subject || params.altname || params.domain || '',
@@ -169,7 +169,7 @@ module.exports = function() {
 			console.info('Get certificates for random domains:');
 			console.info(
 				domains
-					.map(function(puny) {
+					.map(function (puny) {
 						var uni = punycode.toUnicode(puny);
 						if (puny !== uni) {
 							return puny + ' (' + uni + ')';
@@ -221,25 +221,25 @@ module.exports = function() {
 	// Try EC + RSA
 	var rnd = random();
 	happyPath('EC', 'RSA', rnd)
-		.then(function() {
+		.then(function () {
 			console.info('PASS: ECDSA account key with RSA server key');
 			// Now try RSA + EC
 			rnd = random();
-			return happyPath('RSA', 'EC', rnd).then(function() {
+			return happyPath('RSA', 'EC', rnd).then(function () {
 				console.info('PASS: RSA account key with ECDSA server key');
 			});
 		})
-		.then(function() {
+		.then(function () {
 			console.info('PASS');
 		})
-		.catch(function(err) {
+		.catch(function (err) {
 			console.error('Error:');
 			console.error(err.stack);
 		});
 
 	function randomDomains(rnd) {
 		return ['foo-acmejs', 'bar-acmejs', '*.baz-acmejs', 'baz-acmejs'].map(
-			function(pre) {
+			function (pre) {
 				return punycode.toASCII(pre + '-' + rnd + '.' + config.domain);
 			}
 		);
@@ -247,12 +247,7 @@ module.exports = function() {
 
 	function random() {
 		return (
-			parseInt(
-				Math.random()
-					.toString()
-					.slice(2, 99),
-				10
-			)
+			parseInt(Math.random().toString().slice(2, 99), 10)
 				.toString(16)
 				.slice(0, 4) + '例'
 		);

@@ -7,11 +7,11 @@ var Keypairs = require('@root/keypairs');
 var Enc = require('@root/encoding/bytes');
 var agreers = {};
 
-A._getAccountKid = function(me, options) {
+A._getAccountKid = function (me, options) {
 	// It's just fine if there's no account, we'll go get the key id we need via the existing key
 	var kid =
 		options.kid ||
-		(options.account && (options.account.key && options.account.key.kid));
+		(options.account && options.account.key && options.account.key.kid);
 
 	if (kid) {
 		return Promise.resolve(kid);
@@ -19,7 +19,7 @@ A._getAccountKid = function(me, options) {
 
 	//return Promise.reject(new Error("must include KeyID"));
 	// This is an idempotent request. It'll return the same account for the same public key.
-	return A._registerAccount(me, options).then(function(account) {
+	return A._registerAccount(me, options).then(function (account) {
 		return account.key.kid;
 	});
 };
@@ -44,7 +44,7 @@ A._getAccountKid = function(me, options) {
    "signature": "RZPOnYoPs1PhjszF...-nh6X1qtOFPB519I"
  }
 */
-A._registerAccount = function(me, options) {
+A._registerAccount = function (me, options) {
 	//#console.debug('[ACME.js] accounts.create');
 
 	function agree(agreed) {
@@ -58,7 +58,7 @@ A._registerAccount = function(me, options) {
 	}
 
 	function getAccount() {
-		return U._importKeypair(options.accountKey).then(function(pair) {
+		return U._importKeypair(options.accountKey).then(function (pair) {
 			var contact;
 			if (options.contact) {
 				contact = options.contact.slice(0);
@@ -73,14 +73,14 @@ A._registerAccount = function(me, options) {
 			};
 
 			var pub = pair.public;
-			return attachExtAcc(pub, accountRequest).then(function(accReq) {
+			return attachExtAcc(pub, accountRequest).then(function (accReq) {
 				var payload = JSON.stringify(accReq);
 				return U._jwsRequest(me, {
 					accountKey: options.accountKey,
 					url: me._directoryUrls.newAccount,
 					protected: { kid: false, jwk: pair.public },
 					payload: Enc.strToBuf(payload)
-				}).then(function(resp) {
+				}).then(function (resp) {
 					var account = resp.body;
 
 					if (resp.statusCode < 200 || resp.statusCode >= 300) {
@@ -127,18 +127,18 @@ A._registerAccount = function(me, options) {
 				url: me._directoryUrls.newAccount
 			},
 			payload: Enc.strToBuf(JSON.stringify(pubkey))
-		}).then(function(jws) {
+		}).then(function (jws) {
 			accountRequest.externalAccountBinding = jws;
 			return accountRequest;
 		});
 	}
 
 	return Promise.resolve()
-		.then(function() {
+		.then(function () {
 			//#console.debug('[ACME.js] agreeToTerms');
 			var agreeToTerms = options.agreeToTerms;
 			if (!agreeToTerms) {
-				agreeToTerms = function(terms) {
+				agreeToTerms = function (terms) {
 					if (agreers[options.subscriberEmail]) {
 						return true;
 					}
@@ -161,7 +161,7 @@ A._registerAccount = function(me, options) {
 					return true;
 				};
 			} else if (true === agreeToTerms) {
-				agreeToTerms = function(terms) {
+				agreeToTerms = function (terms) {
 					return terms && true;
 				};
 			}

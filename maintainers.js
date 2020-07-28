@@ -7,7 +7,7 @@ var native = require('./lib/native.js');
 // something breaks or has a serious bug or flaw.
 
 var oldCollegeTries = {};
-M.init = function(me) {
+M.init = function (me) {
 	if (oldCollegeTries[me.maintainerEmail]) {
 		return;
 	}
@@ -32,8 +32,8 @@ M.init = function(me) {
 	}
 };
 
-M._init = function(me, tz, locale) {
-	setTimeout(function() {
+M._init = function (me, tz, locale) {
+	setTimeout(function () {
 		// prevent a stampede from misconfigured clients in an eternal loop
 		me.request({
 			timeout: 3000,
@@ -41,12 +41,12 @@ M._init = function(me, tz, locale) {
 			url: 'https://api.rootprojects.org/api/nonce',
 			json: true
 		})
-			.then(function(resp) {
+			.then(function (resp) {
 				// in the browser this will work until solved, but in
 				// node this will bail unless the challenge is trivial
 				return native._hashcash(resp.body || {});
 			})
-			.then(function(hashcash) {
+			.then(function (hashcash) {
 				var req = {
 					timeout: 3000,
 					headers: {
@@ -64,7 +64,7 @@ M._init = function(me, tz, locale) {
 				};
 				return me.request(req);
 			})
-			.catch(function(err) {
+			.catch(function (err) {
 				if (me.debug) {
 					console.error(
 						'error adding maintainer to support notices:'
@@ -72,7 +72,7 @@ M._init = function(me, tz, locale) {
 					console.error(err);
 				}
 			})
-			.then(function(/*resp*/) {
+			.then(function (/*resp*/) {
 				oldCollegeTries[me.maintainerEmail] = true;
 				//console.log(resp);
 			});

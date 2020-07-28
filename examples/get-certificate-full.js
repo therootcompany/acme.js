@@ -5,7 +5,7 @@ async function main() {
 
 	var fs = require('fs');
 	// just to trigger the warning message out of the way
-	await fs.promises.readFile().catch(function() {});
+	await fs.promises.readFile().catch(function () {});
 	console.warn('\n');
 	var MY_DOMAINS = process.env.DOMAINS.split(/[,\s]+/);
 
@@ -55,7 +55,7 @@ async function main() {
 
 	// If you are multi-tenanted or white-labled and need to present the terms of
 	// use to the Subscriber running the service, you can do so with a function.
-	var agreeToTerms = async function() {
+	var agreeToTerms = async function () {
 		return true;
 	};
 
@@ -126,7 +126,7 @@ async function main() {
 	}
 }
 
-main().catch(function(e) {
+main().catch(function (e) {
 	console.error(e.stack);
 });
 

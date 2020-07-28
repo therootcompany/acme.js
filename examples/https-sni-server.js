@@ -13,9 +13,9 @@ function SNICallback(servername, cb) {
 }
 
 var server = https
-	.createSecureServer({ SNICallback: SNICallback }, function(req, res) {
+	.createSecureServer({ SNICallback: SNICallback }, function (req, res) {
 		res.end('Hello, Encrypted World!');
 	})
-	.listen(443, function() {
+	.listen(443, function () {
 		console.info('Listening on', server.address());
 	});

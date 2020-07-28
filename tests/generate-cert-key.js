@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = async function() {
+module.exports = async function () {
 	console.log('[Test] can generate, export, and import key');
 	var Keypairs = require('@root/keypairs');
 
@@ -13,7 +13,7 @@ module.exports = async function() {
 	var jwk = await Keypairs.import({
 		pem: pem
 	});
-	['kty', 'd', 'n', 'e'].forEach(function(k) {
+	['kty', 'd', 'n', 'e'].forEach(function (k) {
 		if (!jwk[k] || jwk[k] !== certKeypair.private[k]) {
 			throw new Error('bad export/import');
 		}

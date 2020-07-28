@@ -37,10 +37,10 @@ var tests = [
 
 var ACME = require('../');
 
-module.exports = function() {
+module.exports = function () {
 	console.info('\n[Test] can split and format PEM chain properly');
 
-	tests.forEach(function(str) {
+	tests.forEach(function (str) {
 		var actual = ACME.formatPemChain(str);
 		if (expected !== actual) {
 			console.error('input:   ', JSON.stringify(str));
@@ -68,7 +68,7 @@ module.exports = function() {
 
 	ACME.splitPemChain(
 		'--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n\n--B--\nxxxx\nyyyy\n--E--\n'
-	).forEach(function(str) {
+	).forEach(function (str) {
 		if ('--B--\nxxxx\nyyyy\n--E--\n' !== str) {
 			throw new Error('bad thingy');
 		}

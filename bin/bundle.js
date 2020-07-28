@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-(async function() {
+(async function () {
 	'use strict';
 
 	var UglifyJS = require('uglify-js');
@@ -22,7 +22,7 @@
 			'../lib/asn1-parser.js',
 			'../lib/csr.js',
 			'../lib/acme.js'
-		].map(async function(file) {
+		].map(async function (file) {
 			return (await readFile(path.join(__dirname, file), 'utf8')).trim();
 		})
 	);
