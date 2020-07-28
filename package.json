@@ -44,9 +44,9 @@
 	"dependencies": {
 		"@root/csr": "^0.8.1",
 		"@root/encoding": "^1.0.1",
-		"@root/keypairs": "^0.9.0",
+		"@root/keypairs": "^0.10.0",
 		"@root/pem": "^1.0.4",
-		"@root/request": "^1.3.11",
+		"@root/request": "^1.6.1",
 		"@root/x509": "^0.7.2"
 	},
 	"devDependencies": {

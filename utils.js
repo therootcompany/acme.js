@@ -11,11 +11,12 @@ U._jwsRequest = function (me, bigopts) {
 		bigopts.protected.nonce = nonce;
 		bigopts.protected.url = bigopts.url;
 		// protected.alg: added by Keypairs.signJws
-		if (!bigopts.protected.jwk) {
-			// protected.kid must be overwritten due to ACME's interpretation of the spec
-			if (!('kid' in bigopts.protected)) {
-				bigopts.protected.kid = bigopts.kid;
-			}
+		if (bigopts.protected.jwk) {
+			bigopts.protected.kid = false;
+		} else if (!('kid' in bigopts.protected)) {
+			// protected.kid must be provided according to ACME's interpretation of the spec
+			// (using the provided URL rather than the Key's Thumbprint as Key ID)
+			bigopts.protected.kid = bigopts.kid;
 		}
 
 		// this will shasum the thumbprint the 2nd time
