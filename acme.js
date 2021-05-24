@@ -756,12 +756,8 @@ ACME._postChallenge = function (me, options, kid, auth) {
 			altname: altname
 		});
 
-		if ('processing' === resp.body.status) {
-			//#console.debug('poll: again', auth.url);
-			return ACME._wait(RETRY_INTERVAL).then(pollStatus);
-		}
-
-		// This state should never occur
+		// State can be pending while waiting ACME server to transition to
+		// processing
 		if ('pending' === resp.body.status) {
 			if (count >= MAX_PEND) {
 				return ACME._wait(RETRY_INTERVAL)
@@ -769,7 +765,12 @@ ACME._postChallenge = function (me, options, kid, auth) {
 					.then(respondToChallenge);
 			}
 			//#console.debug('poll: again', auth.url);
-			return ACME._wait(RETRY_INTERVAL).then(respondToChallenge);
+			return ACME._wait(RETRY_INTERVAL).then(pollStatus);
+		}
+
+		if ('processing' === resp.body.status) {
+			//#console.debug('poll: again', auth.url);
+			return ACME._wait(RETRY_INTERVAL).then(pollStatus);
 		}
 
 		// REMOVE DNS records as soon as the state is non-processing
@@ -1012,73 +1013,84 @@ ACME._pollOrderStatus = function (me, options, kid, order, verifieds) {
 	var body = { csr: csr64 };
 	var payload = JSON.stringify(body);
 
-	function pollCert() {
+	function processResponse(resp) {
+		ACME._notify(me, options, 'certificate_status', {
+			subject: options.domains[0],
+			status: resp.body.status
+		});
+
+		// https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
+		// Possible values are: "pending" => ("invalid" || "ready") => "processing" => "valid"
+		if ('valid' === resp.body.status) {
+			var voucher = resp.body;
+			voucher._certificateUrl = resp.body.certificate;
+
+			return voucher;
+		}
+
+		if ('processing' === resp.body.status) {
+			return ACME._wait().then(pollStatus);
+		}
+
+		if (me.debug) {
+			console.debug(
+				'Error: bad status:\n' + JSON.stringify(resp.body, null, 2)
+			);
+		}
+
+		if ('pending' === resp.body.status) {
+			return Promise.reject(
+				new Error(
+					"Did not finalize order: status 'pending'." +
+						' Best guess: You have not accepted at least one challenge for each domain:\n' +
+						"Requested: '" +
+						options.domains.join(', ') +
+						"'\n" +
+						"Validated: '" +
+						verifieds.join(', ') +
+						"'\n" +
+						JSON.stringify(resp.body, null, 2)
+				)
+			);
+		}
+
+		if ('invalid' === resp.body.status) {
+			return Promise.reject(
+				E.ORDER_INVALID(options, verifieds, resp)
+			);
+		}
+
+		if ('ready' === resp.body.status) {
+			return Promise.reject(
+				E.DOUBLE_READY_ORDER(options, verifieds, resp)
+			);
+		}
+
+		return Promise.reject(
+			E.UNHANDLED_ORDER_STATUS(options, verifieds, resp)
+		);
+	}
+
+	function pollStatus() {
+		return U._jwsRequest(me, {
+			accountKey: options.accountKey,
+			url: order._orderUrl,
+			protected: { kid: kid },
+			payload: Enc.binToBuf('')
+		}).then(processResponse);
+	}
+
+	function finalizeOrder() {
 		//#console.debug('[ACME.js] pollCert:', order._finalizeUrl);
 		return U._jwsRequest(me, {
 			accountKey: options.accountKey,
 			url: order._finalizeUrl,
 			protected: { kid: kid },
 			payload: Enc.strToBuf(payload)
-		}).then(function (resp) {
-			ACME._notify(me, options, 'certificate_status', {
-				subject: options.domains[0],
-				status: resp.body.status
-			});
-
-			// https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
-			// Possible values are: "pending" => ("invalid" || "ready") => "processing" => "valid"
-			if ('valid' === resp.body.status) {
-				var voucher = resp.body;
-				voucher._certificateUrl = resp.body.certificate;
-
-				return voucher;
-			}
-
-			if ('processing' === resp.body.status) {
-				return ACME._wait().then(pollCert);
-			}
-
-			if (me.debug) {
-				console.debug(
-					'Error: bad status:\n' + JSON.stringify(resp.body, null, 2)
-				);
-			}
-
-			if ('pending' === resp.body.status) {
-				return Promise.reject(
-					new Error(
-						"Did not finalize order: status 'pending'." +
-							' Best guess: You have not accepted at least one challenge for each domain:\n' +
-							"Requested: '" +
-							options.domains.join(', ') +
-							"'\n" +
-							"Validated: '" +
-							verifieds.join(', ') +
-							"'\n" +
-							JSON.stringify(resp.body, null, 2)
-					)
-				);
-			}
-
-			if ('invalid' === resp.body.status) {
-				return Promise.reject(
-					E.ORDER_INVALID(options, verifieds, resp)
-				);
-			}
-
-			if ('ready' === resp.body.status) {
-				return Promise.reject(
-					E.DOUBLE_READY_ORDER(options, verifieds, resp)
-				);
-			}
-
-			return Promise.reject(
-				E.UNHANDLED_ORDER_STATUS(options, verifieds, resp)
-			);
-		});
+		}).then(processResponse);
 	}
 
-	return pollCert();
+	return finalizeOrder();
 };
 
 ACME._redeemCert = function (me, options, kid, voucher) {
