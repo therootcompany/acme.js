@@ -1055,9 +1055,7 @@ ACME._pollOrderStatus = function (me, options, kid, order, verifieds) {
 		}
 
 		if ('invalid' === resp.body.status) {
-			return Promise.reject(
-				E.ORDER_INVALID(options, verifieds, resp)
-			);
+			return Promise.reject(E.ORDER_INVALID(options, verifieds, resp));
 		}
 
 		if ('ready' === resp.body.status) {
@@ -1102,7 +1100,7 @@ ACME._redeemCert = function (me, options, kid, voucher) {
 		url: voucher._certificateUrl,
 		protected: { kid: kid },
 		payload: Enc.binToBuf(''),
-		json: true
+		headers: { Accept: 'application/pem-certificate-chain' }
 	}).then(function (resp) {
 		//#console.debug('ACME.js: csr submitted and cert received:');
 
