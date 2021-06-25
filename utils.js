@@ -28,7 +28,7 @@ U._jwsRequest = function (me, bigopts) {
 			.then(function (jws) {
 				//#console.debug('[ACME.js] url: ' + bigopts.url + ':');
 				//#console.debug(jws);
-				return U._request(me, { url: bigopts.url, json: jws });
+				return U._request(me, { url: bigopts.url, json: jws, headers: bigopts.headers });
 			})
 			.catch(function (e) {
 				if (/badNonce$/.test(e.urn)) {
@@ -84,7 +84,9 @@ U._request = function (me, opts) {
 		opts.headers['User-Agent'] = ua;
 	}
 	if (opts.json) {
-		opts.headers.Accept = 'application/json';
+		if (!opts.headers.Accept) {
+			opts.headers.Accept = 'application/json';
+		}
 		if (true !== opts.json) {
 			opts.body = JSON.stringify(opts.json);
 		}
